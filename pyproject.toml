@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "gittxt"
+version = "0.1.0"
+description = "CLI tool for extracting text content from Git repositories"
+authors = [{name = "Sandeep Paidipati", email = "sandeep.paidipati@gmail.com"}]
+dependencies = [
+    "click",
+    "gitpython"
+]
+
+[project.scripts]
+gittxt = "gittxt.cli:main"
