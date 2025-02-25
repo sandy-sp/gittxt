@@ -14,7 +14,8 @@ logger = get_logger(__name__)
 @click.option("--branch", type=str, help="Specify a Git branch (for remote repos)")
 @click.option("--output", type=str, default="gittxt_output.txt", help="Specify output file name")
 @click.option("--max-lines", type=int, help="Limit number of lines per file")
-def main(source, include, exclude, size_limit, branch, output, max_lines):
+@click.option("--format", type=click.Choice(["txt", "json"], case_sensitive=False), default="txt", help="Specify output format")
+def main(source, include, exclude, size_limit, branch, output, max_lines, format):
     """Gittxt: Scan a Git repo and extract text content."""
 
     logger.info(f"Starting Gittxt on: {source}")
@@ -35,7 +36,7 @@ def main(source, include, exclude, size_limit, branch, output, max_lines):
 
     logger.info(f"Processing {len(valid_files)} files...")
 
-    output_builder = OutputBuilder(output_file=output, max_lines=max_lines)
+    output_builder = OutputBuilder(output_file=output, max_lines=max_lines, output_format=format)
     output_file = output_builder.generate_output(valid_files)
 
     logger.info(f"✅ Output saved to: {output_file}")
