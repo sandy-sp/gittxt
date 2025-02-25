@@ -6,7 +6,7 @@ on:
       - "v*"  # Triggers when a new Git tag like "v1.0.0" is pushed
 
 permissions:
-  contents: write  # ✅ Grant permissions to create releases
+  contents: write
   packages: write
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
 
       - name: 📝 Read README for release notes
         id: readme
-        run: echo "::set-output name=notes::$(cat README.md)"
+        run: echo "::set-output name=notes::$(sed ':a;N;$!ba;s/\n/%0A/g' README.md)"
 
       - name: 🏗 Build Distribution (Poetry)
         run: |
@@ -36,7 +36,7 @@ jobs:
           body: "${{ steps.readme.outputs.notes }}"
           draft: false
           prerelease: false
-          files: "dist/*"  # Uploads assets to GitHub Release
+          files: "dist/*"  
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -57,7 +57,11 @@ jobs:
       - name: 📦 Install Poetry
         run: pip install poetry
 
+      - name: 🏗 Build Distribution (Ensure Files Exist)
+        run: poetry build  
+
       - name: 📦 Publish to PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
         run: poetry publish --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
+
