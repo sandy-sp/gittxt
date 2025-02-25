@@ -2,6 +2,9 @@ import click
 from gittxt.scanner import Scanner
 from gittxt.repository import RepositoryHandler
 from gittxt.output_builder import OutputBuilder
+from gittxt.logger import get_logger
+
+logger = get_logger(__name__)
 
 @click.command()
 @click.argument("source")
@@ -13,26 +16,28 @@ from gittxt.output_builder import OutputBuilder
 def main(source, exclude, size_limit, branch, output, max_lines):
     """Gittxt: Scan a Git repo and extract text content."""
 
+    logger.info(f"Starting Gittxt on: {source}")
+
     repo_handler = RepositoryHandler(source, branch)
     repo_path = repo_handler.get_local_path()
 
     if not repo_path:
-        click.echo("Failed to access repository. Exiting.")
+        logger.error("Failed to access repository. Exiting.")
         return
 
     scanner = Scanner(root_path=repo_path, exclude_patterns=exclude, size_limit=size_limit)
     valid_files = scanner.scan_directory()
 
     if not valid_files:
-        click.echo("No valid files found. Exiting.")
+        logger.warning("No valid files found. Exiting.")
         return
 
-    click.echo(f"Processing {len(valid_files)} files...")
+    logger.info(f"Processing {len(valid_files)} files...")
 
     output_builder = OutputBuilder(output_file=output, max_lines=max_lines)
     output_file = output_builder.generate_output(valid_files)
 
-    click.echo(f"✅ Output saved to: {output_file}")
+    logger.info(f"✅ Output saved to: {output_file}")
 
 if __name__ == "__main__":
     main()
