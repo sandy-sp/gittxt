@@ -8,3 +8,6 @@ venv/
 
 # Git-related
 .git
+
+# Local build files
+dist/

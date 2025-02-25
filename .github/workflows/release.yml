@@ -1,0 +1,59 @@
+name: 🚀 Publish Gittxt Release & Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"  # Triggers when a new Git tag like "v1.0.0" is pushed
+
+jobs:
+  release:
+    name: 📦 Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📝 Read README for release notes
+        id: readme
+        run: echo "::set-output name=notes::$(cat README.md)"
+
+      - name: 🏗 Build Distribution (Poetry)
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry build
+
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          body: "${{ steps.readme.outputs.notes }}"
+          draft: false
+          prerelease: false
+          files: "dist/*"  # Uploads assets to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: 📦 Publish to PyPI
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python & Poetry
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: 📦 Install Poetry
+        run: pip install poetry
+
+      - name: 📦 Publish to PyPI
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
+        run: poetry publish --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
