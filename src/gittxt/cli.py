@@ -34,6 +34,8 @@ def main(source, include, exclude, size_limit, branch, output, max_lines, format
         logger.warning("No valid files found. Exiting.")
         return
 
+    print(f"✅ Found {len(valid_files)} valid files.")
+    
     logger.info(f"Processing {len(valid_files)} files...")
 
     output_builder = OutputBuilder(output_file=output, max_lines=max_lines, output_format=format)

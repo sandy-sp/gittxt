@@ -11,5 +11,8 @@ dependencies = [
     "gitpython"
 ]
 
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
 [project.scripts]
 gittxt = "gittxt.cli:main"
