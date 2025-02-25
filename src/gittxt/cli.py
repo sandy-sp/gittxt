@@ -8,12 +8,13 @@ logger = get_logger(__name__)
 
 @click.command()
 @click.argument("source")
+@click.option("--include", multiple=True, help="Include only files matching this pattern (e.g., '.py')")
 @click.option("--exclude", multiple=True, help="Exclude files matching this pattern")
 @click.option("--size-limit", type=int, help="Exclude files larger than this size (bytes)")
 @click.option("--branch", type=str, help="Specify a Git branch (for remote repos)")
 @click.option("--output", type=str, default="gittxt_output.txt", help="Specify output file name")
 @click.option("--max-lines", type=int, help="Limit number of lines per file")
-def main(source, exclude, size_limit, branch, output, max_lines):
+def main(source, include, exclude, size_limit, branch, output, max_lines):
     """Gittxt: Scan a Git repo and extract text content."""
 
     logger.info(f"Starting Gittxt on: {source}")
@@ -25,7 +26,7 @@ def main(source, exclude, size_limit, branch, output, max_lines):
         logger.error("Failed to access repository. Exiting.")
         return
 
-    scanner = Scanner(root_path=repo_path, exclude_patterns=exclude, size_limit=size_limit)
+    scanner = Scanner(root_path=repo_path, include_patterns=include, exclude_patterns=exclude, size_limit=size_limit)
     valid_files = scanner.scan_directory()
 
     if not valid_files:
