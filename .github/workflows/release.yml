@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"  # Triggers when a new Git tag like "v1.0.0" is pushed
 
+permissions:
+  contents: write  # ✅ Grant permissions to create releases
+  packages: write
+
 jobs:
   release:
     name: 📦 Create GitHub Release
