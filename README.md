@@ -7,9 +7,11 @@ It is designed for **code summarization, AI preprocessing, offline reading, and 
 - ✅ **Scan Local or Remote Repositories** (`git clone` support)  
 - ✅ **Include & Exclude File Patterns** (`--include .py`, `--exclude node_modules`)  
 - ✅ **Multi-threaded Scanning** (Optimized for large repositories)  
-- ✅ **Supports JSON & TXT Output Formats** (`--format json`)  
+- ✅ **Supports JSON & TXT Output Formats** (`--output-format json`)  
 - ✅ **Incremental Caching for Faster Scans** (Skips unchanged files)  
 - ✅ **Force Full Rescan When Needed** (`--force-rescan`)  
+- ✅ **Improved Logging & Error Handling** (More detailed messages for debugging)  
+- ✅ **Better CLI Experience** (Handles invalid inputs more effectively)
 
 ---
 
@@ -31,9 +33,9 @@ Options:
   --exclude TEXT
   --size-limit INTEGER
   --branch TEXT
-  --output TEXT
+  --output-dir TEXT
+  --output-format [txt|json]
   --max-lines INTEGER
-  --format [txt|json]
   --force-rescan
   --help  Show this message and exit.
 ```
@@ -46,7 +48,7 @@ Options:
 ```bash
 gittxt .
 ```
-📌 **Result:** Outputs `gittxt_output.txt` containing extracted text.
+📌 **Result:** Outputs extracted text from the repo.
 
 ---
 
@@ -64,21 +66,30 @@ gittxt https://github.com/torvalds/linux
 ### **3️⃣ Customize Output (JSON & TXT)**
 ✅ **Save as JSON (Structured Output)**
 ```bash
-gittxt . --format json --output repo_dump.json
+gittxt . --output-format json --output repo_dump.json
 ```
 
 ✅ **Save as TXT (Default)**
 ```bash
-gittxt . --format txt --output repo_dump.txt
+gittxt . --output-format txt --output repo_dump.txt
 ```
 
 ---
 
-## 📌 🚀 New in `v1.0.0`
-- **🎉 First official release on PyPI (`pip install gittxt`)**
-- **🔄 Automatic caching for faster rescans**
-- **📦 Multi-threaded scanning for large repos**
-- **📝 Improved documentation & CLI stability**
+## 📌 🚀 New in `v1.1.0`
+- **🐛 Bug Fixes & Improvements**
+  - **Fixed `--format` argument** (Now use `--output-format`).
+  - **Better logging & error messages** (Now logs issues more clearly).
+  - **More resilient CLI** (Handles invalid paths properly).
+
+- **🛠 Feature Enhancements**
+  - **CLI now supports `--force-rescan` correctly**.
+  - **Improved caching system** (Scans only modified files).
+  - **More detailed scan reports**.
+
+- **✅ Full Test Coverage**
+  - **18/18 tests passing** 🟢
+  - **New CLI tests added** (`pytest tests/`).
 
 ---
 
@@ -116,4 +127,3 @@ This project is licensed under the **MIT License**.
 ---
 
 📌 **Made by [Sandeep Paidipati](https://github.com/sandy-sp)**
-```
