@@ -69,4 +69,4 @@ def test_invalid_repo_path(clean_output_dirs):
     """Test handling an invalid repository path."""
     result = run_cli(["invalid_repo_path/"])
 
-    assert "❌ Failed to access repository 'invalid_repo_path/'." in result.stdout  # Updated assertion
+    assert "❌ Repository path does not exist: 'invalid_repo_path/'." in result.stdout  # Updated assertion

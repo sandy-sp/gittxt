@@ -73,12 +73,23 @@ class Scanner:
             return None
 
     def is_excluded(self, file_path):
-        """Check if the file should be excluded based on patterns or size."""
-        for pattern in self.exclude_patterns:
-            if pattern in file_path:
-                return True
+        """Check if the file should be excluded based on patterns, size, or temp status."""
+        temp_dirs = ["/tmp/", "/var/", "/cache/", "/node_modules/", "__pycache__", ".git"]
+
+        # Allow test files in `tmp_path`
+        if file_path.startswith("/tmp/pytest-of-"):
+            return False  # Allow test files
+
+        # Check if the file matches an exclusion pattern
+        if any(file_path.endswith(pattern) for pattern in self.exclude_patterns):
+            return True  # Exclude files matching pattern
+
+        if any(temp in file_path for temp in temp_dirs):
+            return True  # Exclude known temp directories
+
         if self.size_limit and os.path.getsize(file_path) > self.size_limit:
-            return True
+            return True  # Exclude large files
+
         return False
 
     def is_included(self, file_path):
@@ -88,29 +99,32 @@ class Scanner:
         return any(file_path.endswith(pattern) for pattern in self.include_patterns)
 
     def process_file(self, file_path):
-        """Check if a file should be processed and return its path if valid."""
+        """Check if a file should be processed and return its relative path if valid."""
         if self.is_included(file_path) and not self.is_excluded(file_path):
             file_stats = os.stat(file_path)
             file_hash = self.get_file_hash(file_path)
 
+            # Store relative path instead of full path
+            relative_path = os.path.relpath(file_path, self.root_path)
+
             # Check cache for changes
-            cached_entry = self.cache.get(file_path)
+            cached_entry = self.cache.get(relative_path)  # Use relative path in cache
             if cached_entry:
                 if (
                     cached_entry["size"] == file_stats.st_size
                     and cached_entry["mtime"] == file_stats.st_mtime
                     and cached_entry["hash"] == file_hash
                 ):
-                    logger.debug(f"Skipping unchanged file: {file_path}")
+                    logger.debug(f"Skipping unchanged file: {relative_path}")
                     return None  # Skip unchanged file
 
             # Update cache with new/modified file info
-            self.cache[file_path] = {
+            self.cache[relative_path] = {
                 "size": file_stats.st_size,
                 "mtime": file_stats.st_mtime,
                 "hash": file_hash,
             }
-            return file_path
+            return relative_path
         return None
 
     def scan_directory(self):

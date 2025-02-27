@@ -105,5 +105,8 @@ def test_exclude_large_files(clean_cache_dir, tmp_path):
     scanner = Scanner(repo_name="test_repo", root_path=str(tmp_path), size_limit=5_000_000)  # 5MB limit
     scanned_files = scanner.scan_directory()
 
-    assert str(large_file) not in scanned_files, "Large file was not excluded"
-    assert str(small_file) in scanned_files, "Small file should not be excluded"
+    # Use relative paths to match how scanner stores paths
+    scanned_files = [os.path.basename(file) for file in scanned_files]
+
+    assert "large.txt" not in scanned_files, "Large file was not excluded"
+    assert "small.txt" in scanned_files, "Small file should not be excluded"

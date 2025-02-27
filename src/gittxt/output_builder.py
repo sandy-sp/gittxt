@@ -11,7 +11,7 @@ OUTPUT_DIR = os.path.join(SRC_DIR, "../gittxt-outputs")  # `src/gittxt-outputs/`
 TEXT_DIR = os.path.join(OUTPUT_DIR, "text")  # `src/gittxt-outputs/text/`
 JSON_DIR = os.path.join(OUTPUT_DIR, "json")  # `src/gittxt-outputs/json/`
 
-# Ensure text and JSON directories exist and persist
+# Ensure directories exist
 os.makedirs(TEXT_DIR, exist_ok=True)
 os.makedirs(JSON_DIR, exist_ok=True)
 
@@ -22,6 +22,10 @@ class OutputBuilder:
         self.max_lines = max_lines
         self.output_format = output_format.lower()
         
+        # Fix naming for local directories (avoid "..txt" issue)
+        if self.repo_name in [".", ".."]:
+            self.repo_name = "current_directory"
+
         # Set output file path based on format
         self.output_file = os.path.join(
             TEXT_DIR if self.output_format == "txt" else JSON_DIR,
@@ -70,7 +74,7 @@ class OutputBuilder:
         return self.output_file
 
     def _generate_json_output(self, files, tree_summary):
-        """Generate a `.json` file with structured output."""
+        """Generate a `.json` file with structured output while avoiding excessive size."""
         logger.info(f"Writing output to {self.output_file} (JSON format)")
         output_data = {
             "repository_structure": tree_summary,
@@ -79,7 +83,11 @@ class OutputBuilder:
 
         for file_path in files:
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
-            content = "".join(self.read_file_content(file_path)).rstrip("\n")  # Ensure consistent formatting
+
+            # Limit the amount of text stored in JSON output
+            file_content = self.read_file_content(file_path)
+            content = "".join(file_content) if len(file_content) < 500 else "[Content too large to display]"
+
             output_data["files"].append({
                 "file": file_path,
                 "size": file_size,

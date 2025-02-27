@@ -25,13 +25,17 @@ def main(source, include, exclude, size_limit, branch, format, max_lines, force_
     repo_handler = RepositoryHandler(source, branch)
     repo_path = repo_handler.get_local_path()
 
-    if not os.path.exists(repo_path):
-        logger.error(f"❌ Failed to access repository '{source}'. Exiting.")
-        print(f"❌ Failed to access repository '{source}'. Exiting.")  # Ensure visible output
+    if not repo_path or not os.path.exists(repo_path):
+        logger.error(f"❌ Repository path does not exist: '{source}'. Exiting.")
+        print(f"❌ Repository path does not exist: '{source}'. Exiting.")  # Ensure visible output
         return
 
     # Extract repo name from the source
     repo_name = repo_handler.get_repo_name()
+
+    # Fix naming for local directories (avoid "..txt" issue)
+    if repo_name in [".", ".."]:
+        repo_name = "current_directory"
 
     # Initialize scanner with repo_name (ensures correct cache handling)
     scanner = Scanner(
