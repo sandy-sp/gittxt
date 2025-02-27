@@ -101,7 +101,6 @@ def test_exclude_large_files(clean_cache_dir, tmp_path):
     large_file = tmp_path / "large.txt"
     large_file.write_text("X" * 10_000_000)  # Large file (10MB)
 
-    files = [str(small_file), str(large_file)]
     scanner = Scanner(repo_name="test_repo", root_path=str(tmp_path), size_limit=5_000_000)  # 5MB limit
     scanned_files = scanner.scan_directory()
 

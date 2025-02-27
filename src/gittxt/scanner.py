@@ -20,9 +20,9 @@ class Scanner:
         """Initialize the scanner with repository name and settings."""
         self.repo_name = repo_name
         self.root_path = root_path
-        self.include_patterns = include_patterns or []
-        self.exclude_patterns = exclude_patterns or []
-        self.size_limit = size_limit
+        self.include_patterns = include_patterns or []  # Default: include all files
+        self.exclude_patterns = exclude_patterns or []  # Default: exclude nothing
+        self.size_limit = size_limit  # Default: No size limit
         self.max_workers = self.calculate_optimal_workers()
         self.cache_reset = False  # Flag to track cache resets
 
@@ -80,22 +80,26 @@ class Scanner:
         if file_path.startswith("/tmp/pytest-of-"):
             return False  # Allow test files
 
-        # Check if the file matches an exclusion pattern
-        if any(file_path.endswith(pattern) for pattern in self.exclude_patterns):
+        filename = os.path.basename(file_path)
+
+        # Ensure exclude patterns match full filenames
+        if any(filename.endswith(pattern) for pattern in self.exclude_patterns):
+            logger.info(f"🛑 Excluding file due to pattern match: {file_path}")
             return True  # Exclude files matching pattern
 
         if any(temp in file_path for temp in temp_dirs):
             return True  # Exclude known temp directories
 
-        if self.size_limit and os.path.getsize(file_path) > self.size_limit:
+        if self.size_limit is not None and os.path.exists(file_path) and os.path.getsize(file_path) > self.size_limit:
+            logger.info(f"🛑 Excluding large file: {file_path} (Size: {os.path.getsize(file_path)} bytes)")
             return True  # Exclude large files
 
         return False
 
     def is_included(self, file_path):
-        """Check if the file should be included based on patterns."""
-        if not self.include_patterns:
-            return True  # Include all if no pattern is specified
+        """Check if the file should be included based on patterns. If no patterns, include all."""
+        if not self.include_patterns:  # Default: include all files
+            return True  
         return any(file_path.endswith(pattern) for pattern in self.include_patterns)
 
     def process_file(self, file_path):
@@ -106,6 +110,9 @@ class Scanner:
 
             # Store relative path instead of full path
             relative_path = os.path.relpath(file_path, self.root_path)
+
+            # Debugging: Log file size before processing
+            logger.debug(f"🔍 Processing file: {relative_path} (Size: {file_stats.st_size} bytes)")
 
             # Check cache for changes
             cached_entry = self.cache.get(relative_path)  # Use relative path in cache
@@ -125,6 +132,8 @@ class Scanner:
                 "hash": file_hash,
             }
             return relative_path
+        else:
+            logger.info(f"🛑 Excluded file: {file_path} (Size: {os.path.getsize(file_path) if os.path.exists(file_path) else 'Unknown'})")
         return None
 
     def scan_directory(self):
