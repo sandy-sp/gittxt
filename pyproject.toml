@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gittxt"
-version = "1.0.0"
+version = "1.1.0"
 description = "CLI tool for extracting text from Git repositories"
 authors = ["Sandeep Paidipati <sandeep.paidipati@gmail.com>"]
 readme = "README.md"
