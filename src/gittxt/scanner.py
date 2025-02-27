@@ -16,11 +16,13 @@ CACHE_DIR = os.path.join(OUTPUT_DIR, "cache")  # `src/gittxt-outputs/cache/`
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 class Scanner:
-    def __init__(self, repo_name, root_path, size_limit=None):
+    def __init__(self, repo_name, root_path, size_limit=None, include_patterns=None, exclude_patterns=None):
         """Initialize the scanner with repository name and settings."""
         self.repo_name = repo_name
         self.root_path = root_path
         self.size_limit = size_limit  # Default: No size limit
+        self.include_patterns = [p.lower() for p in include_patterns or []]  # Normalize patterns
+        self.exclude_patterns = [p.lower() for p in exclude_patterns or []]  # Normalize patterns
         self.max_workers = self.calculate_optimal_workers()
         self.cache_reset = False  # Flag to track cache resets
 
@@ -47,7 +49,7 @@ class Scanner:
                 with open(self.cache_file, "r") as f:
                     return json.load(f)
             except (json.JSONDecodeError, OSError):
-                logger.warning(f"Cache file {self.cache_file} is corrupted. Resetting cache.")
+                logger.warning(f"⚠️ Cache file {self.cache_file} is corrupted. Resetting cache.")
                 os.remove(self.cache_file)  # Delete corrupted cache file
                 self.cache_reset = True  # Set flag to indicate cache reset
                 return {}  # Reset cache
@@ -70,6 +72,22 @@ class Scanner:
             logger.warning(f"Skipping file {file_path} due to error: {e}")
             return None
 
+    def is_excluded(self, file_path):
+        """Check if a file should be excluded based on patterns (case-insensitive)."""
+        relative_path = os.path.relpath(file_path, self.root_path).lower()
+
+        for pattern in self.exclude_patterns:
+            if pattern in relative_path:
+                logger.debug(f"Skipping excluded file: {relative_path}")
+                return True
+        return False
+
+    def is_included(self, file_path):
+        """Check if a file should be included based on patterns (case-insensitive)."""
+        if not self.include_patterns:
+            return True  # If no include patterns are specified, include all files
+        return any(pattern in file_path.lower() for pattern in self.include_patterns)
+
     def process_file(self, file_path):
         """Check if a file should be processed and return its relative path if valid."""
         file_stats = os.stat(file_path)
@@ -80,6 +98,19 @@ class Scanner:
 
         # Debugging: Log file size before processing
         logger.debug(f"🔍 Processing file: {relative_path} (Size: {file_stats.st_size} bytes)")
+
+        # Apply exclude patterns
+        if self.is_excluded(file_path):
+            return None  # Skip excluded file
+
+        # Apply include patterns
+        if not self.is_included(file_path):
+            return None  # Skip non-matching file
+
+        # Check file size limit
+        if self.size_limit and file_stats.st_size > self.size_limit:
+            logger.debug(f"Skipping file exceeding size limit: {relative_path}")
+            return None
 
         # Check cache for changes
         cached_entry = self.cache.get(relative_path)  # Use relative path in cache
@@ -107,7 +138,7 @@ class Scanner:
         self.cache = self.load_cache()  # Load cache
 
         if self.cache_reset:
-            logger.info("Cache was reset due to corruption. Forcing a full scan.")
+            logger.info("♻️ Cache was reset due to corruption. Performing a full scan.")
             self.cache = {}  # Ensure cache starts fresh
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
@@ -126,5 +157,5 @@ class Scanner:
 
         self.save_cache()  # Save cache after scanning
 
-        logger.info(f"Scanning complete. {len(valid_files)} new/modified files found using {self.max_workers} workers.")
+        logger.info(f"✅ Scanning complete. {len(valid_files)} new/modified files found using {self.max_workers} workers.")
         return valid_files
