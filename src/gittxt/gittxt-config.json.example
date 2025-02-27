@@ -1,0 +1,8 @@
+{
+    "output_dir": "../custom-outputs",
+    "size_limit": 500000,
+    "include_patterns": [".py", ".md"],
+    "exclude_patterns": ["node_modules", ".git", "__pycache__"],
+    "output_format": "json",
+    "max_lines": 100
+}
