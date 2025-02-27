@@ -18,7 +18,8 @@ logger = get_logger(__name__)
 @click.option("--output-format", type=click.Choice(["txt", "json"], case_sensitive=False), help="Specify output format.")
 @click.option("--max-lines", type=int, help="Limit number of lines per file.")
 @click.option("--config", type=str, help="Specify a custom config file path.")
-def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, config):
+@click.option("--force-rescan", is_flag=True, help="Clear cache and force a full rescan.")
+def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, config, force_rescan):
     """Gittxt: Scan a Git repo and extract text content."""
     
     # Load configuration from user-specified file or default
@@ -33,10 +34,6 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     max_lines = max_lines if max_lines is not None else config["max_lines"]
 
     logger.info(f"Starting Gittxt on: {source}")
-    logger.info(f"Configuration Used: output_dir={output_dir}, size_limit={size_limit}, include={include_patterns}, exclude={exclude_patterns}, output_format={output_format}, max_lines={max_lines}")
-
-    # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
 
     # Handle repository (local or remote)
     repo_handler = RepositoryHandler(source, branch)
@@ -46,13 +43,22 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
         logger.error("❌ Failed to access repository. Exiting.")
         return
 
-    # Initialize Scanner
+    # Extract repository name for output file naming
+    repo_name = os.path.basename(os.path.normpath(repo_path))
+
+    # Initialize Scanner with repo_name
     scanner = Scanner(
+        repo_name=repo_name,
         root_path=repo_path,
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         size_limit=size_limit
     )
+
+    # Clear cache if --force-rescan is used
+    if force_rescan:
+        scanner.cache = {}  # Reset cache
+        logger.info(f"♻️ Cache reset for {repo_name}. Performing a full rescan.")
 
     # Scan the repository
     valid_files = scanner.scan_directory()
@@ -61,10 +67,7 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
         logger.warning("⚠️ No valid files found. Exiting.")
         return
 
-    logger.info(f"🔍 Processing {len(valid_files)} files...")
-
-    # Extract repository name for output file naming
-    repo_name = os.path.basename(os.path.normpath(repo_path))
+    logger.info(f"✅ Processing {len(valid_files)} files...")
 
     # Initialize OutputBuilder
     output_builder = OutputBuilder(
@@ -77,6 +80,3 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     output_file = output_builder.generate_output(valid_files, repo_path)
 
     logger.info(f"✅ Output saved to: {output_file}")
-
-if __name__ == "__main__":
-    main()

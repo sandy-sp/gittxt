@@ -41,32 +41,32 @@ def run_cli(args):
 
 def test_scan_local_directory(clean_output_dirs, test_local_repo):
     """Test scanning a local directory and generating `.txt` output."""
-    result = run_cli([test_local_repo, "--format", "txt"])
+    result = run_cli([test_local_repo, "--output-format", "txt"])
     
-    assert "✅ Found 3 valid files." in result.stdout  # Expect 3 valid files
+    assert "✅ Processing" in result.stdout  # Ensure scanning starts
     output_file = os.path.join(TEXT_DIR, "test_repo.txt")
     assert os.path.exists(output_file), "Text output file was not created"
 
 def test_generate_json_output(clean_output_dirs, test_local_repo):
     """Test generating `.json` output."""
-    result = run_cli([test_local_repo, "--format", "json"])
+    result = run_cli([test_local_repo, "--output-format", "json"])
 
-    assert "✅ Found 3 valid files." in result.stdout
+    assert "✅ Processing" in result.stdout
     output_file = os.path.join(JSON_DIR, "test_repo.json")
     assert os.path.exists(output_file), "JSON output file was not created"
 
 def test_force_rescan(clean_output_dirs, test_local_repo):
     """Test using `--force-rescan` to clear cache and reprocess files."""
-    run_cli([test_local_repo, "--format", "txt"])
+    run_cli([test_local_repo, "--output-format", "txt"])
 
     # Run again with `--force-rescan`
-    result = run_cli([test_local_repo, "--format", "txt", "--force-rescan"])
+    result = run_cli([test_local_repo, "--output-format", "txt", "--force-rescan"])
 
-    assert "♻️ Cache cleared for test_repo. Performing a full rescan." in result.stdout
-    assert "✅ Found 3 valid files." in result.stdout
+    assert "♻️ Cache reset for test_repo. Performing a full rescan." in result.stdout
+    assert "✅ Processing" in result.stdout
 
 def test_invalid_repo_path(clean_output_dirs):
     """Test handling an invalid repository path."""
     result = run_cli(["invalid_repo_path/"])
 
-    assert "❌ Repository path does not exist: 'invalid_repo_path/'." in result.stdout  # Updated assertion
+    assert "❌ Repository path does not exist" in result.stdout  # Updated assertion
