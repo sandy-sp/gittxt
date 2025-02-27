@@ -17,11 +17,12 @@ logger = get_logger(__name__)
 @click.option("--output-dir", type=str, help="Specify a custom output directory.")
 @click.option("--output-format", type=click.Choice(["txt", "json"], case_sensitive=False), help="Specify output format.")
 @click.option("--max-lines", type=int, help="Limit number of lines per file.")
-def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines):
+@click.option("--config", type=str, help="Specify a custom config file path.")
+def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, config):
     """Gittxt: Scan a Git repo and extract text content."""
     
-    # Load configuration
-    config = load_config()
+    # Load configuration from user-specified file or default
+    config = load_config(config_path=config)
 
     # Use CLI arguments if provided; otherwise, fallback to config values
     output_dir = output_dir or config["output_dir"]
@@ -42,7 +43,7 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     repo_path = repo_handler.get_local_path()
 
     if not repo_path:
-        logger.error("Failed to access repository. Exiting.")
+        logger.error("❌ Failed to access repository. Exiting.")
         return
 
     # Initialize Scanner
@@ -57,10 +58,10 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     valid_files = scanner.scan_directory()
 
     if not valid_files:
-        logger.warning("No valid files found. Exiting.")
+        logger.warning("⚠️ No valid files found. Exiting.")
         return
 
-    logger.info(f"Processing {len(valid_files)} files...")
+    logger.info(f"🔍 Processing {len(valid_files)} files...")
 
     # Extract repository name for output file naming
     repo_name = os.path.basename(os.path.normpath(repo_path))
