@@ -7,15 +7,27 @@ from gittxt.logger import get_logger
 
 logger = get_logger(__name__)
 
-class Scanner:
-    CACHE_FILE = ".gittxt_cache.json"  # Define cache file at the class level
+# Define cache storage inside `src/gittxt-outputs/cache/`
+SRC_DIR = os.path.dirname(__file__)  # `src/gittxt/`
+OUTPUT_DIR = os.path.join(SRC_DIR, "../gittxt-outputs")  # `src/gittxt-outputs/`
+CACHE_DIR = os.path.join(OUTPUT_DIR, "cache")  # `src/gittxt-outputs/cache/`
 
-    def __init__(self, root_path, include_patterns=None, exclude_patterns=None, size_limit=None):
+# Ensure cache directory exists
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+class Scanner:
+    def __init__(self, repo_name, root_path, include_patterns=None, exclude_patterns=None, size_limit=None):
+        """Initialize the scanner with repository name and settings."""
+        self.repo_name = repo_name
         self.root_path = root_path
         self.include_patterns = include_patterns or []
         self.exclude_patterns = exclude_patterns or []
         self.size_limit = size_limit
         self.max_workers = self.calculate_optimal_workers()
+        self.cache_reset = False  # Flag to track cache resets
+
+        # Cache file specific to the repository
+        self.cache_file = os.path.join(CACHE_DIR, f"{self.repo_name}_cache.json")
         self.cache = self.load_cache()
 
     def calculate_optimal_workers(self):
@@ -32,17 +44,20 @@ class Scanner:
 
     def load_cache(self):
         """Load the existing cache from a file if it exists."""
-        if os.path.exists(self.CACHE_FILE):
+        if os.path.exists(self.cache_file):
             try:
-                with open(self.CACHE_FILE, "r") as f:
+                with open(self.cache_file, "r") as f:
                     return json.load(f)
-            except json.JSONDecodeError:
-                logger.warning("Cache file corrupted. Starting fresh cache.")
+            except (json.JSONDecodeError, OSError):
+                logger.warning(f"Cache file {self.cache_file} is corrupted. Resetting cache.")
+                os.remove(self.cache_file)  # Delete corrupted cache file
+                self.cache_reset = True  # Set flag to indicate cache reset
+                return {}  # Reset cache
         return {}
 
     def save_cache(self):
         """Save the updated cache to disk."""
-        with open(self.CACHE_FILE, "w") as f:
+        with open(self.cache_file, "w") as f:
             json.dump(self.cache, f, indent=4)
 
     def get_file_hash(self, file_path):
@@ -101,6 +116,13 @@ class Scanner:
     def scan_directory(self):
         """Scan directory using multi-threading, applying caching."""
         valid_files = []
+        self.cache_reset = False  # Reset cache flag
+        self.cache = self.load_cache()  # Load cache
+
+        if self.cache_reset:
+            logger.info("Cache was reset due to corruption. Forcing a full scan.")
+            self.cache = {}  # Ensure cache starts fresh
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = []
             for root, _, files in os.walk(self.root_path):
@@ -116,5 +138,6 @@ class Scanner:
                     valid_files.append(result)
 
         self.save_cache()  # Save cache after scanning
+
         logger.info(f"Scanning complete. {len(valid_files)} new/modified files found using {self.max_workers} workers.")
         return valid_files

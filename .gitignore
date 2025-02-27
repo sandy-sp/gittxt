@@ -11,3 +11,6 @@ venv/
 
 # Local build files
 dist/
+
+# Ignore pytest cache 
+.pytest_cache/
