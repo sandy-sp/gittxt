@@ -2,6 +2,7 @@ import os
 import shutil
 import pytest
 import subprocess
+from pathlib import Path
 
 # Define paths
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))  # `src/`
@@ -57,13 +58,27 @@ def test_generate_json_output(clean_output_dirs, test_local_repo):
 
 def test_force_rescan(clean_output_dirs, test_local_repo):
     """Test using `--force-rescan` to clear cache and reprocess files."""
+    # Convert test_local_repo to Path object
+    repo_path = Path(test_local_repo)
+
+    # Ensure test repo contains valid files
+    file1 = repo_path / "test1.py"
+    file2 = repo_path / "test2.txt"
+    file1.write_text("print('Hello')")
+    file2.write_text("Some text content")
+
+    # Run first scan
     run_cli([test_local_repo, "--output-format", "txt"])
+
+    # Modify files to force detection
+    file1.write_text("print('Updated Hello')")
+    file2.write_text("Updated text content")
 
     # Run again with `--force-rescan`
     result = run_cli([test_local_repo, "--output-format", "txt", "--force-rescan"])
 
     assert "♻️ Cache reset for test_repo. Performing a full rescan." in result.stdout
-    assert "✅ Processing" in result.stdout
+    assert "✅ Processing" in result.stdout, "Processing message missing after forced rescan"
 
 def test_invalid_repo_path(clean_output_dirs):
     """Test handling an invalid repository path."""

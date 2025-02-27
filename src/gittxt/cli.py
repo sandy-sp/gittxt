@@ -1,5 +1,6 @@
 import click
 import os
+import sys
 from gittxt.scanner import Scanner
 from gittxt.repository import RepositoryHandler
 from gittxt.output_builder import OutputBuilder
@@ -34,16 +35,19 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     max_lines = max_lines if max_lines is not None else config["max_lines"]
 
     click.echo(f"🚀 Starting Gittxt on: {source}")
+    sys.stdout.flush()  # Ensure output is printed immediately
     logger.info(f"Starting Gittxt on: {source}")
 
     # Handle repository (local or remote)
     repo_handler = RepositoryHandler(source, branch)
     repo_path = repo_handler.get_local_path()
 
-    if not repo_path:
-        click.echo("❌ Repository path does not exist.")
+    if not os.path.exists(source):
+        click.echo("❌ Repository path does not exist. Exiting.")
+        sys.stdout.flush()
         logger.error("❌ Repository path does not exist.")
-        return
+        sys.exit(1)
+
 
     # Extract repository name for output file naming
     repo_name = os.path.basename(os.path.normpath(repo_path))
@@ -60,7 +64,9 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     # Clear cache if --force-rescan is used
     if force_rescan:
         scanner.cache = {}  # Reset cache
+        scanner.save_cache()  # Ensure cache is saved as empty
         click.echo(f"♻️ Cache reset for {repo_name}. Performing a full rescan.")
+        sys.stdout.flush()
         logger.info(f"♻️ Cache reset for {repo_name}. Performing a full rescan.")
 
     # Scan the repository
@@ -68,10 +74,12 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     if not valid_files:
         click.echo("⚠️ No valid files found. Exiting.")
+        sys.stdout.flush()
         logger.warning("⚠️ No valid files found. Exiting.")
-        return
+        sys.exit(1)
 
     click.echo(f"✅ Processing {len(valid_files)} files...")
+    sys.stdout.flush()
     logger.info(f"✅ Processing {len(valid_files)} files...")
 
     # Initialize OutputBuilder
@@ -85,4 +93,8 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     output_file = output_builder.generate_output(valid_files, repo_path)
 
     click.echo(f"✅ Output saved to: {output_file}")
+    sys.stdout.flush()
     logger.info(f"✅ Output saved to: {output_file}")
+
+if __name__ == "__main__":
+    main()
