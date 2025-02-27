@@ -14,3 +14,6 @@ dist/
 
 # Ignore pytest cache 
 .pytest_cache/
+
+# Ignore VSCode settings
+.vscode/

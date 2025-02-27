@@ -5,15 +5,15 @@ from gittxt.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Define the directory structure for output storage inside `src/gittxt-outputs/`
+# Define output directory structure inside `src/gittxt-outputs/`
 SRC_DIR = os.path.dirname(__file__)  # `src/gittxt/`
 OUTPUT_DIR = os.path.join(SRC_DIR, "../gittxt-outputs")  # `src/gittxt-outputs/`
 TEXT_DIR = os.path.join(OUTPUT_DIR, "text")  # `src/gittxt-outputs/text/`
 JSON_DIR = os.path.join(OUTPUT_DIR, "json")  # `src/gittxt-outputs/json/`
 
-# Ensure directories exist
-os.makedirs(TEXT_DIR, exist_ok=True)
-os.makedirs(JSON_DIR, exist_ok=True)
+# Ensure directories persist
+for directory in [TEXT_DIR, JSON_DIR]:
+    os.makedirs(directory, exist_ok=True)
 
 class OutputBuilder:
     def __init__(self, repo_name, max_lines=None, output_format="txt"):
@@ -21,10 +21,6 @@ class OutputBuilder:
         self.repo_name = repo_name
         self.max_lines = max_lines
         self.output_format = output_format.lower()
-        
-        # Fix naming for local directories (avoid "..txt" issue)
-        if self.repo_name in [".", ".."]:
-            self.repo_name = "current_directory"
 
         # Set output file path based on format
         self.output_file = os.path.join(
@@ -33,11 +29,11 @@ class OutputBuilder:
         )
 
     def read_file_content(self, file_path):
-        """Read file content with optional line limits, handling missing files."""
+        """Read file content with optional line limits and handle missing files."""
         if not os.path.exists(file_path):
-            logger.warning(f"Skipping missing file: {file_path}")
-            return [f"[Warning: Missing file: {file_path}]\n"]
-        
+            logger.error(f"File not found: {file_path}")
+            return [f"[Error: File '{file_path}' not found]\n"]
+
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 return f.readlines()[:self.max_lines] if self.max_lines else f.readlines()
@@ -74,7 +70,7 @@ class OutputBuilder:
         return self.output_file
 
     def _generate_json_output(self, files, tree_summary):
-        """Generate a `.json` file with structured output while avoiding excessive size."""
+        """Generate a `.json` file with structured output."""
         logger.info(f"Writing output to {self.output_file} (JSON format)")
         output_data = {
             "repository_structure": tree_summary,
@@ -83,19 +79,15 @@ class OutputBuilder:
 
         for file_path in files:
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
-
-            # Limit the amount of text stored in JSON output
-            file_content = self.read_file_content(file_path)
-            content = "".join(file_content) if len(file_content) < 500 else "[Content too large to display]"
-
+            content = "".join(self.read_file_content(file_path))
             output_data["files"].append({
                 "file": file_path,
                 "size": file_size,
-                "content": content
+                "content": content.strip()  # Ensure formatting consistency
             })
 
         with open(self.output_file, "w", encoding="utf-8") as json_file:
             json.dump(output_data, json_file, indent=4)
-        
+
         logger.info(f"✅ Output saved to {self.output_file}")
         return self.output_file
