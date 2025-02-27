@@ -13,8 +13,11 @@ JSON_DIR = os.path.join(OUTPUT_DIR, "json")
 def clean_output_dir():
     """Ensure the output directories are clean before each test."""
     for folder in [TEXT_DIR, JSON_DIR]:
-        for file in os.listdir(folder):
-            os.remove(os.path.join(folder, file))  # Remove only files, not folders
+        if os.path.exists(folder):
+            for file in os.listdir(folder):  # Remove only files, not folders
+                file_path = os.path.join(folder, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
 @pytest.fixture
 def sample_files(tmp_path):
@@ -26,6 +29,21 @@ def sample_files(tmp_path):
     file2.write_text("Hello World in text file\n")
 
     return [str(file1), str(file2)], str(tmp_path)
+
+def test_generate_text_output(clean_output_dir, sample_files):
+    """Test generating a `.txt` output file."""
+    files, repo_path = sample_files
+    builder = OutputBuilder(repo_name="test_repo", output_format="txt")
+    output_file = builder.generate_output(files, repo_path)
+
+    assert os.path.exists(output_file), "Text output file was not created"
+    assert output_file.endswith(".txt"), "Output file does not have .txt extension"
+
+    with open(output_file, "r") as f:
+        content = f.read()
+        assert "Repository Structure Overview" in content, "Tree structure missing from text output"
+        assert "print('Hello from Python')" in content, "Python file content missing"
+        assert "Hello World in text file" in content, "Text file content missing"
 
 def test_generate_json_output(clean_output_dir, sample_files):
     """Test generating a `.json` output file."""
@@ -54,4 +72,4 @@ def test_handle_missing_file(clean_output_dir, tmp_path):
 
     with open(output_file, "r") as f:
         content = f.read()
-        assert "[Warning: Missing file" in content, "Missing file error was not logged properly"
+        assert "[Error: File" in content, "Missing file error was not logged properly"
