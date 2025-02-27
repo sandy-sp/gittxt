@@ -33,6 +33,7 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     output_format = output_format or config["output_format"]
     max_lines = max_lines if max_lines is not None else config["max_lines"]
 
+    click.echo(f"🚀 Starting Gittxt on: {source}")
     logger.info(f"Starting Gittxt on: {source}")
 
     # Handle repository (local or remote)
@@ -40,7 +41,8 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     repo_path = repo_handler.get_local_path()
 
     if not repo_path:
-        logger.error("❌ Failed to access repository. Exiting.")
+        click.echo("❌ Repository path does not exist.")
+        logger.error("❌ Repository path does not exist.")
         return
 
     # Extract repository name for output file naming
@@ -58,15 +60,18 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     # Clear cache if --force-rescan is used
     if force_rescan:
         scanner.cache = {}  # Reset cache
+        click.echo(f"♻️ Cache reset for {repo_name}. Performing a full rescan.")
         logger.info(f"♻️ Cache reset for {repo_name}. Performing a full rescan.")
 
     # Scan the repository
     valid_files = scanner.scan_directory()
 
     if not valid_files:
+        click.echo("⚠️ No valid files found. Exiting.")
         logger.warning("⚠️ No valid files found. Exiting.")
         return
 
+    click.echo(f"✅ Processing {len(valid_files)} files...")
     logger.info(f"✅ Processing {len(valid_files)} files...")
 
     # Initialize OutputBuilder
@@ -79,4 +84,5 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     # Generate output file
     output_file = output_builder.generate_output(valid_files, repo_path)
 
+    click.echo(f"✅ Output saved to: {output_file}")
     logger.info(f"✅ Output saved to: {output_file}")
