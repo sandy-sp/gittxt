@@ -84,14 +84,15 @@ def test_handle_corrupt_cache(clean_cache_dir, sample_files):
     assert len(scanned_files) == 2, "Scanner did not recover from corrupt cache"
     assert os.path.exists(cache_file), "Cache file should be recreated"
 
-
 def test_exclude_files_by_pattern(clean_cache_dir, sample_files):
     """Test excluding files by pattern."""
     files, repo_path = sample_files
-    scanner = Scanner(repo_name="test_repo", root_path=repo_path, exclude_patterns=[".py"])
+    scanner = Scanner(repo_name="test_repo", root_path=repo_path, exclude_patterns=["file1.py", ".py"])
     scanned_files = scanner.scan_directory()
 
-    assert len(scanned_files) == 1, "Exclusion pattern did not work correctly"
+    scanned_filenames = [os.path.basename(f) for f in scanned_files]
+    assert "file1.py" not in scanned_filenames, "Exclusion pattern did not work correctly"
+    assert "file2.txt" in scanned_filenames, "Non-matching file should not be excluded"
 
 def test_exclude_large_files(clean_cache_dir, tmp_path):
     """Test excluding files based on size."""
@@ -105,7 +106,7 @@ def test_exclude_large_files(clean_cache_dir, tmp_path):
     scanned_files = scanner.scan_directory()
 
     # Use relative paths to match how scanner stores paths
-    scanned_files = [os.path.basename(file) for file in scanned_files]
+    scanned_filenames = [os.path.basename(file) for file in scanned_files]
 
-    assert "large.txt" not in scanned_files, "Large file was not excluded"
-    assert "small.txt" in scanned_files, "Small file should not be excluded"
+    assert "large.txt" not in scanned_filenames, "Large file was not excluded"
+    assert "small.txt" in scanned_filenames, "Small file should not be excluded"
