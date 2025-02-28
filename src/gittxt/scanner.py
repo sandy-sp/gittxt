@@ -44,6 +44,15 @@ class Scanner:
         conn.close()
         logger.debug("✅ Cache database initialized")
 
+    def clear_cache(self):
+        """Clear the cache database. Used for testing and ensuring fresh scans."""
+        conn = sqlite3.connect(self.CACHE_DB)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM file_cache")
+        conn.commit()
+        conn.close()
+        logger.info("🗑️ Cache cleared.")
+
     def _parse_patterns(self, patterns):
         """Convert comma-separated string patterns into a list."""
         if isinstance(patterns, str):
@@ -119,7 +128,6 @@ class Scanner:
         cached_file_count = cursor.fetchone()[0]
 
         logger.debug(f"🔄 Cached file count (valid text files only): {cached_file_count}")
-
         conn.close()
 
         logger.info(f"✅ Scanning complete. {len(valid_files)} text files found.")
@@ -156,7 +164,7 @@ class Scanner:
         cached_entry = cursor.fetchone()
 
         file_hash = self.get_file_hash(file_path)
-        
+
         if cached_entry and cached_entry[0] == file_hash:
             logger.debug(f"⚡ Skipping unchanged file (cached): {file_path}")
             conn.close()

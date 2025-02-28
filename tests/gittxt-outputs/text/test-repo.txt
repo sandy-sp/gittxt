@@ -1,0 +1,18 @@
+📂 Repository Structure Overview:
+/tmp/pytest-of-sp/pytest-47/test_max_lines_limited_output0/test-repo
+├── file1.py
+├── file2.md
+└── file3.log
+
+1 directory, 3 files
+
+
+=== File: /tmp/pytest-of-sp/pytest-47/test_max_lines_limited_output0/test-repo/file3.log (size: 25 bytes) ===
+Mock content for testing.
+
+=== File: /tmp/pytest-of-sp/pytest-47/test_max_lines_limited_output0/test-repo/file1.py (size: 25 bytes) ===
+Mock content for testing.
+
+=== File: /tmp/pytest-of-sp/pytest-47/test_max_lines_limited_output0/test-repo/file2.md (size: 25 bytes) ===
+Mock content for testing.
+

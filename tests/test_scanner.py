@@ -2,7 +2,7 @@ import pytest
 import os
 import mimetypes
 import sqlite3
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from gittxt.scanner import Scanner
 
 # Define test parameters
@@ -72,20 +72,35 @@ def test_size_limit_exclusion(setup_test_files, clean_cache):
 def test_caching_prevents_rescanning(setup_test_files, clean_cache):
     """Ensure caching prevents rescanning unchanged files."""
     scanner = Scanner(root_path=str(setup_test_files))
-    valid_files, _ = scanner.scan_directory()
+
+    # Explicitly clear the cache before the first scan
+    scanner.clear_cache()  # 🔥 Fix: Ensure no old cache exists
 
     # First scan should add files to cache
+    valid_files, _ = scanner.scan_directory()
+
     conn = sqlite3.connect(scanner.CACHE_DB)
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM file_cache")
     cached_count = cursor.fetchone()[0]
     conn.close()
 
+    print(f"\nDEBUG: Cached files after first scan: {cached_count}")  # 🛠 Debugging
+
     assert cached_count == len(valid_files)
 
     # Second scan should not rescan unchanged files
     valid_files, _ = scanner.scan_directory()
-    assert len(valid_files) == cached_count  # No additional files scanned
+
+    conn = sqlite3.connect(scanner.CACHE_DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM file_cache")
+    cached_count_after_second_scan = cursor.fetchone()[0]
+    conn.close()
+
+    print(f"\nDEBUG: Cached files after second scan: {cached_count_after_second_scan}")  # 🛠 Debugging
+
+    assert cached_count_after_second_scan == cached_count  # No additional files scanned
 
 @patch("mimetypes.guess_type", return_value=("text/plain", None))
 def test_mime_type_check(mock_mime, setup_test_files, clean_cache):

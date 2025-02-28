@@ -1,0 +1,14 @@
+📂 Repository Structure Overview:
+/media/sp/SinisterPuppy/SP/sandy-sp/repos/gittxt/tests/test-repo
+├── sample.md
+└── sample.py
+
+1 directory, 2 files
+
+
+=== File: /media/sp/SinisterPuppy/SP/sandy-sp/repos/gittxt/tests/test-repo/sample.py (size: 6 bytes) ===
+# Test
+
+=== File: /media/sp/SinisterPuppy/SP/sandy-sp/repos/gittxt/tests/test-repo/sample.md (size: 7 bytes) ===
+# TestS
+
