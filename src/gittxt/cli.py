@@ -82,12 +82,16 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     logger.info(f"✅ Output saved to: {output_file}")
 
-    # Show Summary Report
+    # Ensure critical output is printed instead of just logged
+    print(f"✅ Scanning complete. {len(valid_files)} text files found.")
+    print(f"✅ Output saved to: {output_file}")
+
+    # Ensure Summary Report is also printed
     if summary:
-        logger.info("\n📊 Summary Report:")
-        logger.info(f" - Scanned: {len(valid_files)} text files")
-        logger.info(f" - Output Format: {output_format}")
-        logger.info(f" - Saved in: {output_file}")
+        print("\n📊 Summary Report:")
+        print(f" - Scanned: {len(valid_files)} text files")
+        print(f" - Output Format: {output_format}")
+        print(f" - Saved in: {output_file}")
 
 if __name__ == "__main__":
     main()
