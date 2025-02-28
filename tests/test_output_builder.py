@@ -1,27 +1,25 @@
 import pytest
 import os
 import json
+import shutil
 from gittxt.output_builder import OutputBuilder
 
 # Define test parameters
 TEST_REPO_NAME = "test-repo"
-TEST_OUTPUT_DIR = os.path.join("tests", "gittxt-outputs")
+TEST_OUTPUT_DIR = os.path.abspath("tests/gittxt-outputs")
 TEST_TEXT_FILE = os.path.join(TEST_OUTPUT_DIR, "text", f"{TEST_REPO_NAME}.txt")
 TEST_JSON_FILE = os.path.join(TEST_OUTPUT_DIR, "json", f"{TEST_REPO_NAME}.json")
+TEST_MARKDOWN_FILE = os.path.join(TEST_OUTPUT_DIR, "md", f"{TEST_REPO_NAME}.md")
 MOCK_FILES = ["file1.py", "file2.md", "file3.log"]
 
 @pytest.fixture(scope="function")
 def clean_output_dir():
     """Ensure the test output directory is clean before each test."""
-    for subdir in ["text", "json"]:
+    for subdir in ["text", "json", "md"]:
         output_path = os.path.join(TEST_OUTPUT_DIR, subdir)
         if os.path.exists(output_path):
-            for file in os.listdir(output_path):
-                file_path = os.path.join(output_path, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-        else:
-            os.makedirs(output_path, exist_ok=True)
+            shutil.rmtree(output_path)
+        os.makedirs(output_path, exist_ok=True)
 
 @pytest.fixture
 def mock_file_system(tmp_path):
@@ -87,5 +85,23 @@ def test_max_lines_limited_output(clean_output_dir, mock_file_system):
 
 def test_output_directory_structure():
     """Ensure that output directory structure is created correctly."""
-    for subdir in ["text", "json"]:
+    for subdir in ["text", "json", "md"]:
         assert os.path.exists(os.path.join(TEST_OUTPUT_DIR, subdir))
+
+def test_generate_markdown_output(clean_output_dir, mock_file_system):
+    """Test if Markdown output is correctly generated and contains expected content."""
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="md")
+    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+
+    assert os.path.exists(output_file), f"❌ Markdown output file {output_file} was not created!"
+
+    with open(output_file, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert f"# Repository: {TEST_REPO_NAME}" in content, "❌ Repository name header missing in Markdown output!"
+    assert "## Extracted Files" in content, "❌ Extracted files section missing in Markdown output!"
+    assert "### File: file1.py" in content, "❌ Expected file section missing!"
+    assert "### File: file2.md" in content, "❌ Expected file section missing!"
+    assert "Mock content for testing." in content, "❌ Extracted file content missing!"
+
+    print(f"✅ Markdown output test passed! File: {output_file}")
