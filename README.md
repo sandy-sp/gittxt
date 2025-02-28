@@ -14,7 +14,7 @@ Whether you’re using **ChatGPT, Grok, or Ollama**, or any LLM, Gittxt helps pr
 
 ## 📌 Installation (From PyPI)
 ```bash
-pip install gittxt
+pip install gittxt==1.0.0
 ```
 Verify installation:
 ```bash
