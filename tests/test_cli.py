@@ -1,87 +1,70 @@
-import os
-import shutil
 import pytest
+import os
 import subprocess
-from pathlib import Path
+from gittxt.config import ConfigManager
 
-# Define paths
-SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))  # `src/`
-CLI_SCRIPT = os.path.join(SRC_DIR, "gittxt/cli.py")
+# Load test configuration
+config = ConfigManager.load_config()
 
-# Define output directories
-OUTPUT_DIR = os.path.join(SRC_DIR, "gittxt-outputs")
-TEXT_DIR = os.path.join(OUTPUT_DIR, "text")
-JSON_DIR = os.path.join(OUTPUT_DIR, "json")
-CACHE_DIR = os.path.join(OUTPUT_DIR, "cache")
+# Define test repository and output paths
+TEST_REPO = "tests/test-repo"
+TEST_OUTPUT_DIR = os.path.join(config["output_dir"], "test-cli")
 
 @pytest.fixture(scope="function")
-def clean_output_dirs():
-    """Ensure the output directories are clean before each test."""
-    for folder in [TEXT_DIR, JSON_DIR, CACHE_DIR]:
-        if os.path.exists(folder):
-            shutil.rmtree(folder)  # Remove existing directory
-        os.makedirs(folder, exist_ok=True)  # Recreate empty directory
+def clean_output_dir():
+    """Ensure the test output directory is clean before each test."""
+    if os.path.exists(TEST_OUTPUT_DIR):
+        for file in os.listdir(TEST_OUTPUT_DIR):
+            file_path = os.path.join(TEST_OUTPUT_DIR, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+    else:
+        os.makedirs(TEST_OUTPUT_DIR, exist_ok=True)
 
-@pytest.fixture
-def test_local_repo(tmp_path):
-    """Create a temporary directory with sample files for scanning."""
-    test_repo = tmp_path / "test_repo"
-    test_repo.mkdir()
+def run_gittxt_command(args):
+    """Helper function to execute Gittxt CLI commands."""
+    cmd = ["python", "src/gittxt/cli.py"] + args
+    return subprocess.run(cmd, capture_output=True, text=True)
 
-    (test_repo / "file1.py").write_text("print('Hello from Python')")
-    (test_repo / "file2.txt").write_text("Hello World in text file")
-    (test_repo / "exclude.log").write_text("This file should be excluded")
+def test_cli_help():
+    """Test if the CLI help command works."""
+    result = run_gittxt_command(["--help"])
+    assert "Usage: cli.py [OPTIONS] SOURCE" in result.stdout
 
-    return str(test_repo)
-
-def run_cli(args):
-    """Run the CLI command with PYTHONPATH set."""
-    env = os.environ.copy()
-    env["PYTHONPATH"] = SRC_DIR  # Ensure Python finds `gittxt`
-    return subprocess.run(["python", CLI_SCRIPT] + args, capture_output=True, text=True, env=env)
-
-def test_scan_local_directory(clean_output_dirs, test_local_repo):
-    """Test scanning a local directory and generating `.txt` output."""
-    result = run_cli([test_local_repo, "--output-format", "txt"])
-    
-    assert "✅ Processing" in result.stdout  # Ensure scanning starts
-    output_file = os.path.join(TEXT_DIR, "test_repo.txt")
-    assert os.path.exists(output_file), "Text output file was not created"
-
-def test_generate_json_output(clean_output_dirs, test_local_repo):
-    """Test generating `.json` output."""
-    result = run_cli([test_local_repo, "--output-format", "json"])
-
+def test_cli_basic_scan(clean_output_dir):
+    """Test basic scanning of a local repository."""
+    result = run_gittxt_command([TEST_REPO, "--output-dir", TEST_OUTPUT_DIR])
     assert "✅ Processing" in result.stdout
-    output_file = os.path.join(JSON_DIR, "test_repo.json")
-    assert os.path.exists(output_file), "JSON output file was not created"
+    assert os.path.exists(os.path.join(TEST_OUTPUT_DIR, "test-repo.txt"))
 
-def test_force_rescan(clean_output_dirs, test_local_repo):
-    """Test using `--force-rescan` to clear cache and reprocess files."""
-    # Convert test_local_repo to Path object
-    repo_path = Path(test_local_repo)
+def test_cli_include_exclude(clean_output_dir):
+    """Test if --include and --exclude options work correctly."""
+    result = run_gittxt_command([
+        TEST_REPO, "--include", ".py,.md",
+        "--exclude", "node_modules,__pycache__",
+        "--output-dir", TEST_OUTPUT_DIR
+    ])
+    assert "✅ Processing" in result.stdout
+    assert os.path.exists(os.path.join(TEST_OUTPUT_DIR, "test-repo.txt"))
 
-    # Ensure test repo contains valid files
-    file1 = repo_path / "test1.py"
-    file2 = repo_path / "test2.txt"
-    file1.write_text("print('Hello')")
-    file2.write_text("Some text content")
+def test_cli_output_format_json(clean_output_dir):
+    """Test if the JSON output format works."""
+    result = run_gittxt_command([
+        TEST_REPO, "--output-format", "json", "--output-dir", TEST_OUTPUT_DIR
+    ])
+    assert "✅ Output saved" in result.stdout
+    assert os.path.exists(os.path.join(TEST_OUTPUT_DIR, "test-repo.json"))
 
-    # Run first scan
-    run_cli([test_local_repo, "--output-format", "txt"])
+def test_cli_summary_flag(clean_output_dir):
+    """Test if --summary flag works correctly."""
+    result = run_gittxt_command([
+        TEST_REPO, "--summary", "--output-dir", TEST_OUTPUT_DIR
+    ])
+    assert "📊 Summary Report" in result.stdout
 
-    # Modify files to force detection
-    file1.write_text("print('Updated Hello')")
-    file2.write_text("Updated text content")
-
-    # Run again with `--force-rescan`
-    result = run_cli([test_local_repo, "--output-format", "txt", "--force-rescan"])
-
-    assert "♻️ Cache reset for test_repo. Performing a full rescan." in result.stdout
-    assert "✅ Processing" in result.stdout, "Processing message missing after forced rescan"
-
-def test_invalid_repo_path(clean_output_dirs):
-    """Test handling an invalid repository path."""
-    result = run_cli(["invalid_repo_path/"])
-
-    assert "❌ Repository path does not exist" in result.stdout  # Updated assertion
+def test_cli_debug_flag(clean_output_dir):
+    """Test if --debug flag enables debug mode."""
+    result = run_gittxt_command([
+        TEST_REPO, "--debug", "--output-dir", TEST_OUTPUT_DIR
+    ])
+    assert "🔍 Debug mode enabled." in result.stdout

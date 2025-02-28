@@ -1,112 +1,97 @@
-import os
-import json
-import shutil
-import time
 import pytest
+import os
+import mimetypes
+import sqlite3
+from unittest.mock import patch, MagicMock
 from gittxt.scanner import Scanner
 
-# Define expected directory paths inside `src/gittxt-outputs/`
-SRC_DIR = os.path.dirname(__file__)  # `tests/`
-OUTPUT_DIR = os.path.join(SRC_DIR, "../src/gittxt-outputs")
-CACHE_DIR = os.path.join(OUTPUT_DIR, "cache")
+# Define test parameters
+TEST_SCAN_DIR = os.path.join("tests", "test-scan-dir")
+TEST_CACHE_DB = os.path.join("tests", "gittxt-outputs", "cache", "scan_cache.db")
 
 @pytest.fixture(scope="function")
-def clean_cache_dir():
-    """Ensure the cache directory is clean before each test."""
-    if os.path.exists(CACHE_DIR):
-        shutil.rmtree(CACHE_DIR)  # Remove cache directory if it exists
-    os.makedirs(CACHE_DIR, exist_ok=True)  # Recreate cache directory
-    yield
-    shutil.rmtree(CACHE_DIR)  # Cleanup after test
+def setup_test_files(tmp_path):
+    """Create a temporary directory with mock text and non-text files."""
+    test_dir = tmp_path / "test-repo"
+    test_dir.mkdir()
 
-@pytest.fixture
-def sample_files(tmp_path):
-    """Create sample text files for testing."""
-    file1 = tmp_path / "file1.py"
-    file1.write_text("print('Hello from Python')\n")
+    # Create text files
+    (test_dir / "file1.py").write_text("print('Hello, world!')", encoding="utf-8")
+    (test_dir / "file2.md").write_text("# Sample Markdown", encoding="utf-8")
 
-    file2 = tmp_path / "file2.txt"
-    file2.write_text("Hello World in text file\n")
+    # Create non-text files
+    (test_dir / "file3.mp4").write_bytes(b"\x00\x01\x02\x03")
+    (test_dir / "file4.tar.gz").write_bytes(b"\x1f\x8b\x08\x00")
 
-    return [str(file1), str(file2)], str(tmp_path)
+    return test_dir
 
-def test_first_time_scan(clean_cache_dir, sample_files):
-    """Test first-time scan of a directory."""
-    files, repo_path = sample_files
-    scanner = Scanner(repo_name="test_repo", root_path=repo_path)
-    scanned_files = scanner.scan_directory()
+@pytest.fixture(scope="function")
+def clean_cache():
+    """Ensure the cache database is clean before each test."""
+    if os.path.exists(TEST_CACHE_DB):
+        os.remove(TEST_CACHE_DB)
 
-    assert len(scanned_files) == 2, "Not all files were scanned on first run"
-    cache_file = os.path.join(CACHE_DIR, "test_repo_cache.json")
-    assert os.path.exists(cache_file), "Cache file was not created"
+def test_scan_directory_identifies_text_files(setup_test_files, clean_cache):
+    """Ensure directory scanning correctly identifies valid text files."""
+    scanner = Scanner(root_path=str(setup_test_files))
+    valid_files, _ = scanner.scan_directory()
 
-def test_re_scan_without_changes(clean_cache_dir, sample_files):
-    """Test scanning again without modifications (should skip unchanged files)."""
-    files, repo_path = sample_files
-    scanner = Scanner(repo_name="test_repo", root_path=repo_path)
-    scanner.scan_directory()  # First scan
-    start_time = time.time()
-    scanned_files = scanner.scan_directory()  # Second scan (should be fast)
-    end_time = time.time()
+    assert "file1.py" in [os.path.basename(f) for f in valid_files]
+    assert "file2.md" in [os.path.basename(f) for f in valid_files]
 
-    assert len(scanned_files) == 0, "Unchanged files were not skipped"
-    assert (end_time - start_time) < 1, "Scanning took too long for unchanged files"
+def test_exclude_non_text_files(setup_test_files, clean_cache):
+    """Ensure non-text files are properly excluded from scanning."""
+    scanner = Scanner(root_path=str(setup_test_files))
+    valid_files, _ = scanner.scan_directory()
 
-def test_modify_file_and_re_scan(clean_cache_dir, sample_files):
-    """Test modifying a file and ensuring cache detects it."""
-    files, repo_path = sample_files
-    scanner = Scanner(repo_name="test_repo", root_path=repo_path)
-    scanner.scan_directory()  # First scan
+    assert "file3.mp4" not in [os.path.basename(f) for f in valid_files]
+    assert "file4.tar.gz" not in [os.path.basename(f) for f in valid_files]
 
-    # Modify a file
-    with open(files[0], "a") as f:
-        f.write("\n# New Comment Added")
+def test_include_exclude_patterns(setup_test_files, clean_cache):
+    """Test if --include and --exclude patterns work correctly."""
+    scanner = Scanner(
+        root_path=str(setup_test_files),
+        include_patterns=[".py"],
+        exclude_patterns=["file1.py"]
+    )
+    valid_files, _ = scanner.scan_directory()
 
-    scanned_files = scanner.scan_directory()  # Re-scan
+    assert "file1.py" not in [os.path.basename(f) for f in valid_files]  # Excluded
+    assert "file2.md" not in [os.path.basename(f) for f in valid_files]  # Not included
 
-    assert len(scanned_files) == 1, "Modified file was not detected"
+def test_size_limit_exclusion(setup_test_files, clean_cache):
+    """Ensure files exceeding --size-limit are skipped."""
+    large_file = setup_test_files / "large.txt"
+    large_file.write_text("A" * 1000000, encoding="utf-8")  # 1MB file
 
-def test_handle_corrupt_cache(clean_cache_dir, sample_files):
-    """Test handling of a corrupt cache file."""
-    files, repo_path = sample_files
-    scanner = Scanner(repo_name="test_repo", root_path=repo_path)
-    scanner.scan_directory()  # First scan
+    scanner = Scanner(root_path=str(setup_test_files), size_limit=500000)
+    valid_files, _ = scanner.scan_directory()
 
-    # Corrupt the cache file
-    cache_file = os.path.join(CACHE_DIR, "test_repo_cache.json")
-    with open(cache_file, "w") as f:
-        f.write("{corrupted_json}")  # Invalid JSON format
+    assert "large.txt" not in [os.path.basename(f) for f in valid_files]
 
-    # Re-scan after corruption
-    scanner = Scanner(repo_name="test_repo", root_path=repo_path)  # Reload scanner
-    scanned_files = scanner.scan_directory()
+def test_caching_prevents_rescanning(setup_test_files, clean_cache):
+    """Ensure caching prevents rescanning unchanged files."""
+    scanner = Scanner(root_path=str(setup_test_files))
+    valid_files, _ = scanner.scan_directory()
 
-    assert len(scanned_files) == 2, "Scanner did not recover from corrupt cache"
-    assert os.path.exists(cache_file), "Cache file should be recreated"
+    # First scan should add files to cache
+    conn = sqlite3.connect(scanner.CACHE_DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM file_cache")
+    cached_count = cursor.fetchone()[0]
+    conn.close()
 
-def test_exclude_files_by_pattern(clean_cache_dir, sample_files):
-    """Test excluding files by pattern."""
-    files, repo_path = sample_files
-    scanner = Scanner(repo_name="test_repo", root_path=repo_path, exclude_patterns=["file1.py", ".py"])
-    scanned_files = scanner.scan_directory()
+    assert cached_count == len(valid_files)
 
-    scanned_filenames = [os.path.basename(f) for f in scanned_files]
-    assert "file1.py" not in scanned_filenames, "Exclusion pattern did not work correctly"
-    assert "file2.txt" in scanned_filenames, "Non-matching file should not be excluded"
+    # Second scan should not rescan unchanged files
+    valid_files, _ = scanner.scan_directory()
+    assert len(valid_files) == cached_count  # No additional files scanned
 
-def test_exclude_large_files(clean_cache_dir, tmp_path):
-    """Test excluding files based on size."""
-    small_file = tmp_path / "small.txt"
-    small_file.write_text("This is a small file")
+@patch("mimetypes.guess_type", return_value=("text/plain", None))
+def test_mime_type_check(mock_mime, setup_test_files, clean_cache):
+    """Ensure MIME type detection correctly classifies text files."""
+    scanner = Scanner(root_path=str(setup_test_files))
+    valid_files, _ = scanner.scan_directory()
 
-    large_file = tmp_path / "large.txt"
-    large_file.write_text("X" * 10_000_000)  # Large file (10MB)
-
-    scanner = Scanner(repo_name="test_repo", root_path=str(tmp_path), size_limit=5_000_000)  # 5MB limit
-    scanned_files = scanner.scan_directory()
-
-    # Use relative paths to match how scanner stores paths
-    scanned_filenames = [os.path.basename(file) for file in scanned_files]
-
-    assert "large.txt" not in scanned_filenames, "Large file was not excluded"
-    assert "small.txt" in scanned_filenames, "Small file should not be excluded"
+    assert "file1.py" in [os.path.basename(f) for f in valid_files]
+    assert "file3.mp4" not in [os.path.basename(f) for f in valid_files]

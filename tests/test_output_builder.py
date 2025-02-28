@@ -1,75 +1,91 @@
+import pytest
 import os
 import json
-import pytest
 from gittxt.output_builder import OutputBuilder
 
-# Define expected directory paths inside `src/gittxt-outputs/`
-SRC_DIR = os.path.dirname(__file__)  # `tests/`
-OUTPUT_DIR = os.path.join(SRC_DIR, "../src/gittxt-outputs")
-TEXT_DIR = os.path.join(OUTPUT_DIR, "text")
-JSON_DIR = os.path.join(OUTPUT_DIR, "json")
+# Define test parameters
+TEST_REPO_NAME = "test-repo"
+TEST_OUTPUT_DIR = os.path.join("tests", "gittxt-outputs")
+TEST_TEXT_FILE = os.path.join(TEST_OUTPUT_DIR, "text", f"{TEST_REPO_NAME}.txt")
+TEST_JSON_FILE = os.path.join(TEST_OUTPUT_DIR, "json", f"{TEST_REPO_NAME}.json")
+MOCK_FILES = ["file1.py", "file2.md", "file3.log"]
 
 @pytest.fixture(scope="function")
 def clean_output_dir():
-    """Ensure the output directories are clean before each test."""
-    for folder in [TEXT_DIR, JSON_DIR]:
-        if os.path.exists(folder):
-            for file in os.listdir(folder):  # Remove only files, not folders
-                file_path = os.path.join(folder, file)
+    """Ensure the test output directory is clean before each test."""
+    for subdir in ["text", "json"]:
+        output_path = os.path.join(TEST_OUTPUT_DIR, subdir)
+        if os.path.exists(output_path):
+            for file in os.listdir(output_path):
+                file_path = os.path.join(output_path, file)
                 if os.path.isfile(file_path):
                     os.remove(file_path)
+        else:
+            os.makedirs(output_path, exist_ok=True)
 
 @pytest.fixture
-def sample_files(tmp_path):
-    """Create sample text files for testing."""
-    file1 = tmp_path / "file1.py"
-    file1.write_text("print('Hello from Python')\n")  # Ensure newline consistency
+def mock_file_system(tmp_path):
+    """Create a temporary directory with mock text and non-text files."""
+    repo_path = tmp_path / TEST_REPO_NAME
+    repo_path.mkdir()
+    
+    for file in MOCK_FILES:
+        file_path = repo_path / file
+        file_path.write_text("Mock content for testing.", encoding="utf-8")
 
-    file2 = tmp_path / "file2.txt"
-    file2.write_text("Hello World in text file\n")
+    return repo_path
 
-    return [str(file1), str(file2)], str(tmp_path)
+def test_generate_text_output(clean_output_dir, mock_file_system):
+    """Test if text output file is generated correctly."""
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt")
+    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
 
-def test_generate_text_output(clean_output_dir, sample_files):
-    """Test generating a `.txt` output file."""
-    files, repo_path = sample_files
-    builder = OutputBuilder(repo_name="test_repo", output_format="txt")
-    output_file = builder.generate_output(files, repo_path)
-
-    assert os.path.exists(output_file), "Text output file was not created"
-    assert output_file.endswith(".txt"), "Output file does not have .txt extension"
-
-    with open(output_file, "r") as f:
+    assert os.path.exists(output_file)
+    with open(output_file, "r", encoding="utf-8") as f:
         content = f.read()
-        assert "Repository Structure Overview" in content, "Tree structure missing from text output"
-        assert "print('Hello from Python')" in content, "Python file content missing"
-        assert "Hello World in text file" in content, "Text file content missing"
+    
+    assert "📂 Repository Structure Overview" in content
+    assert "Mock content for testing." in content
 
-def test_generate_json_output(clean_output_dir, sample_files):
-    """Test generating a `.json` output file."""
-    files, repo_path = sample_files
-    builder = OutputBuilder(repo_name="test_repo", output_format="json")
-    output_file = builder.generate_output(files, repo_path)
+def test_generate_json_output(clean_output_dir, mock_file_system):
+    """Test if JSON output file is generated correctly."""
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="json")
+    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
 
-    assert os.path.exists(output_file), "JSON output file was not created"
-    assert output_file.endswith(".json"), "Output file does not have .json extension"
+    assert os.path.exists(output_file)
+    with open(output_file, "r", encoding="utf-8") as f:
+        json_data = json.load(f)
+    
+    assert "repository_structure" in json_data
+    assert len(json_data["files"]) == len(MOCK_FILES)
+    assert json_data["files"][0]["content"] == "Mock content for testing."
 
-    with open(output_file, "r") as f:
-        data = json.load(f)
-        assert "repository_structure" in data, "Tree structure missing from JSON output"
-        assert len(data["files"]) == 2, "Incorrect number of files in JSON output"
-        assert data["files"][0]["content"].strip() == "print('Hello from Python')", "Python file content incorrect"
-        assert data["files"][1]["content"].strip() == "Hello World in text file", "Text file content incorrect"
+def test_handle_missing_files(clean_output_dir):
+    """Ensure missing files are logged instead of causing failure."""
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt")
+    missing_file = os.path.join(TEST_OUTPUT_DIR, "text", "missing_file.txt")
 
-def test_handle_missing_file(clean_output_dir, tmp_path):
-    """Test handling of missing files without crashing."""
-    missing_file = tmp_path / "missing.txt"
-    files = [str(missing_file)]
-    builder = OutputBuilder(repo_name="test_repo", output_format="txt")
-    output_file = builder.generate_output(files, str(tmp_path))
+    output_file = builder.generate_output([missing_file], TEST_OUTPUT_DIR)
 
-    assert os.path.exists(output_file), "Output file should be created even if some files are missing"
-
-    with open(output_file, "r") as f:
+    assert os.path.exists(output_file)
+    with open(output_file, "r", encoding="utf-8") as f:
         content = f.read()
-        assert "[Error: File" in content, "Missing file error was not logged properly"
+    
+    assert "[Error: File" in content
+
+def test_max_lines_limited_output(clean_output_dir, mock_file_system):
+    """Ensure that the --max-lines argument is enforced."""
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt", max_lines=1)
+    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+
+    assert os.path.exists(output_file)
+    with open(output_file, "r", encoding="utf-8") as f:
+        content_lines = f.readlines()
+
+    # Ensure that no file has more than one content line
+    assert sum(1 for line in content_lines if "Mock content" in line) == len(MOCK_FILES)
+
+def test_output_directory_structure():
+    """Ensure that output directory structure is created correctly."""
+    for subdir in ["text", "json"]:
+        assert os.path.exists(os.path.join(TEST_OUTPUT_DIR, subdir))

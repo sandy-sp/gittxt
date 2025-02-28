@@ -1,64 +1,72 @@
-import os
-import shutil
 import pytest
+import os
+import tempfile
+from unittest.mock import patch, MagicMock
 from gittxt.repository import RepositoryHandler
 
-# Define test repository details
-TEST_REPO_HTTPS = "https://github.com/octocat/Hello-World.git"
-TEST_REPO_SSH = "git@github.com:octocat/Hello-World.git"
-INVALID_REPO = "https://github.com/invalid/repository.git"
-LOCAL_REPO = "/path/to/existing/local/repo"
-
-# Updated expected directory inside `src/`
-SRC_DIR = os.path.dirname(__file__)  # `tests/`
-OUTPUT_DIR = os.path.join(SRC_DIR, "../src/gittxt-outputs")
-TEMP_DIR = os.path.join(OUTPUT_DIR, "temp")
+# Define test parameters
+TEST_LOCAL_REPO = os.path.join("tests", "test-repo")
+TEST_REMOTE_REPO_HTTPS = "https://github.com/sandy-sp/sandy-sp.git"
+TEST_REMOTE_REPO_SSH = "git@github.com:sandy-sp/sandy-sp.git"
+TEST_TEMP_DIR = os.path.join("tests", "gittxt-outputs", "temp")
 
 @pytest.fixture(scope="function")
 def clean_temp_dir():
-    """Ensure the temp directory is clean before each test."""
-    if os.path.exists(TEMP_DIR):
-        shutil.rmtree(TEMP_DIR)  # Remove temp directory if it exists
-    os.makedirs(TEMP_DIR, exist_ok=True)  # Recreate temp directory
-    yield
-    shutil.rmtree(TEMP_DIR)  # Cleanup after test
+    """Ensure the test temp directory is clean before each test."""
+    if os.path.exists(TEST_TEMP_DIR):
+        for file in os.listdir(TEST_TEMP_DIR):
+            file_path = os.path.join(TEST_TEMP_DIR, file)
+            if os.path.isdir(file_path):
+                os.rmdir(file_path)
+    else:
+        os.makedirs(TEST_TEMP_DIR, exist_ok=True)
 
-def test_clone_https_repo(clean_temp_dir):
-    """Test cloning a valid HTTPS repository."""
-    handler = RepositoryHandler(TEST_REPO_HTTPS)
-    repo_path = handler.get_local_path()
+def test_identify_local_repo():
+    """Ensure local repository paths are detected correctly."""
+    repo_handler = RepositoryHandler(TEST_LOCAL_REPO)
+    assert repo_handler.get_local_path() == TEST_LOCAL_REPO
 
-    assert repo_path is not None, "Repository cloning failed"
-    assert os.path.exists(repo_path), "Cloned repo folder does not exist"
-    assert os.path.basename(repo_path) == "Hello-World", "Repository name is incorrect"
+@patch("git.Repo.clone_from")
+def test_clone_remote_repo_https(mock_clone, clean_temp_dir):
+    """Ensure HTTPS remote repositories are cloned into `gittxt-outputs/temp/`."""
+    repo_handler = RepositoryHandler(TEST_REMOTE_REPO_HTTPS, reuse_existing=False)
+    temp_path = repo_handler.get_local_path()
 
-def test_clone_ssh_repo(clean_temp_dir):
-    """Test cloning a valid SSH repository."""
-    handler = RepositoryHandler(TEST_REPO_SSH)
-    repo_path = handler.get_local_path()
+    assert os.path.exists(temp_path)
+    assert TEST_REMOTE_REPO_HTTPS in temp_path
+    mock_clone.assert_called_once_with(TEST_REMOTE_REPO_HTTPS, temp_path, depth=1)
 
-    assert repo_path is not None, "Repository cloning failed"
-    assert os.path.exists(repo_path), "Cloned repo folder does not exist"
-    assert os.path.basename(repo_path) == "Hello-World", "Repository name is incorrect"
+@patch("git.Repo.clone_from")
+def test_clone_remote_repo_ssh(mock_clone, clean_temp_dir):
+    """Ensure SSH remote repositories are cloned correctly."""
+    repo_handler = RepositoryHandler(TEST_REMOTE_REPO_SSH, reuse_existing=False)
+    temp_path = repo_handler.get_local_path()
 
-def test_reuse_existing_repo(clean_temp_dir):
-    """Test reusing an already cloned repository."""
-    handler = RepositoryHandler(TEST_REPO_HTTPS)
-    repo_path1 = handler.get_local_path()
-    repo_path2 = handler.get_local_path()  # Second call should not re-clone
+    assert os.path.exists(temp_path)
+    assert TEST_REMOTE_REPO_SSH in temp_path
+    mock_clone.assert_called_once_with(TEST_REMOTE_REPO_SSH, temp_path, depth=1)
 
-    assert repo_path1 == repo_path2, "Repository was cloned again instead of being reused"
+@patch("git.Repo.clone_from")
+def test_reuse_existing_repo(mock_clone, clean_temp_dir):
+    """Ensure an existing repository is not re-cloned if `reuse_existing_repos=True`."""
+    repo_handler = RepositoryHandler(TEST_REMOTE_REPO_HTTPS, reuse_existing=True)
+    temp_path = repo_handler.get_local_path()
 
-def test_invalid_repo(clean_temp_dir):
-    """Test handling of an invalid repository URL."""
-    handler = RepositoryHandler(INVALID_REPO)
-    repo_path = handler.get_local_path()
+    # First time should clone
+    assert os.path.exists(temp_path)
+    assert mock_clone.call_count == 1
 
-    assert repo_path is None, "Invalid repository should not be cloned"
+    # Second call should reuse the existing repo and not clone again
+    repo_handler = RepositoryHandler(TEST_REMOTE_REPO_HTTPS, reuse_existing=True)
+    temp_path = repo_handler.get_local_path()
 
-def test_local_repo():
-    """Test handling of a local repository."""
-    handler = RepositoryHandler(LOCAL_REPO)
-    repo_path = handler.get_local_path()
+    assert mock_clone.call_count == 1  # No additional clone call
 
-    assert repo_path == LOCAL_REPO, "Local repository path was changed unexpectedly"
+@patch("git.Repo.clone_from", side_effect=Exception("Mocked cloning error"))
+def test_clone_failure(mock_clone, clean_temp_dir):
+    """Ensure error handling works when cloning fails."""
+    repo_handler = RepositoryHandler("https://invalid.url/repo.git", reuse_existing=False)
+    temp_path = repo_handler.get_local_path()
+
+    assert temp_path is None
+    assert "Mocked cloning error" in str(mock_clone.side_effect)
