@@ -1,27 +1,30 @@
 import os
+import tempfile
 import git
 from urllib.parse import urlparse
-from gittxt.logger import get_logger
+from gittxt.logger import Logger
 
-logger = get_logger(__name__)
-
-# Define the directory for storing temporary cloned repositories **inside src/**
-SRC_DIR = os.path.dirname(__file__)  # `src/gittxt/`
-OUTPUT_DIR = os.path.join(SRC_DIR, "../gittxt-outputs")  # `src/gittxt-outputs/`
-TEMP_DIR = os.path.join(OUTPUT_DIR, "temp")  # `src/gittxt-outputs/temp/`
-
-# Ensure directories exist
-os.makedirs(TEMP_DIR, exist_ok=True)
+logger = Logger.get_logger(__name__)
 
 class RepositoryHandler:
-    def __init__(self, source, branch=None):
+    """Handles remote and local Git repository management for Gittxt."""
+
+    def __init__(self, source, branch=None, reuse_existing=True):
+        """
+        Initialize repository handler.
+
+        :param source: Local path or remote Git URL.
+        :param branch: Git branch to clone (if applicable).
+        :param reuse_existing: Reuse already cloned repositories to prevent redundancy.
+        """
         self.source = source
         self.branch = branch
+        self.reuse_existing = reuse_existing
         self.local_path = None
 
     def is_remote_repo(self):
-        """Check if the given source is a remote Git repository."""
-        return self.source.startswith("http") or self.source.endswith(".git") or self.source.startswith("git@")
+        """Check if the source is a remote Git repository."""
+        return self.source.startswith("http") or self.source.endswith(".git") or "git@" in self.source
 
     def get_repo_name(self):
         """Extract repository name from the URL."""
@@ -30,30 +33,42 @@ class RepositoryHandler:
         return repo_name if repo_name else "unknown_repo"
 
     def clone_repository(self):
-        """Clone the repository into `src/gittxt-outputs/temp/` and avoid redundant cloning."""
+        """Clone the repository into a named temp directory instead of a random one."""
         repo_name = self.get_repo_name()
-        repo_path = os.path.join(TEMP_DIR, repo_name)
+        temp_base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gittxt-outputs", "temp")
+        temp_dir = os.path.join(temp_base, repo_name)
 
-        # Check if the repo already exists
-        if os.path.exists(repo_path):
-            logger.info(f"Repository {repo_name} already exists. Using cached clone.")
-            self.local_path = repo_path
-            return repo_path
+        # Ensure the directory structure exists
+        os.makedirs(temp_base, exist_ok=True)
 
-        logger.info(f"Cloning repository into: {repo_path}")
+        # Avoid redundant cloning if reuse_existing is enabled
+        if self.reuse_existing and os.path.exists(temp_dir):
+            logger.info(f"✅ Repository already cloned: {temp_dir}")
+            self.local_path = temp_dir
+            return temp_dir
 
+        logger.info(f"🚀 Cloning repository into: {temp_dir}")
+
+        # Clone with shallow depth for efficiency
         clone_args = {"depth": 1} if not self.branch else {"branch": self.branch, "depth": 1}
 
         try:
-            git.Repo.clone_from(self.source, repo_path, **clone_args)
-            self.local_path = repo_path
-            return repo_path
+            git.Repo.clone_from(self.source, temp_dir, **clone_args)
+            self.local_path = temp_dir
+            return temp_dir
         except git.exc.GitCommandError as e:
-            logger.error(f"Error cloning repository: {e}")
+            logger.error(f"❌ Error cloning repository: {e}")
             return None
 
     def get_local_path(self):
-        """Return the path to the local repository, cloning if necessary."""
+        """
+        Get the local path of the repository.
+
+        If it's a remote repo, clone it first. If it's local, return the provided path.
+        """
         if self.is_remote_repo():
             return self.clone_repository()
-        return self.source  # Use directly if it's a local directory
+        if os.path.exists(self.source):
+            return self.source
+        logger.error(f"❌ Invalid repository path: {self.source}")
+        return None
