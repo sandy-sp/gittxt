@@ -1,8 +1,10 @@
 {
-    "output_dir": "../custom-outputs",
+    "output_dir": "gittxt-outputs",
     "size_limit": 500000,
     "include_patterns": [".py", ".md"],
-    "exclude_patterns": ["node_modules", ".git", "__pycache__"],
+    "exclude_patterns": ["node_modules", ".git", "__pycache__", ".log"],
     "output_format": "json",
-    "max_lines": 100
+    "max_lines": 100,
+    "reuse_existing_repos": true,
+    "logging_level": "INFO"
 }

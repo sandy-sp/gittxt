@@ -1,42 +1,54 @@
 import os
 import json
-from gittxt.logger import get_logger
+from gittxt.logger import Logger
 
-logger = get_logger(__name__)
+logger = Logger.get_logger(__name__)
 
-# Define default configuration values
-DEFAULT_CONFIG = {
-    "output_dir": "../gittxt-outputs",
-    "size_limit": None,  # No size limit by default
-    "include_patterns": [],
-    "exclude_patterns": [".git", "node_modules", "__pycache__", ".vscode", "venv"],
-    "output_format": "txt",
-    "max_lines": None
-}
+class ConfigManager:
+    """Handles configuration loading and management for Gittxt."""
 
-# Default config file path inside `src/gittxt/`
-SRC_DIR = os.path.dirname(__file__)  # `src/gittxt/`
-DEFAULT_CONFIG_FILE = os.path.join(SRC_DIR, "gittxt-config.json")  # `src/gittxt/gittxt-config.json`
+    # Default Configuration
+    DEFAULT_CONFIG = {
+        "output_dir": "gittxt-outputs",
+        "size_limit": None,  # No size limit by default
+        "include_patterns": [],
+        "exclude_patterns": [".git", "node_modules", "__pycache__", ".log"],
+        "output_format": "txt",
+        "max_lines": None,
+        "reuse_existing_repos": True,  # Prevent redundant cloning
+        "logging_level": "INFO"  # Default logging level
+    }
 
-def load_config(config_path=None):
-    """
-    Load configuration from a user-specified file or fall back to `gittxt-config.json`.
-    If the config file is missing or invalid, default settings are used.
-    """
-    config_file = config_path or DEFAULT_CONFIG_FILE  # Use provided config file or default
+    # Define the config file path inside `src/gittxt/`
+    SRC_DIR = os.path.dirname(__file__)  # `src/gittxt/`
+    CONFIG_FILE = os.path.join(SRC_DIR, "gittxt-config.json")
 
-    if not os.path.exists(config_file):
-        logger.warning(f"⚠️ Config file not found ({config_file}). Using default settings.")
-        return DEFAULT_CONFIG
+    @staticmethod
+    def load_config():
+        """Load configuration from `gittxt-config.json`, falling back to defaults if missing or invalid."""
+        if not os.path.exists(ConfigManager.CONFIG_FILE):
+            logger.warning("⚠️ Config file not found. Using default settings.")
+            return ConfigManager.DEFAULT_CONFIG
 
-    try:
-        with open(config_file, "r", encoding="utf-8") as f:
-            user_config = json.load(f)
-        
-        # Merge user config with defaults (user values override defaults)
-        config = {**DEFAULT_CONFIG, **user_config}
-        logger.info(f"✅ Loaded configuration from {config_file}.")
-        return config
-    except (json.JSONDecodeError, IOError) as e:
-        logger.error(f"❌ Error loading config file {config_file}: {e}. Using defaults.")
-        return DEFAULT_CONFIG
+        try:
+            with open(ConfigManager.CONFIG_FILE, "r", encoding="utf-8") as f:
+                user_config = json.load(f)
+
+            # Merge user config with defaults (user settings take priority)
+            config = {**ConfigManager.DEFAULT_CONFIG, **user_config}
+            logger.info("✅ Loaded configuration from gittxt-config.json.")
+            return config
+        except (json.JSONDecodeError, IOError) as e:
+            logger.error(f"❌ Error loading config file: {e}. Using defaults.")
+            return ConfigManager.DEFAULT_CONFIG
+
+    @staticmethod
+    def save_default_config():
+        """Create a default config file if none exists."""
+        if not os.path.exists(ConfigManager.CONFIG_FILE):
+            with open(ConfigManager.CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(ConfigManager.DEFAULT_CONFIG, f, indent=4)
+            logger.info("✅ Default configuration file created: gittxt-config.json.")
+
+# Ensure a default config exists upon import
+ConfigManager.save_default_config()
