@@ -1,0 +1,15 @@
+{
+    "output_dir": "/media/sp/SinisterPuppy/SP/sandy-sp/repos/gittxt/src/gittxt-outputs",
+    "size_limit": null,
+    "include_patterns": [],
+    "exclude_patterns": [
+        ".git",
+        "node_modules",
+        "__pycache__",
+        ".log"
+    ],
+    "output_format": "txt",
+    "max_lines": null,
+    "reuse_existing_repos": true,
+    "logging_level": "INFO"
+}
