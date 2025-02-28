@@ -1,4 +1,15 @@
 include README.md
 include LICENSE
 include pyproject.toml
+include MANIFEST.in
 recursive-include src/gittxt *.py
+recursive-include src/gittxt/gittxt-config.json
+recursive-include src/gittxt-logs *
+recursive-include src/gittxt-outputs *
+
+# Exclude test and dev-related files
+prune tests
+prune .github
+prune .vscode
+prune .pytest_cache
+prune docs

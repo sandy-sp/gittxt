@@ -5,7 +5,7 @@ from gittxt.config import ConfigManager
 # Package Metadata
 __version__ = "1.2.0"
 __author__ = "Sandeep Paidipati"
-__description__ = "CLI tool for extracting text from Git repositories"
+__description__ = "Get Text of Your Repo for AI, LLMs & Docs!"
 
 logger = Logger.get_logger(__name__)
 

@@ -1,27 +1,22 @@
-# 📝 Gittxt: Extract Text from Git Repositories
+# 🚀 Gittxt: Get Text of Your Repo for AI, LLMs & Docs!
 
-**Gittxt** is a **lightweight CLI tool** that scans Git repositories (local or remote) and extracts text content into a **consolidated file** (`.txt`, `.json`).  
-It is designed for **code summarization, AI preprocessing, offline reading, and documentation generation**.
+**Gittxt** is a **lightweight CLI tool** that extracts text from **Git repositories** and formats it into **AI-friendly outputs** (`.txt`, `.json`, `.md`).  
+Whether you’re using **ChatGPT, Grok, LLaMA**, or any LLM, Gittxt helps process repositories for insights, training, and documentation.
 
-🚀 **Features**  
-- ✅ **Scan Local or Remote Repositories** (`git clone` support)  
-- ✅ **Include & Exclude File Patterns** (`--include .py`, `--exclude node_modules`)  
-- ✅ **Multi-threaded Scanning** (Optimized for large repositories)  
-- ✅ **Supports JSON & TXT Output Formats** (`--output-format json`)  
-- ✅ **Incremental Caching for Faster Scans** (Skips unchanged files)  
-- ✅ **Force Full Rescan When Needed** (`--force-rescan`)  
-- ✅ **Improved Logging & Error Handling** (More detailed messages for debugging)  
-- ✅ **Better CLI Experience** (Handles invalid inputs more effectively)
+### ✨ Why Use Gittxt?
+✅ **Extract Readable Text from Git Repos**  
+✅ **Convert Code & Docs into AI-Friendly Formats**  
+✅ **Generate JSON for LLM Training** (Ideal for AI Preprocessing)  
+✅ **Create Markdown Files for Documentation**  
+✅ **Summarize & Analyze GitHub Repositories**  
 
 ---
 
 ## 📌 Installation (From PyPI)
-Now available on PyPI! 🎉 Install it with:
 ```bash
 pip install gittxt
 ```
-
-✅ **Verify Installation**
+Verify installation:
 ```bash
 gittxt --help
 ```
@@ -34,96 +29,121 @@ Options:
   --size-limit INTEGER
   --branch TEXT
   --output-dir TEXT
-  --output-format [txt|json]
+  --output-format [txt|json|md]
   --max-lines INTEGER
-  --force-rescan
+  --summary
+  --debug
   --help  Show this message and exit.
 ```
 
 ---
 
-## 📌 Usage Examples
+## 📌 How to Use Gittxt
 
-### **1️⃣ Scan a Local Folder**
+### **1️⃣ Extract Text from a Local Repository**
 ```bash
 gittxt .
 ```
-📌 **Result:** Outputs extracted text from the repo.
+✅ Extracts all readable text from your repo into **gittxt-outputs/text/**.
 
 ---
 
-### **2️⃣ Scan a Remote GitHub Repository**
+### **2️⃣ Extract from a Remote GitHub Repo**
 ```bash
-gittxt https://github.com/torvalds/linux
+gittxt https://github.com/sandy-sp/sandy-sp
 ```
-📌 **This will:**
-- Clone the **Linux Kernel repo** to a temporary directory.
-- Extract **all readable text**.
-- Save it in `gittxt_output.txt`.
+✅ Automatically clones the repo, scans it, and **extracts text**.
 
 ---
 
-### **3️⃣ Customize Output (JSON & TXT)**
-✅ **Save as JSON (Structured Output)**
+### **3️⃣ Use AI-Friendly Output Formats**
+#### **🧠 JSON (Best for AI & LLM Training)**
 ```bash
 gittxt . --output-format json --output repo_dump.json
 ```
+**Why JSON?**
+- **Perfect format for AI & LLMs** (GPT-4, Grok, LLaMA).
+- **Prepares structured data for AI training**.
+- **Can be used to fine-tune models with repository insights**.
 
-✅ **Save as TXT (Default)**
+#### **📜 TXT (For AI Chat & Analysis)**
 ```bash
 gittxt . --output-format txt --output repo_dump.txt
 ```
+**Why TXT?**
+- **Extracts pure text**, making it easy for AI-powered chat analysis.
+- **Good for summarization and AI-assisted code review**.
+
+#### **📝 Markdown (Best for Documentation)**
+```bash
+gittxt . --output-format md --output repo_dump.md
+```
+**Why Markdown?**
+- **Great for GitHub docs & project READMEs**.
+- **LLMs like ChatGPT use Markdown for structured responses**.
+- **Retains headings, code snippets, and structure**.
 
 ---
 
-## 📌 🚀 New in `v1.1.0`
-- **🐛 Bug Fixes & Improvements**
-  - **Fixed `--format` argument** (Now use `--output-format`).
-  - **Better logging & error messages** (Now logs issues more clearly).
-  - **More resilient CLI** (Handles invalid paths properly).
-
-- **🛠 Feature Enhancements**
-  - **CLI now supports `--force-rescan` correctly**.
-  - **Improved caching system** (Scans only modified files).
-  - **More detailed scan reports**.
-
-- **✅ Full Test Coverage**
-  - **18/18 tests passing** 🟢
-  - **New CLI tests added** (`pytest tests/`).
+### **4️⃣ Get a Summary Report**
+```bash
+gittxt . --summary
+```
+Example Output:
+```
+📊 Summary Report:
+ - Scanned 105 text files
+ - Total Size: 3.2 MB
+ - File Types: .py, .md, .txt
+ - Saved in: gittxt-outputs/text/repo_dump.txt
+```
+✅ **Helps quickly analyze repositories for AI training**.
 
 ---
 
-## 📌 Development & Contribution
-Want to contribute? Follow these steps:
+## 🆕 **What's New in v1.2.0?**
+### ✅ **Bug Fixes & Enhancements**
+- **Better file filtering (`--include`, `--exclude`)**.
+- **Faster processing with improved caching**.
+- **More accurate MIME-type detection**.
 
+### 🚀 **New Features**
+- **✅ Markdown Output (`--output-format md`)** → Generates AI-friendly structured docs.
+- **📊 Summary Reports (`--summary`)** → Instantly view repo insights.
+- **🔍 Debug Mode (`--debug`)** → See detailed logs of the extraction process.
+
+---
+
+## 📌 Contribute & Develop
 ### **1️⃣ Run Tests**
 ```bash
 pytest tests/
 ```
-
-### **2️⃣ Formatting & Linting**
+### **2️⃣ Format Code**
 ```bash
 black src/
 ```
-
-### **3️⃣ Open a Pull Request**
+### **3️⃣ Submit a PR**
 1. **Fork the repo**
-2. **Create a new branch** (`feature/my-change`)
+2. **Create a new branch (`feature/my-change`)**
 3. **Push changes**
 4. **Submit a PR!** 🚀
 
 ---
 
-## 📌 License
-This project is licensed under the **MIT License**.
+## 📜 License
+Gittxt is licensed under **MIT**.
 
 ---
 
-## **🚀 Next Steps**
-- **[ ] Add support for Markdown (`.md`) output.**
-- **[ ] Implement a Web UI for visualization.**
-- **[ ] Improve error handling for edge cases.**
+## **💡 Next Features Coming Soon!**
+- [ ] **Interactive CLI for easy selection**  
+- [ ] **Web UI for scanning repositories visually**  
+- [ ] **Smarter AI-based file summarization**  
 
 ---
 
 📌 **Made by [Sandeep Paidipati](https://github.com/sandy-sp)**
+🚀 **Gittxt: Get Text of Your Repo for AI, LLMs & Docs!**
+
+---

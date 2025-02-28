@@ -27,7 +27,7 @@ config = ConfigManager.load_config()
 @click.option("--summary", is_flag=True, help="Show a summary report of scanned files and their types.")
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, summary, debug):
-    """Gittxt: Scan a Git repo or directory and extract text content."""
+    """Gittxt: Get Text of Your Repo for AI, LLMs & Docs!"""
 
     # Enable Debug Mode
     if debug:
