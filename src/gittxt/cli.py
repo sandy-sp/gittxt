@@ -8,7 +8,10 @@ from gittxt.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-# Load configuration
+# Ensure ConfigManager loads a valid config
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "gittxt-config.json")
+if not os.path.exists(CONFIG_PATH):
+    ConfigManager.save_default_config()
 config = ConfigManager.load_config()
 
 @click.command()

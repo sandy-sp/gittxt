@@ -20,7 +20,7 @@ class RepositoryHandler:
         :param branch: Git branch to clone (if applicable).
         :param reuse_existing: Reuse already cloned repositories to prevent redundancy.
         """
-        self.source = source
+        self.source = source  # Set before calling other methods
         self.branch = branch
         self.reuse_existing = reuse_existing
         self.local_path = None
@@ -30,7 +30,10 @@ class RepositoryHandler:
         return self.source.startswith(("http", "git@")) or self.source.endswith(".git")
 
     def get_repo_name(self):
-        """Extract repository name from the URL."""
+        """Extract repository name from the URL or local path."""
+        if os.path.exists(self.source):
+            return os.path.basename(os.path.normpath(self.source))
+        
         parsed_url = urlparse(self.source)
         repo_name = os.path.basename(parsed_url.path).replace(".git", "").strip()
 
@@ -71,11 +74,7 @@ class RepositoryHandler:
             return None
 
     def get_local_path(self):
-        """
-        Get the local path of the repository.
-
-        If it's a remote repo, clone it first. If it's local, return the provided path.
-        """
+        """Get the local path of the repository."""
         if self.is_remote_repo():
             return self.clone_repository()
         if os.path.exists(self.source):

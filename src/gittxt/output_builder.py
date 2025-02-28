@@ -17,7 +17,7 @@ class OutputBuilder:
         :param repo_name: Name of the repository or folder being processed.
         :param output_dir: Directory where outputs will be stored (default: `gittxt-outputs/`).
         :param max_lines: Maximum number of lines per file (for large file handling).
-        :param output_format: Output format (`txt` or `json`).
+        :param output_format: Output format (`txt`, `json`, `md`).
         """
         # Ensure absolute path for output directory
         self.output_dir = os.path.abspath(output_dir) if output_dir else self.BASE_OUTPUT_DIR
@@ -37,7 +37,7 @@ class OutputBuilder:
             f"{self.repo_name}.{self.output_format}"
         )
 
-        logger.debug(f"Output directory resolved to: {self.output_dir}")
+        logger.debug(f"✅ Output directory resolved to: {self.output_dir}")
 
     def generate_tree_summary(self, repo_path):
         """Generate a folder structure summary using 'tree' command."""
@@ -46,7 +46,7 @@ class OutputBuilder:
         except FileNotFoundError:
             logger.warning("⚠️ Tree command not found, skipping repository structure summary.")
             return "⚠️ Tree command not available."
-        except Exception as e:
+        except subprocess.SubprocessError as e:
             logger.error(f"❌ Error generating tree summary: {e}")
             return "⚠️ Error generating repository structure."
 
@@ -74,15 +74,19 @@ class OutputBuilder:
     def _generate_text_output(self, files, tree_summary):
         """Generate a `.txt` file with extracted text and folder structure summary."""
         logger.info(f"📝 Writing output to {self.output_file} (TXT format)")
-        with open(self.output_file, "w", encoding="utf-8") as out:
-            out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
-            for file_path in files:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
-                out.write(f"=== File: {file_path} (size: {file_size} bytes) ===\n")
-                out.writelines(self.read_file_content(file_path))
-                out.write("\n\n")
-        logger.info(f"✅ Output saved to: {self.output_file}")
-        return self.output_file
+        try:
+            with open(self.output_file, "w", encoding="utf-8") as out:
+                out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
+                for file_path in files:
+                    file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
+                    out.write(f"=== File: {file_path} (size: {file_size} bytes) ===\n")
+                    out.writelines(self.read_file_content(file_path))
+                    out.write("\n\n")
+            logger.info(f"✅ Output saved to: {self.output_file}")
+            return self.output_file
+        except Exception as e:
+            logger.error(f"❌ Error writing text output: {e}")
+            return None
 
     def _generate_json_output(self, files, tree_summary):
         """Generate a `.json` file with structured repository content."""
@@ -94,18 +98,20 @@ class OutputBuilder:
 
         for file_path in files:
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
-            content = "".join(self.read_file_content(file_path))
+            content = "".join(self.read_file_content(file_path)).strip()
+            
+            # Ensure PosixPath is serialized correctly
             output_data["files"].append({
-                "file": str(file_path),  # Convert PosixPath to string to avoid serialization errors
+                "file": str(file_path),
                 "size": file_size,
-                "content": content.strip()  # Ensure consistent formatting
+                "content": content if len(content) < 100000 else "[Truncated large content]"
             })
 
         try:
             with open(self.output_file, "w", encoding="utf-8") as json_file:
                 json.dump(output_data, json_file, indent=4)
+            logger.info(f"✅ Output saved to: {self.output_file}")
+            return self.output_file
         except TypeError as e:
             logger.error(f"❌ Error saving JSON output: {e}")
-
-        logger.info(f"✅ Output saved to: {self.output_file}")
-        return self.output_file
+            return None

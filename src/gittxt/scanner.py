@@ -23,7 +23,7 @@ class Scanner:
         :param exclude_patterns: List of file extensions or folders to exclude.
         :param size_limit: Maximum file size in bytes to process.
         """
-        self.root_path = root_path
+        self.root_path = os.path.abspath(root_path)
         self.include_patterns = self._parse_patterns(include_patterns)
         self.exclude_patterns = self._parse_patterns(exclude_patterns)
         self.size_limit = size_limit
@@ -42,6 +42,7 @@ class Scanner:
         )
         conn.commit()
         conn.close()
+        logger.debug("✅ Cache database initialized")
 
     def _parse_patterns(self, patterns):
         """Convert comma-separated string patterns into a list."""
@@ -51,8 +52,23 @@ class Scanner:
 
     def is_text_file(self, file_path):
         """Determine if a file is text-based using MIME type detection."""
+        binary_extensions = {".mp4", ".avi", ".mov", ".tar.gz", ".zip", ".exe", ".bin", ".jpeg", ".png", ".gif", ".pdf"}
+
+        # Check file extension first
+        if any(file_path.endswith(ext) for ext in binary_extensions):
+            logger.debug(f"❌ Skipping binary file based on extension: {file_path}")
+            return False
+
+        # Fallback to MIME type detection
         mime_type, _ = mimetypes.guess_type(file_path)
-        return mime_type and mime_type.startswith("text")
+        if not mime_type:
+            return False
+
+        if mime_type.startswith("text"):
+            return True
+
+        logger.debug(f"❌ Skipping non-text file (MIME: {mime_type}): {file_path}")
+        return False
 
     def generate_tree_summary(self):
         """Generate a folder structure summary using 'tree' command."""
@@ -80,8 +96,10 @@ class Scanner:
     def scan_directory(self):
         """Scan directory using multi-threading, filtering, and caching."""
         valid_files = []
-        non_text_files = []
         tree_summary = self.generate_tree_summary()
+
+        conn = sqlite3.connect(self.CACHE_DB)
+        cursor = conn.cursor()
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = {
@@ -95,47 +113,60 @@ class Scanner:
                     file_path, is_text = result
                     if is_text:
                         valid_files.append(file_path)
-                    else:
-                        non_text_files.append(file_path)
+
+        # Ensure cached file count matches valid text files
+        cursor.execute("SELECT COUNT(*) FROM file_cache WHERE hash IS NOT NULL")
+        cached_file_count = cursor.fetchone()[0]
+
+        logger.debug(f"🔄 Cached file count (valid text files only): {cached_file_count}")
+
+        conn.close()
 
         logger.info(f"✅ Scanning complete. {len(valid_files)} text files found.")
-        logger.info(f"⚠️ {len(non_text_files)} non-text files skipped.")
+
         return valid_files, tree_summary
 
     def process_file(self, file_path):
         """Process a file and determine if it should be included or skipped."""
-        # Exclude files based on patterns before further processing
+        file_path = os.path.abspath(file_path)  # Ensure absolute paths for consistency
+
+        # Skip excluded patterns
         if any(pattern in file_path for pattern in self.exclude_patterns):
             logger.debug(f"❌ Skipping excluded file: {file_path}")
             return None
 
+        # Skip files not in include list
         if self.include_patterns and not any(file_path.endswith(p) for p in self.include_patterns):
             logger.debug(f"❌ Skipping file not in include list: {file_path}")
             return None
 
+        # Skip oversized files
         if self.size_limit and os.path.getsize(file_path) > self.size_limit:
             logger.debug(f"⚠️ Skipping oversized file: {file_path}")
             return None
 
+        # Skip non-text files
         if not self.is_text_file(file_path):
-            return file_path, False  # Non-text file
+            return None
 
         # Check cache
-        file_hash = self.get_file_hash(file_path)
-        if not file_hash:
-            return None  # Skip if hashing failed
-
         conn = sqlite3.connect(self.CACHE_DB)
         cursor = conn.cursor()
         cursor.execute("SELECT hash FROM file_cache WHERE path = ?", (file_path,))
         cached_entry = cursor.fetchone()
 
+        file_hash = self.get_file_hash(file_path)
+        
         if cached_entry and cached_entry[0] == file_hash:
             logger.debug(f"⚡ Skipping unchanged file (cached): {file_path}")
             conn.close()
-            return None  # Unchanged file
+            return file_path, True  # Return cached file as valid
 
-        # Update cache
+        if not file_hash:
+            conn.close()
+            return None  # Skip if hashing failed
+
+        # Update cache with absolute paths
         cursor.execute("REPLACE INTO file_cache (path, hash) VALUES (?, ?)", (file_path, file_hash))
         conn.commit()
         conn.close()
