@@ -1,7 +1,7 @@
 # 🚀 Gittxt: Get Text of Your Repo for AI, LLMs & Docs!
 
 **Gittxt** is a **lightweight CLI tool** that extracts text from **Git repositories** and formats it into **AI-friendly outputs** (`.txt`, `.json`, `.md`).  
-Whether you’re using **ChatGPT, Grok, LLaMA**, or any LLM, Gittxt helps process repositories for insights, training, and documentation.
+Whether you’re using **ChatGPT, Grok, or Ollama**, or any LLM, Gittxt helps process repositories for insights, training, and documentation.
 
 ### ✨ Why Use Gittxt?
 ✅ **Extract Readable Text from Git Repos**  
