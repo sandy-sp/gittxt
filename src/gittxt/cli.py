@@ -1,5 +1,6 @@
 import click
 import os
+import sys
 from gittxt.scanner import Scanner
 from gittxt.repository import RepositoryHandler
 from gittxt.output_builder import OutputBuilder
@@ -8,21 +9,18 @@ from gittxt.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-# Ensure ConfigManager loads a valid config
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "gittxt-config.json")
-if not os.path.exists(CONFIG_PATH):
-    ConfigManager.save_default_config()
+# Load configuration
 config = ConfigManager.load_config()
 
 @click.command()
 @click.argument("source")
-@click.option("--include", multiple=True, help="Include only files matching these patterns (comma-separated).")
-@click.option("--exclude", multiple=True, help="Exclude files matching these patterns (comma-separated).")
+@click.option("--include", multiple=True, help="Include only files matching these patterns.")
+@click.option("--exclude", multiple=True, help="Exclude files matching these patterns.")
 @click.option("--size-limit", type=int, help="Exclude files larger than this size (bytes).")
 @click.option("--branch", type=str, help="Specify a Git branch (for remote repos).")
-@click.option("--output-dir", type=str, default=config["output_dir"], help="Specify a custom output directory.")
-@click.option("--output-format", type=click.Choice(["txt", "json", "md"], case_sensitive=False), default=config["output_format"], help="Specify output format.")
-@click.option("--max-lines", type=int, default=config["max_lines"], help="Limit number of lines per file.")
+@click.option("--output-dir", type=click.Path(file_okay=False, writable=True), default=config["output_dir"], show_default=True, help="Specify a custom output directory.")
+@click.option("--output-format", type=click.Choice(["txt", "json", "md"], case_sensitive=False), default=config["output_format"], show_default=True, help="Specify output format.")
+@click.option("--max-lines", type=int, default=config["max_lines"], show_default=True, help="Limit number of lines per file.")
 @click.option("--summary", is_flag=True, help="Show a summary report of scanned files and their types.")
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, summary, debug):
@@ -39,19 +37,23 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     output_dir = os.path.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
-    # Handle repository (local or remote)
+    # Handle local or remote repository
     repo_handler = RepositoryHandler(source, branch, reuse_existing=config["reuse_existing_repos"])
     repo_path = repo_handler.get_local_path()
 
     if not repo_path:
-        logger.error("❌ Failed to access repository. Exiting.")
-        exit(1)
+        logger.error("❌ Failed to access repository. Check if the source path is correct.")
+        sys.exit(1)  # Ensures script exits with an error code
 
-    # Initialize Scanner with include and exclude patterns
+    # Convert include/exclude patterns into lists
+    include_patterns = list(include) if include else config.get("include_patterns", [])
+    exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
+
+    # Initialize Scanner
     scanner = Scanner(
         root_path=repo_path,
-        include_patterns=include if include else config["include_patterns"],
-        exclude_patterns=exclude if exclude else config["exclude_patterns"],
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
         size_limit=size_limit if size_limit else config["size_limit"]
     )
 
@@ -59,10 +61,10 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     valid_files, tree_summary = scanner.scan_directory()
 
     if not valid_files:
-        logger.warning("⚠️ No valid files found. Exiting.")
-        exit(2)
+        logger.warning("⚠️ No valid files found for extraction. Ensure the repository contains supported text-based files.")
+        sys.exit(2)
 
-    logger.info(f"✅ Processing {len(valid_files)} files...")
+    logger.info(f"✅ Processing {len(valid_files)} text files...")
 
     # Extract repository name for output file naming
     repo_name = os.path.basename(os.path.normpath(repo_path))
@@ -82,12 +84,10 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     # Show Summary Report
     if summary:
-        logger.info("📊 Summary Report:")
-        logger.info(f" - Scanned {len(valid_files)} text files")
+        logger.info("\n📊 Summary Report:")
+        logger.info(f" - Scanned: {len(valid_files)} text files")
         logger.info(f" - Output Format: {output_format}")
         logger.info(f" - Saved in: {output_file}")
-
-    exit(0)
 
 if __name__ == "__main__":
     main()
