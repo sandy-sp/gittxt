@@ -23,7 +23,7 @@ config = ConfigManager.load_config()
 @click.option("--summary", is_flag=True, help="Show a summary report of scanned files and their types.")
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, summary, debug):
-    """Gittxt: Scan a Git repo and extract text content."""
+    """Gittxt: Scan a Git repo or directory and extract text content."""
 
     # Enable Debug Mode
     if debug:
@@ -32,7 +32,8 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     logger.info(f"🚀 Starting Gittxt on: {source}")
 
-    # Ensure output directory exists
+    # Ensure output directory is absolute
+    output_dir = os.path.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
     # Handle repository (local or remote)
@@ -41,7 +42,7 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     if not repo_path:
         logger.error("❌ Failed to access repository. Exiting.")
-        return
+        exit(1)
 
     # Initialize Scanner with include and exclude patterns
     scanner = Scanner(
@@ -56,7 +57,7 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     if not valid_files:
         logger.warning("⚠️ No valid files found. Exiting.")
-        return
+        exit(2)
 
     logger.info(f"✅ Processing {len(valid_files)} files...")
 
@@ -82,6 +83,8 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
         logger.info(f" - Scanned {len(valid_files)} text files")
         logger.info(f" - Output Format: {output_format}")
         logger.info(f" - Saved in: {output_file}")
+
+    exit(0)
 
 if __name__ == "__main__":
     main()

@@ -8,6 +8,8 @@ logger = Logger.get_logger(__name__)
 class OutputBuilder:
     """Handles output generation for scanned repositories."""
 
+    BASE_OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt-outputs"))
+
     def __init__(self, repo_name, output_dir=None, max_lines=None, output_format="txt"):
         """
         Initialize the OutputBuilder with output file configurations.
@@ -17,8 +19,8 @@ class OutputBuilder:
         :param max_lines: Maximum number of lines per file (for large file handling).
         :param output_format: Output format (`txt` or `json`).
         """
-        base_output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gittxt-outputs")
-        self.output_dir = output_dir or base_output_dir
+        # Ensure absolute path for output directory
+        self.output_dir = os.path.abspath(output_dir) if output_dir else self.BASE_OUTPUT_DIR
         self.text_dir = os.path.join(self.output_dir, "text")
         self.json_dir = os.path.join(self.output_dir, "json")
         self.max_lines = max_lines
@@ -35,12 +37,18 @@ class OutputBuilder:
             f"{self.repo_name}.{self.output_format}"
         )
 
+        logger.debug(f"Output directory resolved to: {self.output_dir}")
+
     def generate_tree_summary(self, repo_path):
         """Generate a folder structure summary using 'tree' command."""
         try:
             return subprocess.check_output(["tree", repo_path, "-L", "2"], text=True)
         except FileNotFoundError:
+            logger.warning("⚠️ Tree command not found, skipping repository structure summary.")
             return "⚠️ Tree command not available."
+        except Exception as e:
+            logger.error(f"❌ Error generating tree summary: {e}")
+            return "⚠️ Error generating repository structure."
 
     def read_file_content(self, file_path):
         """Read file content with optional line limits and handle missing files."""
@@ -88,13 +96,16 @@ class OutputBuilder:
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
             content = "".join(self.read_file_content(file_path))
             output_data["files"].append({
-                "file": file_path,
+                "file": str(file_path),  # Convert PosixPath to string to avoid serialization errors
                 "size": file_size,
                 "content": content.strip()  # Ensure consistent formatting
             })
 
-        with open(self.output_file, "w", encoding="utf-8") as json_file:
-            json.dump(output_data, json_file, indent=4)
+        try:
+            with open(self.output_file, "w", encoding="utf-8") as json_file:
+                json.dump(output_data, json_file, indent=4)
+        except TypeError as e:
+            logger.error(f"❌ Error saving JSON output: {e}")
 
         logger.info(f"✅ Output saved to: {self.output_file}")
         return self.output_file

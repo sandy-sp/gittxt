@@ -11,7 +11,8 @@ logger = Logger.get_logger(__name__)
 class Scanner:
     """Handles scanning of local directories and filtering based on file type and patterns."""
 
-    CACHE_DB = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gittxt-outputs", "cache", "scan_cache.db")
+    BASE_CACHE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt-outputs/cache"))
+    CACHE_DB = os.path.join(BASE_CACHE_DIR, "scan_cache.db")
 
     def __init__(self, root_path, include_patterns=None, exclude_patterns=None, size_limit=None):
         """
@@ -30,7 +31,7 @@ class Scanner:
 
     def _initialize_cache(self):
         """Ensure SQLite cache database is set up for incremental scanning."""
-        os.makedirs(os.path.dirname(self.CACHE_DB), exist_ok=True)
+        os.makedirs(self.BASE_CACHE_DIR, exist_ok=True)
         conn = sqlite3.connect(self.CACHE_DB)
         cursor = conn.cursor()
         cursor.execute(
@@ -58,7 +59,11 @@ class Scanner:
         try:
             return subprocess.check_output(["tree", self.root_path, "-L", "2"], text=True)
         except FileNotFoundError:
+            logger.warning("⚠️ Tree command not found, skipping repository structure summary.")
             return "⚠️ Tree command not available."
+        except subprocess.SubprocessError as e:
+            logger.error(f"❌ Error generating tree summary: {e}")
+            return "⚠️ Error generating repository structure."
 
     def get_file_hash(self, file_path):
         """Generate SHA256 hash of the file content for caching."""
@@ -85,11 +90,13 @@ class Scanner:
             }
 
             for future in concurrent.futures.as_completed(futures):
-                file_path, is_text = future.result()
-                if is_text:
-                    valid_files.append(file_path)
-                else:
-                    non_text_files.append(file_path)
+                result = future.result()
+                if result:
+                    file_path, is_text = result
+                    if is_text:
+                        valid_files.append(file_path)
+                    else:
+                        non_text_files.append(file_path)
 
         logger.info(f"✅ Scanning complete. {len(valid_files)} text files found.")
         logger.info(f"⚠️ {len(non_text_files)} non-text files skipped.")
@@ -97,29 +104,36 @@ class Scanner:
 
     def process_file(self, file_path):
         """Process a file and determine if it should be included or skipped."""
+        # Exclude files based on patterns before further processing
+        if any(pattern in file_path for pattern in self.exclude_patterns):
+            logger.debug(f"❌ Skipping excluded file: {file_path}")
+            return None
+
+        if self.include_patterns and not any(file_path.endswith(p) for p in self.include_patterns):
+            logger.debug(f"❌ Skipping file not in include list: {file_path}")
+            return None
+
+        if self.size_limit and os.path.getsize(file_path) > self.size_limit:
+            logger.debug(f"⚠️ Skipping oversized file: {file_path}")
+            return None
+
         if not self.is_text_file(file_path):
             return file_path, False  # Non-text file
 
-        if any(pattern in file_path for pattern in self.exclude_patterns):
-            return None, False  # Excluded file
-
-        if self.include_patterns and not any(file_path.endswith(p) for p in self.include_patterns):
-            return None, False  # Not in included patterns
-
-        if self.size_limit and os.path.getsize(file_path) > self.size_limit:
-            return None, False  # Exceeds size limit
-
         # Check cache
         file_hash = self.get_file_hash(file_path)
+        if not file_hash:
+            return None  # Skip if hashing failed
+
         conn = sqlite3.connect(self.CACHE_DB)
         cursor = conn.cursor()
         cursor.execute("SELECT hash FROM file_cache WHERE path = ?", (file_path,))
         cached_entry = cursor.fetchone()
 
         if cached_entry and cached_entry[0] == file_hash:
-            logger.info(f"⚡ Skipping unchanged file: {file_path}")
+            logger.debug(f"⚡ Skipping unchanged file (cached): {file_path}")
             conn.close()
-            return None, False  # Unchanged file
+            return None  # Unchanged file
 
         # Update cache
         cursor.execute("REPLACE INTO file_cache (path, hash) VALUES (?, ?)", (file_path, file_hash))
