@@ -21,19 +21,9 @@ config = ConfigManager.load_config()
 @click.option("--exclude", multiple=True, help="Exclude files matching these patterns.")
 @click.option("--size-limit", type=int, help="Exclude files larger than this size (bytes).")
 @click.option("--branch", type=str, help="Specify a Git branch (for remote repos).")
-@click.option(
-    "--output-dir", type=click.Path(), default=config["output_dir"], show_default=True,
-    help="Specify a custom output directory."
-)
-@click.option(
-    "--output-format", type=click.Choice(["txt", "json", "md"], case_sensitive=False),
-    default=config["output_format"], show_default=True,
-    help="Specify output format (txt, json, md)."
-)
-@click.option(
-    "--max-lines", type=int, default=config["max_lines"], show_default=True,
-    help="Limit number of lines per file."
-)
+@click.option("--output-dir", type=click.Path(), default=config["output_dir"], show_default=True, help="Specify a custom output directory.")
+@click.option("--output-format", type=click.Choice(["txt", "json", "md"], case_sensitive=False), default=config["output_format"], show_default=True, help="Specify output format.")
+@click.option("--max-lines", type=int, default=config["max_lines"], show_default=True, help="Limit number of lines per file.")
 @click.option("--summary", is_flag=True, help="Show a summary report of scanned files and their types.")
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, summary, debug):
@@ -79,6 +69,15 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     logger.info(f"✅ Processing {len(valid_files)} text files...")
 
+    # Collect summary statistics
+    total_size = sum(os.path.getsize(f) for f in valid_files)
+    file_types = {os.path.splitext(f)[1] for f in valid_files}
+    summary_data = {
+        "total_files": len(valid_files),
+        "total_size": total_size,
+        "file_types": list(file_types),
+    }
+
     # Extract repository name for output file naming
     repo_name = os.path.basename(os.path.normpath(repo_path))
 
@@ -91,15 +90,16 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     )
 
     # Generate output file
-    output_file = output_builder.generate_output(valid_files, repo_path)
+    output_file = output_builder.generate_output(valid_files, repo_path, summary_data)
 
     logger.info(f"✅ Output saved to: {output_file}")
 
     # Show Summary Report
     if summary:
         logger.info("📊 Summary Report:")
-        logger.info(f" - Scanned {len(valid_files)} text files")
-        logger.info(f" - Output Format: {output_format}")
+        logger.info(f" - Scanned {summary_data['total_files']} text files")
+        logger.info(f" - Total Size: {summary_data['total_size']} bytes")
+        logger.info(f" - File Types: {', '.join(summary_data['file_types'])}")
         logger.info(f" - Saved in: {output_file}")
 
 if __name__ == "__main__":

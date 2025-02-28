@@ -67,34 +67,44 @@ class OutputBuilder:
             logger.error(f"❌ Error reading {file_path}: {e}")
             return [f"[Error reading {file_path}: {e}]\n"]
 
-    def generate_output(self, files, repo_path):
+    def generate_output(self, files, repo_path, summary_data=None):
         """Generate the final output file in the specified format."""
         tree_summary = self.generate_tree_summary(repo_path)
 
         if self.output_format == "json":
-            return self._generate_json_output(files, tree_summary)
+            return self._generate_json_output(files, tree_summary, summary_data)
         elif self.output_format == "md":
-            return self._generate_markdown_output(files, tree_summary)
-        return self._generate_text_output(files, tree_summary)
+            return self._generate_markdown_output(files, tree_summary, summary_data)
+        return self._generate_text_output(files, tree_summary, summary_data)
 
-    def _generate_text_output(self, files, tree_summary):
+    def _generate_text_output(self, files, tree_summary, summary_data):
         """Generate a `.txt` file with extracted text and folder structure summary."""
         logger.info(f"📝 Writing output to {self.output_file} (TXT format)")
         with open(self.output_file, "w", encoding="utf-8") as out:
             out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
+
+            # Include summary data
+            if summary_data:
+                out.write("📊 Summary Report:\n")
+                out.write(f" - Total Files: {summary_data['total_files']}\n")
+                out.write(f" - Total Size: {summary_data['total_size']} bytes\n")
+                out.write(f" - File Types: {', '.join(summary_data['file_types'])}\n\n")
+
             for file_path in files:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
                 out.write(f"=== File: {file_path} (size: {file_size} bytes) ===\n")
                 out.writelines(self.read_file_content(file_path))
                 out.write("\n\n")
+
         logger.info(f"✅ Output saved to: {self.output_file}")
         return self.output_file
 
-    def _generate_json_output(self, files, tree_summary):
+    def _generate_json_output(self, files, tree_summary, summary_data):
         """Generate a `.json` file with structured repository content."""
         logger.info(f"📝 Writing output to {self.output_file} (JSON format)")
         output_data = {
             "repository_structure": tree_summary,
+            "summary": summary_data if summary_data else {},
             "files": []
         }
 
@@ -102,9 +112,9 @@ class OutputBuilder:
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
             content = "".join(self.read_file_content(file_path))
             output_data["files"].append({
-                "file": str(file_path),  
+                "file": str(file_path),
                 "size": file_size,
-                "content": content.strip()  
+                "content": content.strip()
             })
 
         try:
@@ -116,7 +126,7 @@ class OutputBuilder:
         logger.info(f"✅ Output saved to: {self.output_file}")
         return self.output_file
 
-    def _generate_markdown_output(self, files, tree_summary):
+    def _generate_markdown_output(self, files, tree_summary, summary_data):
         """Generate a `.md` file with structured repository content."""
         logger.info(f"📝 Writing output to {self.output_file} (Markdown format)")
 
@@ -124,9 +134,12 @@ class OutputBuilder:
             out.write(f"# 📂 Repository Overview: {self.repo_name}\n\n")
             out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n\n")
             out.write("## 📊 Summary Report\n")
-            out.write(f"- **Total Files Processed:** {len(files)}\n\n")
-            out.write("## 📄 Extracted Text Files\n")
+            if summary_data:
+                out.write(f"- **Total Files Processed:** {summary_data['total_files']}\n")
+                out.write(f"- **Total Size:** {summary_data['total_size']} bytes\n")
+                out.write(f"- **File Types:** {', '.join(summary_data['file_types'])}\n\n")
 
+            out.write("## 📄 Extracted Text Files\n")
             for file_path in files:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
                 out.write(f"\n### `{os.path.basename(file_path)}` (size: {file_size} bytes)\n")

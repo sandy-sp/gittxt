@@ -93,3 +93,15 @@ def test_cli_debug_flag(clean_output_dir):
     print("\nDEBUG - test_cli_debug_flag OUTPUT:\n", result.stdout)
 
     assert "🔍 Debug mode enabled." in result.stdout or result.stderr
+
+def test_cli_summary_report(clean_output_dir):
+    """Test if --summary flag correctly generates a summary report."""
+    result = run_gittxt_command([
+        TEST_REPO, "--summary", "--output-dir", TEST_OUTPUT_DIR
+    ])
+
+    # Debugging: Print actual stdout and stderr
+    print("\nDEBUG - test_cli_summary_report OUTPUT:\n", result.stdout)
+    print("\nDEBUG - STDERR:\n", result.stderr)
+
+    assert "📊 Summary Report" in result.stdout or "📊 Summary Report" in result.stderr
