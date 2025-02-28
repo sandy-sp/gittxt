@@ -7,20 +7,33 @@ from gittxt.output_builder import OutputBuilder
 from gittxt.config import ConfigManager
 from gittxt.logger import Logger
 
+# Ensure `src` is in Python's module search path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 logger = Logger.get_logger(__name__)
 
 # Load configuration
 config = ConfigManager.load_config()
 
 @click.command()
-@click.argument("source")
+@click.argument("source", type=click.Path(exists=True))
 @click.option("--include", multiple=True, help="Include only files matching these patterns.")
 @click.option("--exclude", multiple=True, help="Exclude files matching these patterns.")
 @click.option("--size-limit", type=int, help="Exclude files larger than this size (bytes).")
 @click.option("--branch", type=str, help="Specify a Git branch (for remote repos).")
-@click.option("--output-dir", type=click.Path(file_okay=False, writable=True), default=config["output_dir"], show_default=True, help="Specify a custom output directory.")
-@click.option("--output-format", type=click.Choice(["txt", "json", "md"], case_sensitive=False), default=config["output_format"], show_default=True, help="Specify output format.")
-@click.option("--max-lines", type=int, default=config["max_lines"], show_default=True, help="Limit number of lines per file.")
+@click.option(
+    "--output-dir", type=click.Path(), default=config["output_dir"], show_default=True,
+    help="Specify a custom output directory."
+)
+@click.option(
+    "--output-format", type=click.Choice(["txt", "json", "md"], case_sensitive=False),
+    default=config["output_format"], show_default=True,
+    help="Specify output format (txt, json, md)."
+)
+@click.option(
+    "--max-lines", type=int, default=config["max_lines"], show_default=True,
+    help="Limit number of lines per file."
+)
 @click.option("--summary", is_flag=True, help="Show a summary report of scanned files and their types.")
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 def main(source, include, exclude, size_limit, branch, output_dir, output_format, max_lines, summary, debug):
@@ -30,24 +43,24 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
     if debug:
         logger.setLevel("DEBUG")
         logger.debug("🔍 Debug mode enabled.")
-
+    
     logger.info(f"🚀 Starting Gittxt on: {source}")
 
     # Ensure output directory is absolute
     output_dir = os.path.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
-    # Handle local or remote repository
+    # Handle repository (local or remote)
     repo_handler = RepositoryHandler(source, branch, reuse_existing=config["reuse_existing_repos"])
     repo_path = repo_handler.get_local_path()
 
     if not repo_path:
         logger.error("❌ Failed to access repository. Check if the source path is correct.")
-        sys.exit(1)  # Ensures script exits with an error code
+        return
 
     # Convert include/exclude patterns into lists
-    include_patterns = list(include) if include else config.get("include_patterns", [])
-    exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
+    include_patterns = list(include) if include else config["include_patterns"]
+    exclude_patterns = list(exclude) if exclude else config["exclude_patterns"]
 
     # Initialize Scanner
     scanner = Scanner(
@@ -62,7 +75,7 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     if not valid_files:
         logger.warning("⚠️ No valid files found for extraction. Ensure the repository contains supported text-based files.")
-        sys.exit(2)
+        return
 
     logger.info(f"✅ Processing {len(valid_files)} text files...")
 
@@ -82,16 +95,12 @@ def main(source, include, exclude, size_limit, branch, output_dir, output_format
 
     logger.info(f"✅ Output saved to: {output_file}")
 
-    # Ensure critical output is printed instead of just logged
-    print(f"✅ Scanning complete. {len(valid_files)} text files found.")
-    print(f"✅ Output saved to: {output_file}")
-
-    # Ensure Summary Report is also printed
+    # Show Summary Report
     if summary:
-        print("\n📊 Summary Report:")
-        print(f" - Scanned: {len(valid_files)} text files")
-        print(f" - Output Format: {output_format}")
-        print(f" - Saved in: {output_file}")
+        logger.info("📊 Summary Report:")
+        logger.info(f" - Scanned {len(valid_files)} text files")
+        logger.info(f" - Output Format: {output_format}")
+        logger.info(f" - Saved in: {output_file}")
 
 if __name__ == "__main__":
     main()
