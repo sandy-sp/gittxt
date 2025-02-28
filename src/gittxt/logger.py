@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 class Logger:
     """Handles logging configuration for Gittxt."""
@@ -28,6 +29,46 @@ class Logger:
     def get_logger(name):
         """Returns a configured logger instance."""
         return logging.getLogger(name)
+
+
+if "-sp" in sys.argv:
+    print("""
+        🔥 **You've unlocked the Gittxt Easter Egg!** 🚀  
+        🔗 Connect with me on LinkedIn: **[Sandeep Paidipati](https://www.linkedin.com/in/sandeep-paidipati/)**  
+        📩 Add me & let's chat about anything!                                                                          
+                                                                                                    
+                                             888888                                                 
+                                          888888888888                                              
+                                        888888888888888                                             
+                                       88888888    888888                                           
+                                      8888888         8888                                          
+                                      888888           8888                                         
+                                      8888888            888                                        
+                                       888888888          88                                        
+                                        888888888888                                                
+                                          88888888888888                                            
+                                             88888888888888                                         
+                                                 88888888888                                        
+                                      88        66    88888888                                      
+                                      8888     6666     8888888                                     
+                                      88888   66666      888888                                     
+                                       888888666666       88888                                     
+                                        8888966666        888                                       
+                                         888699698888888888888                                      
+                                          9669668888888888888                                       
+                                         666666988888888888                                         
+                                        9666666                                                     
+                                        666666                                                      
+                                       6666666                                                      
+                                      6666666                                                       
+                                     6666669                                                        
+                                    6666669                                                         
+                                   6666666                                                          
+                                  666669                                                            
+                                  66                                                                
+                                                                                                      
+    """)
+    sys.exit(0)  # Exit before running anything else
 
 # Initialize logger on import
 Logger.setup_logger()
