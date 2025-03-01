@@ -2,6 +2,8 @@ from fastapi import APIRouter, Form, WebSocket, WebSocketDisconnect
 import subprocess
 from pathlib import Path
 import asyncio
+from fastapi.responses import FileResponse
+import os
 
 router = APIRouter()
 
@@ -35,3 +37,11 @@ async def scan_progress(websocket: WebSocket):
         await websocket.send_text("✅ Scan completed successfully!")
     except WebSocketDisconnect:
         print("WebSocket disconnected.")
+
+@router.get("/download/{filename}")
+async def download_file(filename: str):
+    """Serve scanned output files for download."""
+    file_path = UPLOAD_DIR / "results" / filename
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="application/octet-stream", filename=filename)
+    return {"error": "File not found"}
