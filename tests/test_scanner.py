@@ -74,7 +74,7 @@ def test_caching_prevents_rescanning(setup_test_files, clean_cache):
     scanner = Scanner(root_path=str(setup_test_files))
 
     # Explicitly clear the cache before the first scan
-    scanner.clear_cache()  # 🔥 Fix: Ensure no old cache exists
+    scanner.clear_cache()
 
     # First scan should add files to cache
     valid_files, _ = scanner.scan_directory()
@@ -85,8 +85,7 @@ def test_caching_prevents_rescanning(setup_test_files, clean_cache):
     cached_count = cursor.fetchone()[0]
     conn.close()
 
-    print(f"\nDEBUG: Cached files after first scan: {cached_count}")  # 🛠 Debugging
-
+    print(f"\nDEBUG: Cached files after first scan: {cached_count}")
     assert cached_count == len(valid_files)
 
     # Second scan should not rescan unchanged files
@@ -98,8 +97,7 @@ def test_caching_prevents_rescanning(setup_test_files, clean_cache):
     cached_count_after_second_scan = cursor.fetchone()[0]
     conn.close()
 
-    print(f"\nDEBUG: Cached files after second scan: {cached_count_after_second_scan}")  # 🛠 Debugging
-
+    print(f"\nDEBUG: Cached files after second scan: {cached_count_after_second_scan}")
     assert cached_count_after_second_scan == cached_count  # No additional files scanned
 
 @patch("mimetypes.guess_type", return_value=("text/plain", None))
@@ -110,3 +108,38 @@ def test_mime_type_check(mock_mime, setup_test_files, clean_cache):
 
     assert "file1.py" in [os.path.basename(f) for f in valid_files]
     assert "file3.mp4" not in [os.path.basename(f) for f in valid_files]
+
+# ------------------------------------------
+# OPTIONAL: Additional tests for docs_only & auto_filter
+# ------------------------------------------
+
+def test_docs_only(setup_test_files, clean_cache):
+    """
+    If docs_only=True, we only keep doc files (like .md, README, etc.).
+    We have file2.md which should remain, file1.py should be excluded.
+    """
+    scanner = Scanner(root_path=str(setup_test_files), docs_only=True)
+    valid_files, _ = scanner.scan_directory()
+
+    # We expect only the .md file
+    assert "file2.md" in [os.path.basename(f) for f in valid_files]
+    # Py or other non-doc files are excluded
+    assert "file1.py" not in [os.path.basename(f) for f in valid_files]
+    assert "file3.mp4" not in [os.path.basename(f) for f in valid_files]
+    assert "file4.tar.gz" not in [os.path.basename(f) for f in valid_files]
+
+def test_auto_filter(setup_test_files, clean_cache):
+    """
+    If auto_filter=True, some unwanted/binary file types (e.g. .log, .csv, .png) are skipped.
+    We have .mp4 and .tar.gz which might also be caught by is_text_file, but let's confirm.
+    """
+    scanner = Scanner(root_path=str(setup_test_files), auto_filter=True)
+    valid_files, _ = scanner.scan_directory()
+
+    # normal text files remain
+    assert "file1.py" in [os.path.basename(f) for f in valid_files]
+    assert "file2.md" in [os.path.basename(f) for f in valid_files]
+
+    # mp4, tar.gz are not text and also likely auto-filter
+    assert "file3.mp4" not in [os.path.basename(f) for f in valid_files]
+    assert "file4.tar.gz" not in [os.path.basename(f) for f in valid_files]

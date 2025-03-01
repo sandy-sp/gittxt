@@ -36,9 +36,14 @@ def mock_file_system(tmp_path):
 def test_generate_text_output(clean_output_dir, mock_file_system):
     """Test if text output file is generated correctly."""
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt")
-    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
 
-    assert os.path.exists(output_file)
+    # The new code returns a list, so we pick the first
+    assert isinstance(output_paths, list), "Expected a list of output paths"
+    assert len(output_paths) == 1, "Should only have 1 output path with a single format"
+    output_file = output_paths[0]
+
+    assert os.path.exists(output_file), "Expected text output file to be created"
     with open(output_file, "r", encoding="utf-8") as f:
         content = f.read()
     
@@ -48,9 +53,12 @@ def test_generate_text_output(clean_output_dir, mock_file_system):
 def test_generate_json_output(clean_output_dir, mock_file_system):
     """Test if JSON output file is generated correctly."""
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="json")
-    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
 
-    assert os.path.exists(output_file)
+    assert len(output_paths) == 1
+    output_file = output_paths[0]
+
+    assert os.path.exists(output_file), "Expected JSON output file to be created"
     with open(output_file, "r", encoding="utf-8") as f:
         json_data = json.load(f)
     
@@ -63,7 +71,8 @@ def test_handle_missing_files(clean_output_dir):
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt")
     missing_file = os.path.join(TEST_OUTPUT_DIR, "text", "missing_file.txt")
 
-    output_file = builder.generate_output([missing_file], TEST_OUTPUT_DIR)
+    output_paths = builder.generate_output([missing_file], TEST_OUTPUT_DIR)
+    output_file = output_paths[0]
 
     assert os.path.exists(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
@@ -74,7 +83,8 @@ def test_handle_missing_files(clean_output_dir):
 def test_max_lines_limited_output(clean_output_dir, mock_file_system):
     """Ensure that the --max-lines argument is enforced."""
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt", max_lines=1)
-    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+    output_file = output_paths[0]
 
     assert os.path.exists(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
@@ -91,17 +101,36 @@ def test_output_directory_structure():
 def test_generate_markdown_output(clean_output_dir, mock_file_system):
     """Test if Markdown output is correctly generated and contains expected content."""
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="md")
-    output_file = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+    output_file = output_paths[0]
 
     assert os.path.exists(output_file), f"❌ Markdown output file {output_file} was not created!"
 
     with open(output_file, "r", encoding="utf-8") as f:
         content = f.read()
 
-    assert "# 📂 Repository Overview:" in content, "❌ Repository name header missing in Markdown output!"
-    assert "## 📜 Folder Structure" in content, "❌ Folder structure section missing in Markdown output!"
+    assert "# 📂 Repository Overview:" in content, "❌ Repository name header missing!"
+    assert "## 📜 Folder Structure" in content, "❌ Folder structure missing!"
     assert "### `file1.py`" in content, "❌ Expected file section missing!"
     assert "### `file2.md`" in content, "❌ Expected file section missing!"
     assert "Mock content for testing." in content, "❌ Extracted file content missing!"
 
     print(f"✅ Markdown output test passed! File: {output_file}")
+
+def test_multi_format_output(clean_output_dir, mock_file_system):
+    """
+    Test if multiple output formats are generated in one call (e.g. "txt,json").
+    """
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt,json")
+    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
+
+    # We expect 2 output paths
+    assert len(output_paths) == 2, "Should generate 2 files for 'txt,json' multi-format"
+
+    text_path = os.path.join(TEST_OUTPUT_DIR, "text", f"{TEST_REPO_NAME}.txt")
+    json_path = os.path.join(TEST_OUTPUT_DIR, "json", f"{TEST_REPO_NAME}.json")
+    assert text_path in output_paths, "Expected the text file in the list"
+    assert json_path in output_paths, "Expected the json file in the list"
+
+    assert os.path.exists(text_path), "Text file wasn't created!"
+    assert os.path.exists(json_path), "JSON file wasn't created!"

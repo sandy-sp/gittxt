@@ -3,7 +3,7 @@ from gittxt.logger import Logger
 from gittxt.config import ConfigManager
 
 # Package Metadata
-__version__ = "1.2.0"
+__version__ = "2.0.0"
 __author__ = "Sandeep Paidipati"
 __description__ = "Get Text of Your Repo for AI, LLMs & Docs!"
 
@@ -15,13 +15,15 @@ config = ConfigManager.load_config()
 # Define core directories
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.path.join(BASE_DIR, "../gittxt-logs")
-OUTPUT_DIR = os.path.join(BASE_DIR, "../gittxt-outputs")
+# Use the output_dir from config (which is now OS-aware), with fallback if needed.
+OUTPUT_DIR = config.get("output_dir", os.path.abspath(os.path.join(BASE_DIR, "../gittxt-outputs")))
 CACHE_DIR = os.path.join(OUTPUT_DIR, "cache")
 TEXT_DIR = os.path.join(OUTPUT_DIR, "text")
 JSON_DIR = os.path.join(OUTPUT_DIR, "json")
+MD_DIR = os.path.join(OUTPUT_DIR, "md")  # New directory for markdown output
 
 # Ensure necessary directories exist
-for directory in [LOG_DIR, OUTPUT_DIR, CACHE_DIR, TEXT_DIR, JSON_DIR]:
+for directory in [LOG_DIR, OUTPUT_DIR, CACHE_DIR, TEXT_DIR, JSON_DIR, MD_DIR]:
     os.makedirs(directory, exist_ok=True)
 
 logger.info("✅ Gittxt package initialized successfully.")

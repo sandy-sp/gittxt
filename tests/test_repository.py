@@ -15,39 +15,32 @@ TEST_TEMP_DIR = os.path.abspath(os.path.join("tests", "gittxt-outputs", "temp"))
 def clean_temp_dir():
     """Ensure the test temp directory is clean before each test."""
     if os.path.exists(TEST_TEMP_DIR):
-        shutil.rmtree(TEST_TEMP_DIR)  # Ensure a fresh directory
+        shutil.rmtree(TEST_TEMP_DIR)
     os.makedirs(TEST_TEMP_DIR, exist_ok=True)
 
-
-# ------------------------------------------------------
-# Existing test: Ensures error handling on clone failure
-# ------------------------------------------------------
 @patch("git.Repo.clone_from", side_effect=Exception("Mocked cloning error"))
 def test_clone_failure(mock_clone, clean_temp_dir):
-    """Ensure error handling works when cloning fails."""
+    """
+    Ensure error handling works when cloning fails.
+    We expect None to be returned if the clone attempt raises an exception.
+    """
     repo_handler = RepositoryHandler("https://invalid.url/repo.git", reuse_existing=False)
     temp_path = repo_handler.get_local_path()
 
     assert temp_path is None, "Expected None when cloning fails"
     mock_clone.assert_called_once()
 
-
-# ------------------------------------------------------
-# New Tests: Local Repositories
-# ------------------------------------------------------
 def test_local_repo_valid(clean_temp_dir):
     """
     Ensure we can handle an existing local repository path correctly.
     This test checks that get_local_path returns the same path if it's valid.
     """
-    # Make sure the directory actually exists for this test
     os.makedirs(TEST_LOCAL_REPO, exist_ok=True)
 
     repo_handler = RepositoryHandler(TEST_LOCAL_REPO, reuse_existing=False)
     local_path = repo_handler.get_local_path()
 
-    assert local_path == TEST_LOCAL_REPO, "Expected the local path to be returned for a valid local repo"
-
+    assert local_path == TEST_LOCAL_REPO, "Expected the local path for a valid local repo"
 
 def test_local_repo_invalid(clean_temp_dir):
     """
@@ -58,29 +51,20 @@ def test_local_repo_invalid(clean_temp_dir):
 
     assert local_path is None, "Expected None for an invalid local path"
 
-
-# ------------------------------------------------------
-# New Tests: Remote Repositories
-# ------------------------------------------------------
 @patch("git.Repo.clone_from")
 def test_remote_repo_https(mock_clone, clean_temp_dir):
     """
     Test handling of a valid HTTPS remote repository.
     """
-    # Mock the clone_from call to simulate a successful clone
     mock_clone.return_value = MagicMock()
 
     repo_handler = RepositoryHandler(TEST_REMOTE_REPO_HTTPS, reuse_existing=False)
     local_path = repo_handler.get_local_path()
 
-    # Expect some temp directory in `gittxt-outputs/temp/<repo_name>`
     assert local_path is not None, "Expected a non-None path for successful HTTPS clone"
-    mock_clone.assert_called_once_with(
-        TEST_REMOTE_REPO_HTTPS,
-        os.path.join(TEST_TEMP_DIR, "sandy-sp"),  # 'sandy-sp' is the repo name, typically
-        depth=1
-    )
-
+    # The repo name is 'sandy-sp' if we parse that from the URL
+    expected_path = os.path.join(TEST_TEMP_DIR, "sandy-sp")
+    mock_clone.assert_called_once_with(TEST_REMOTE_REPO_HTTPS, expected_path, depth=1)
 
 @patch("git.Repo.clone_from")
 def test_remote_repo_ssh(mock_clone, clean_temp_dir):
@@ -95,10 +79,6 @@ def test_remote_repo_ssh(mock_clone, clean_temp_dir):
     assert local_path is not None, "Expected a non-None path for successful SSH clone"
     mock_clone.assert_called_once()
 
-
-# ------------------------------------------------------
-# New Test: Reuse existing clone
-# ------------------------------------------------------
 @patch("git.Repo.clone_from")
 def test_reuse_existing_clone(mock_clone, clean_temp_dir):
     """
@@ -111,19 +91,13 @@ def test_reuse_existing_clone(mock_clone, clean_temp_dir):
     assert first_path is not None
     assert mock_clone.call_count == 1, "Should have cloned exactly once"
 
-    # 2. Second pass: same repo, same handler or new
-    # The directory now exists, so we skip re-cloning
+    # 2. Second pass: same repo, new handler
     second_handler = RepositoryHandler(TEST_REMOTE_REPO_HTTPS, reuse_existing=True)
     second_path = second_handler.get_local_path()
 
     assert second_path == first_path, "Expected the same path if reuse_existing is True"
-    # clone_from should still be called only once
     assert mock_clone.call_count == 1, "Should not have cloned again"
 
-
-# ------------------------------------------------------
-# New Test: Branch Handling
-# ------------------------------------------------------
 @patch("git.Repo.clone_from")
 def test_clone_with_branch(mock_clone, clean_temp_dir):
     """
@@ -136,9 +110,10 @@ def test_clone_with_branch(mock_clone, clean_temp_dir):
     local_path = repo_handler.get_local_path()
 
     assert local_path is not None, "Expected successful clone"
+    expected_path = os.path.join(TEST_TEMP_DIR, "sandy-sp")
     mock_clone.assert_called_once_with(
         TEST_REMOTE_REPO_HTTPS,
-        os.path.join(TEST_TEMP_DIR, "sandy-sp"),
+        expected_path,
         branch=test_branch,
         depth=1
     )
