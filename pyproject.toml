@@ -34,7 +34,7 @@ include = [
     "MANIFEST.in",
     "src/gittxt/**/*.py",
     "src/gittxt-logs/**",
-    "src/gittxt-outputs/**"
+    "src/gittxt-outputs/**",
     "src/gittxt-ui/**"
 ]
 
