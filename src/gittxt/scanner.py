@@ -33,7 +33,7 @@ class Scanner:
         :param include_patterns: List of file extensions to include (default: all).
         :param exclude_patterns: List of file extensions or folders to exclude.
         :param size_limit: Maximum file size in bytes to process.
-        :param docs_only: If True, only documentation files (README, .md, .rst, etc.) are processed.
+        :param docs_only: If True, only documentation files (README, .md, .rst, .txt, etc.) are processed.
         :param auto_filter: If True, automatically skip common unwanted/binary file types.
         """
         self.root_path = os.path.abspath(root_path)
@@ -78,28 +78,27 @@ class Scanner:
     def _is_documentation_file(self, file_path):
         """
         Determine if the file is considered 'documentation'.
-        For simplicity, we'll treat these files/folders as docs:
-          - Filenames: README*, LICENSE, CONTRIBUTING, CHANGELOG, etc.
-          - Any .md, .rst, .txt extension
-          - Anything in a '/docs/' folder
+
+        A file is considered documentation if:
+          - Its extension is one of: .md, .rst, .txt, OR
+          - Its basename starts with common doc keywords (e.g. readme, license, contributing, changelog), OR
+          - It is located in a directory named exactly 'docs' (case-insensitive).
         """
         basename = os.path.basename(file_path).lower()
-        dirname = os.path.dirname(file_path).lower()
         _, ext = os.path.splitext(basename)
+        ext = ext.lower()
 
-        doc_filenames = {
-            "readme", "license", "contributing", "changelog"
-        }
         doc_extensions = {".md", ".rst", ".txt"}
-
-        # Check if name starts with any of doc_filenames (e.g. README.md or LICENSE.txt)
-        if any(basename.startswith(fn) for fn in doc_filenames):
-            return True
-        # Check extension
         if ext in doc_extensions:
             return True
-        # If 'docs' is in the folder path
-        if "docs" in dirname:
+
+        doc_filenames = {"readme", "license", "contributing", "changelog"}
+        if any(basename.startswith(keyword) for keyword in doc_filenames):
+            return True
+
+        norm_path = os.path.normpath(file_path)
+        path_parts = norm_path.split(os.sep)
+        if "docs" in path_parts:
             return True
 
         return False
@@ -107,41 +106,30 @@ class Scanner:
     def _auto_filter_file(self, file_path):
         """
         Skip common unwanted or binary file types automatically.
-        E.g., .log, .gz, .tar, .jpg, .csv (optionally), etc.
-        This is separate from 'is_text_file' or explicit includes/excludes,
-        giving us an extra layer of default filtering if auto_filter is enabled.
+        E.g., .log, .gz, .tar, .jpg, .csv, etc.
         """
-        # Define some typical patterns we want to skip automatically
-        # (beyond what's done by is_text_file).
-        # For instance, log files, archive files, big data file types...
         auto_exclude_ext = {
             ".log", ".gz", ".tar", ".jpg", ".jpeg", ".png", ".csv", ".pdf", ".doc", ".docx"
         }
         basename = os.path.basename(file_path).lower()
         _, ext = os.path.splitext(basename)
-
-        # If the extension is in auto_exclude_ext, skip it
-        if ext in auto_exclude_ext:
+        if ext.lower() in auto_exclude_ext:
             logger.debug(f"❌ Auto-filter skipping file: {file_path}")
             return True
-
         return False
 
     def is_text_file(self, file_path):
         """
         Determine if a file is text-based using MIME type detection.
-        We also maintain an explicit set of known binary extensions.
+        Also maintains an explicit set of known binary extensions.
         """
         binary_extensions = {
             ".mp4", ".avi", ".mov", ".tar.gz", ".zip", ".exe", ".bin", ".jpeg", ".png", ".gif", ".pdf"
         }
-
-        # Check file extension first
         if any(file_path.endswith(ext) for ext in binary_extensions):
             logger.debug(f"❌ Skipping binary file based on extension: {file_path}")
             return False
 
-        # Fallback to MIME type detection
         mime_type, _ = mimetypes.guess_type(file_path)
         if not mime_type:
             return False
@@ -179,8 +167,8 @@ class Scanner:
         """
         Scan directory using multi-threading, filtering, and caching.
         Returns:
-          valid_files: A list of text files that pass all filters
-          tree_summary: Output of 'tree' command or fallback
+          valid_files: A list of text files that pass all filters.
+          tree_summary: Output of 'tree' command or fallback.
         """
         valid_files = []
         tree_summary = self.generate_tree_summary()
@@ -201,10 +189,8 @@ class Scanner:
                     if is_text:
                         valid_files.append(file_path)
 
-        # Ensure cached file count matches valid text files
         cursor.execute("SELECT COUNT(*) FROM file_cache WHERE hash IS NOT NULL")
         cached_file_count = cursor.fetchone()[0]
-
         logger.debug(f"🔄 Cached file count (valid text files only): {cached_file_count}")
         conn.close()
 
@@ -214,40 +200,39 @@ class Scanner:
     def process_file(self, file_path):
         """
         Process a file and determine if it should be included or skipped.
-        Returns (file_path, True) if it is a valid text file that passes all checks,
-        otherwise returns None.
+        Returns (file_path, True) if valid, otherwise None.
         """
-        file_path = os.path.abspath(file_path)  # Ensure absolute paths for consistency
+        file_path = os.path.abspath(file_path)
 
-        # 1. Skip excluded patterns
+        # 1. Skip excluded patterns.
         if any(pattern in file_path for pattern in self.exclude_patterns):
             logger.debug(f"❌ Skipping excluded file: {file_path}")
             return None
 
-        # 2. If docs_only is True, skip files that are not recognized as documentation
+        # 2. If docs_only is True, skip non-documentation files.
         if self.docs_only and not self._is_documentation_file(file_path):
             logger.debug(f"❌ Skipping non-doc file (docs_only): {file_path}")
             return None
 
-        # 3. Skip files not in include list (if include_patterns is set)
+        # 3. Skip files not in include list (if specified).
         if self.include_patterns and not any(file_path.endswith(p) for p in self.include_patterns):
             logger.debug(f"❌ Skipping file not in include list: {file_path}")
             return None
 
-        # 4. Skip oversized files
+        # 4. Skip oversized files.
         if self.size_limit and os.path.getsize(file_path) > self.size_limit:
             logger.debug(f"⚠️ Skipping oversized file: {file_path}")
             return None
 
-        # 5. If auto_filter, do an extra quick check for known unneeded patterns
+        # 5. If auto_filter is enabled, skip common unwanted files.
         if self.auto_filter and self._auto_filter_file(file_path):
             return None
 
-        # 6. Skip non-text files
+        # 6. Skip non-text files.
         if not self.is_text_file(file_path):
             return None
 
-        # 7. Check cache
+        # 7. Check cache.
         conn = sqlite3.connect(self.CACHE_DB)
         cursor = conn.cursor()
         cursor.execute("SELECT hash FROM file_cache WHERE path = ?", (file_path,))
@@ -261,11 +246,11 @@ class Scanner:
 
         if not file_hash:
             conn.close()
-            return None  # Skip if hashing failed
+            return None
 
-        # 8. Update cache with new/changed file
+        # 8. Update cache.
         cursor.execute("REPLACE INTO file_cache (path, hash) VALUES (?, ?)", (file_path, file_hash))
         conn.commit()
         conn.close()
 
-        return (file_path, True)  # Valid text file
+        return (file_path, True)
