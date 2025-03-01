@@ -24,10 +24,32 @@
             <option value="md">Markdown</option>
         </select>
 
-        <button type="submit">Scan Repository</button>
+        <button type="submit" onclick="startWebSocket()">Scan Repository</button>
     </form>
 
+    <div id="progress">
+        <h3>Live Progress:</h3>
+        <div id="progressUpdates"></div>
+    </div>
+
     <div id="results"></div>
+
+    <script>
+        function startWebSocket() {
+            let socket = new WebSocket("ws://127.0.0.1:8000/ws/progress/");
+
+            socket.onmessage = function(event) {
+                let progressDiv = document.getElementById("progressUpdates");
+                let message = document.createElement("p");
+                message.textContent = event.data;
+                progressDiv.appendChild(message);
+            };
+
+            socket.onclose = function() {
+                console.log("WebSocket connection closed.");
+            };
+        }
+    </script>
 
 </body>
 </html>
