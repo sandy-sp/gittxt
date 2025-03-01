@@ -13,9 +13,10 @@
     <h1>Gittxt Web Interface</h1>
 
     <form id="scanForm" hx-post="/scan/" hx-target="#results" hx-swap="innerHTML">
-        <label for="repo_path">Select Directory:</label>
-        <input type="text" id="repo_path" name="repo_path" placeholder="Enter repo path...">
-        
+        <label for="repo_path">Enter Repository URL or Select Directory:</label>
+        <input type="text" id="repo_path" name="repo_path" placeholder="Enter URL or path...">
+        <input type="file" webkitdirectory name="local_repo">
+
         <label for="output_format">Output Format:</label>
         <select name="output_format">
             <option value="txt">TXT</option>
