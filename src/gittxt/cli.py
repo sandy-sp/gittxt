@@ -1,6 +1,7 @@
 import click
 import os
 import sys
+import logging
 
 from gittxt.config import ConfigManager
 from gittxt.logger import Logger
@@ -10,7 +11,7 @@ from gittxt.output_builder import OutputBuilder
 
 logger = Logger.get_logger(__name__)
 
-# Load the config just once here. We'll override certain fields in subcommands if needed.
+# Load configuration once; CLI options may override these.
 config = ConfigManager.load_config()
 
 @click.group()
@@ -62,7 +63,7 @@ def install():
     click.echo("Installation / setup complete. You can now run 'gittxt scan' to test.\n")
 
 @cli.command()
-@click.argument("repos", nargs=-1)  # Allow multiple repos
+@click.argument("repos", nargs=-1)  # Allow multiple repositories
 @click.option("--include", multiple=True, help="Include only files matching these patterns.")
 @click.option("--exclude", multiple=True, help="Exclude files matching these patterns.")
 @click.option("--size-limit", type=int, help="Exclude files larger than this size (bytes).")
@@ -87,31 +88,32 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
         click.echo("❌ No repositories specified. Provide at least one path or URL.")
         sys.exit(1)
 
-    # Override logging level if --debug
+    # If --debug flag is set, update the logger level and echo the expected debug message.
     if debug:
-        logger.setLevel("DEBUG")
-        logger.debug("🔍 Debug mode enabled via CLI --debug")
+        logging.getLogger().setLevel(logging.DEBUG)
+        msg = "🔍 Debug mode enabled."
+        logger.debug(msg)
+        click.echo(msg)
 
-    # Determine final output directory
+    # Determine final output directory (CLI option overrides config)
     final_output_dir = output_dir or config.get("output_dir")
 
-    # If the user didn't specify a new format, use config or default "txt"
+    # Use output format from CLI if provided; otherwise default from config.
     chosen_format = output_format if output_format else config.get("output_format", "txt")
 
-    # If max_lines not set, use config's max_lines
+    # Use CLI provided max_lines or config value.
     final_max_lines = max_lines if max_lines is not None else config.get("max_lines")
 
-    # Build lists from CLI or config
+    # Build include and exclude patterns.
     include_patterns = list(include) if include else config.get("include_patterns", [])
     exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
 
-    # If size_limit not set, use config
+    # Determine size limit.
     final_size_limit = size_limit if size_limit else config.get("size_limit")
 
-    # Reuse existing repos
+    # Reuse existing repositories flag from config.
     reuse_existing = config.get("reuse_existing_repos", True)
 
-    # We'll store outputs for each repo
     all_output_files = []
 
     for repo_source in repos:
@@ -124,7 +126,7 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
             logger.error("❌ Failed to access repository. Skipping this repo...")
             continue
 
-        # Initialize the Scanner
+        # Initialize the Scanner with new flags.
         scanner = Scanner(
             root_path=repo_path,
             include_patterns=include_patterns,
@@ -141,7 +143,7 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
 
         logger.info(f"✅ Processing {len(valid_files)} text files from {repo_source}...")
 
-        # Collect summary statistics
+        # Collect summary statistics.
         total_size = sum(os.path.getsize(f) for f in valid_files)
         file_types = {os.path.splitext(f)[1] for f in valid_files}
         summary_data = {
@@ -150,7 +152,6 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
             "file_types": list(file_types)
         }
 
-        # Repo name for output file naming
         repo_name = os.path.basename(os.path.normpath(repo_path))
 
         # Initialize OutputBuilder (supports multiple formats)
@@ -161,29 +162,22 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
             output_format=chosen_format
         )
 
-        # Generate output files
         generated_files = builder.generate_output(valid_files, repo_path, summary_data)
-        # generated_files is a list (in case of multi-format)
         all_output_files.extend(generated_files)
 
-        # Show summary if requested
         if summary:
             logger.info("📊 Summary Report:")
             logger.info(f" - Scanned {summary_data['total_files']} text files")
             logger.info(f" - Total Size: {summary_data['total_size']} bytes")
             logger.info(f" - File Types: {', '.join(summary_data['file_types'])}")
-            # If token counting is done, show it
             if "estimated_tokens" in summary_data:
                 logger.info(f" - Estimated Tokens: {summary_data['estimated_tokens']}")
-            # Show final file paths
             for out_f in generated_files:
                 logger.info(f" - Output Saved: {out_f}")
 
-    # If no outputs at all, inform the user
     if not all_output_files:
         click.echo("❌ No outputs were generated. Verify your repository or filtering options.")
     else:
-        # You can add a final message summarizing all repos scanned
         logger.info(f"✅ Completed scanning of {len(repos)} repositories. Output files: {all_output_files}")
 
 def main():
