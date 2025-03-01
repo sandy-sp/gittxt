@@ -3,7 +3,7 @@ from gittxt.logger import Logger
 from gittxt.config import ConfigManager
 
 # Package Metadata
-__version__ = "2.0.0"
+__version__ = "1.3.0"
 __author__ = "Sandeep Paidipati"
 __description__ = "Get Text of Your Repo for AI, LLMs & Docs!"
 

@@ -1,149 +1,171 @@
 # 🚀 Gittxt: Get Text of Your Repo for AI, LLMs & Docs!
 
-**Gittxt** is a **lightweight CLI tool** that extracts text from **Git repositories** and formats it into **AI-friendly outputs** (`.txt`, `.json`, `.md`).  
-Whether you’re using **ChatGPT, Grok, or Ollama**, or any LLM, Gittxt helps process repositories for insights, training, and documentation.
-
-### ✨ Why Use Gittxt?
-✅ **Extract Readable Text from Git Repos**  
-✅ **Convert Code & Docs into AI-Friendly Formats**  
-✅ **Generate JSON for LLM Training** (Ideal for AI Preprocessing)  
-✅ **Create Markdown Files for Documentation**  
-✅ **Summarize & Analyze GitHub Repositories**  
+**Gittxt** is a **lightweight CLI tool** that extracts text from **Git repositories** and formats it into AI-friendly outputs (`.txt`, `.json`, `.md`). Whether you’re using ChatGPT, Grok, Ollama or any LLM, Gittxt helps you process repositories for insights, training, and documentation.
 
 ---
 
-## 📌 Installation (From PyPI)
+## ✨ Why Use Gittxt?
+- **Extract Readable Text:** Easily pull text from code, docs, and other repository files.
+- **AI-Friendly Outputs:** Generate outputs in TXT, JSON, and Markdown for different use cases.
+- **Efficient Processing:** Faster scanning with incremental caching.
+- **Flexible Filtering:** Use advanced flags like `--docs-only` and `--auto-filter` to control what’s extracted.
+- **Multi-Repository Support:** Scan one or more repositories in a single command.
+
+---
+
+## 🆕 Release v1.3.0
+
+### New Features & Enhancements
+- **Interactive Installation:**  
+  Use the new `gittxt install` subcommand to set up your configuration (output directory, logging preferences, etc.) interactively.
+
+- **Multi-Repository Scanning:**  
+  Scan multiple repositories at once, whether they are local or remote.
+
+- **Advanced Filtering Options:**  
+  - `--docs-only`: Extract only documentation files (e.g., README, docs/ folder, etc.).
+  - `--auto-filter`: Automatically skip common unwanted or binary files.
+
+- **Multi-Format Output:**  
+  Specify multiple output formats simultaneously (e.g., `--output-format txt,json,md`).
+
+- **Enhanced Summary Reports:**  
+  Outputs include summary statistics and an estimated token count for further AI processing.
+
+- **Improved Logging & Caching:**  
+  Faster, more accurate scanning with incremental caching and a rotating log file system.
+
+---
+
+## 📥 Installation
+
+### Via PIP
 ```bash
-pip install gittxt==1.0.0
+pip install gittxt==1.3.0
 ```
-Verify installation:
+
+### First-Time Setup (Interactive)
+After installing, run:
 ```bash
-gittxt --help
+gittxt install
 ```
-Expected Output:
-```
-Usage: gittxt [OPTIONS] SOURCE
-Options:
-  --include TEXT
-  --exclude TEXT
-  --size-limit INTEGER
-  --branch TEXT
-  --output-dir TEXT
-  --output-format [txt|json|md]
-  --max-lines INTEGER
-  --summary
-  --debug
-  --help  Show this message and exit.
-```
+This command will prompt you to configure:
+- Your default output directory (automatically set based on your OS, e.g., `~/Gittxt/` on Linux/Mac)
+- Logging level and file logging preferences
 
 ---
 
 ## 📌 How to Use Gittxt
 
-### **1️⃣ Extract Text from a Local Repository**
+### 1. Scanning Repositories
+Use the `scan` subcommand to extract text and generate outputs.
+
+#### Scan a Local Repository
 ```bash
-gittxt .
+gittxt scan .
 ```
-✅ Extracts all readable text from your repo into **gittxt-outputs/text/**.
+Extracts all readable text into the default output directories.
+
+#### Scan a Remote GitHub Repository
+```bash
+gittxt scan https://github.com/sandy-sp/sandy-sp
+```
+Automatically clones the repository, scans it, and extracts text.
+
+#### Scan Multiple Repositories with Advanced Options
+```bash
+gittxt scan /path/to/repo1 https://github.com/user/repo2 --output-format txt,json --docs-only --auto-filter --summary
+```
 
 ---
 
-### **2️⃣ Extract from a Remote GitHub Repo**
-```bash
-gittxt https://github.com/sandy-sp/sandy-sp
-```
-✅ Automatically clones the repo, scans it, and **extracts text**.
+## 🔧 CLI Options
+
+| Option                   | Description                                                               |
+|--------------------------|---------------------------------------------------------------------------|
+| `--include`              | Include only files matching these patterns.                              |
+| `--exclude`              | Exclude files matching these patterns.                                   |
+| `--size-limit`           | Exclude files larger than the specified size (in bytes).                 |
+| `--branch`               | Specify a Git branch (for remote repositories).                          |
+| `--output-dir`           | Override the default output directory.                                   |
+| `--output-format`        | Comma-separated list of output formats (e.g., `txt,json,md`).               |
+| `--max-lines`            | Limit the number of lines per file.                                      |
+| `--summary`              | Display a summary report after scanning.                                 |
+| `--debug`                | Enable debug mode for detailed logging.                                  |
+| `--docs-only`            | Only extract documentation files (e.g., README, docs folder).              |
+| `--auto-filter`          | Automatically skip common unwanted or binary files.                      |
 
 ---
 
-### **3️⃣ Use AI-Friendly Output Formats**
-#### **🧠 JSON (Best for AI & LLM Training)**
-```bash
-gittxt . --output-format json --output repo_dump.json
-```
-**Why JSON?**
-- **Perfect format for AI & LLMs** (GPT-4, Grok, LLaMA).
-- **Prepares structured data for AI training**.
-- **Can be used to fine-tune models with repository insights**.
+## 📄 Output Formats
 
-#### **📜 TXT (For AI Chat & Analysis)**
-```bash
-gittxt . --output-format txt --output repo_dump.txt
-```
-**Why TXT?**
-- **Extracts pure text**, making it easy for AI-powered chat analysis.
-- **Good for summarization and AI-assisted code review**.
+- **TXT:** Simple text extraction for AI chat and quick analysis.
+- **JSON:** Structured output ideal for LLM training and data preprocessing.
+- **Markdown (MD):** Neatly formatted documentation for GitHub or project READMEs.
 
-#### **📝 Markdown (Best for Documentation)**
-```bash
-gittxt . --output-format md --output repo_dump.md
-```
-**Why Markdown?**
-- **Great for GitHub docs & project READMEs**.
-- **LLMs like ChatGPT use Markdown for structured responses**.
-- **Retains headings, code snippets, and structure**.
+When specifying multiple formats (e.g., `--output-format txt,json`), Gittxt generates separate files in their respective output directories.
 
 ---
 
-### **4️⃣ Get a Summary Report**
-```bash
-gittxt . --summary
+## 🗂 Directory Structure
+
+By default, outputs are stored in your configured output directory, which is organized as follows:
 ```
-Example Output:
+<output_dir>/
+  ├── text/    # Plain text outputs (.txt)
+  ├── json/    # JSON outputs (.json)
+  ├── md/      # Markdown outputs (.md)
+  └── cache/   # Caching for incremental scans
 ```
-📊 Summary Report:
- - Scanned 105 text files
- - Total Size: 3.2 MB
- - File Types: .py, .md, .txt
- - Saved in: gittxt-outputs/text/repo_dump.txt
-```
-✅ **Helps quickly analyze repositories for AI training**.
 
 ---
 
-## 🆕 **What's New in v1.2.0?**
-### ✅ **Bug Fixes & Enhancements**
-- **Better file filtering (`--include`, `--exclude`)**.
-- **Faster processing with improved caching**.
-- **More accurate MIME-type detection**.
+## ⚙️ Configuration
 
-### 🚀 **New Features**
-- **✅ Markdown Output (`--output-format md`)** → Generates AI-friendly structured docs.
-- **📊 Summary Reports (`--summary`)** → Instantly view repo insights.
-- **🔍 Debug Mode (`--debug`)** → See detailed logs of the extraction process.
+Gittxt uses a configuration file (`gittxt-config.json`) to store user preferences. You can update this configuration via the interactive install command:
+```bash
+gittxt install
+```
+Or edit the file manually. Key settings include:
+- **Output Directory:** Auto-determined based on your OS (e.g., `~/Gittxt/`).
+- **Logging Options:** Logging level and file logging preferences.
+- **Filtering Options:** Include/exclude patterns, file size limits, etc.
 
 ---
 
 ## 📌 Contribute & Develop
-### **1️⃣ Run Tests**
-```bash
-pytest tests/
-```
-### **2️⃣ Format Code**
-```bash
-black src/
-```
-### **3️⃣ Submit a PR**
-1. **Fork the repo**
-2. **Create a new branch (`feature/my-change`)**
-3. **Push changes**
-4. **Submit a PR!** 🚀
+
+1. **Run Tests:**
+   ```bash
+   pytest tests/
+   ```
+2. **Format Code:**
+   ```bash
+   black src/
+   ```
+3. **Submit a PR:**
+   - Fork the repo.
+   - Create a new branch (e.g., `feature/my-change`).
+   - Push your changes.
+   - Submit a PR.
+
+For more details, see the [Contributing Guide](CONTRIBUTING.md).
+
+---
+
+## 💡 Future Roadmap
+
+Our future plans include enhancements to the user interface and further AI-based features. We’re working on a lightweight web-based UI and additional improvements that streamline repository analysis and documentation extraction.
 
 ---
 
 ## 📜 License
-Gittxt is licensed under **MIT**.
+
+Gittxt is licensed under the **MIT License**.
 
 ---
 
-## **💡 Next Features Coming Soon!**
-- [ ] **Interactive CLI for easy selection**  
-- [ ] **Web UI for scanning repositories visually**  
-- [ ] **Smarter AI-based file summarization**  
-
----
-
-📌 **Made by [Sandeep Paidipati](https://github.com/sandy-sp)**
+## **Made by [Sandeep Paidipati](https://github.com/sandy-sp)**
 🚀 **Gittxt: Get Text of Your Repo for AI, LLMs & Docs!**
 
 ---
