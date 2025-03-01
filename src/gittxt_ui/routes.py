@@ -40,8 +40,9 @@ async def scan_progress(websocket: WebSocket):
 
 @router.get("/download/{filename}")
 async def download_file(filename: str):
-    """Serve scanned output files for download."""
-    file_path = UPLOAD_DIR / "results" / filename
+    """Serve files from the uploads directory."""
+    file_path = os.path.join(UPLOADS_DIR, filename)
+
     if os.path.exists(file_path):
-        return FileResponse(file_path, media_type="application/octet-stream", filename=filename)
+        return FileResponse(file_path, filename=filename)
     return {"error": "File not found"}

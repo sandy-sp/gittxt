@@ -54,19 +54,19 @@
         }
 
         function fetchResults() {
-            fetch('/scan/')
-                .then(response => response.json())
-                .then(data => {
-                    let fileList = document.getElementById("fileList");
-                    fileList.innerHTML = "";
+        fetch('/scan/')
+            .then(response => response.json())
+            .then(data => {
+                let fileList = document.getElementById("fileList");
+                fileList.innerHTML = "";
 
-                    data.files.forEach(file => {
-                        let listItem = document.createElement("li");
-                        listItem.innerHTML = `<a href="/download/${file}" download>${file}</a>`;
-                        fileList.appendChild(listItem);
-                    });
+                data.files.forEach(file => {
+                    let listItem = document.createElement("li");
+                    listItem.innerHTML = `<a href="/download/${file}" download>${file}</a>`;
+                    fileList.appendChild(listItem);
                 });
-        }
+            });
+    }
     </script>
 
 </body>
