@@ -5,6 +5,7 @@ include MANIFEST.in
 recursive-include src/gittxt *.py
 recursive-include src/gittxt-logs *
 recursive-include src/gittxt-outputs *
+recursive-include src/gittxt-ui *
 
 # Exclude test and development related files
 prune tests

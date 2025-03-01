@@ -12,10 +12,9 @@
 
     <h1>Gittxt Web Interface</h1>
 
-    <!-- File Picker for Local Scanning -->
     <form id="scanForm" hx-post="/scan/" hx-target="#results" hx-swap="innerHTML">
         <label for="repo_path">Select Directory:</label>
-        <input type="file" id="repo_path" name="repo_path" webkitdirectory>
+        <input type="text" id="repo_path" name="repo_path" placeholder="Enter repo path...">
         
         <label for="output_format">Output Format:</label>
         <select name="output_format">
@@ -27,7 +26,6 @@
         <button type="submit">Scan Repository</button>
     </form>
 
-    <!-- Results -->
     <div id="results"></div>
 
 </body>
