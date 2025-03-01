@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gittxt Web UI</title>
+    <script src="https://unpkg.com/htmx.org@1.9.4"></script>
+    <script src="https://unpkg.com/alpinejs@3.9.0" defer></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <h1>Gittxt Web Interface</h1>
+
+    <!-- File Picker for Local Scanning -->
+    <form id="scanForm" hx-post="/scan/" hx-target="#results" hx-swap="innerHTML">
+        <label for="repo_path">Select Directory:</label>
+        <input type="file" id="repo_path" name="repo_path" webkitdirectory>
+        
+        <label for="output_format">Output Format:</label>
+        <select name="output_format">
+            <option value="txt">TXT</option>
+            <option value="json">JSON</option>
+            <option value="md">Markdown</option>
+        </select>
+
+        <button type="submit">Scan Repository</button>
+    </form>
+
+    <!-- Results -->
+    <div id="results"></div>
+
+</body>
+</html>
