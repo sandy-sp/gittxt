@@ -8,7 +8,7 @@ import os
 router = APIRouter()
 
 # Define the base uploads directory
-UPLOADS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt_ui/uploads"))
+UPLOADS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt-outputs/ui"))
 
 # Supported output formats and corresponding subdirectories
 OUTPUT_FORMAT_DIRS = {
@@ -59,7 +59,7 @@ async def download_file(output_format: str, filename: str):
         raise HTTPException(status_code=400, detail="Invalid output format specified.")
 
     # Build the correct file path based on format
-    file_path = os.path.join(UPLOADS_DIR, OUTPUT_FORMAT_DIRS[output_format], filename)
+    file_path = os.path.join("src", "gittxt-outputs", "ui", OUTPUT_FORMAT_DIRS[output_format], filename)
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found.")

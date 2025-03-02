@@ -21,9 +21,10 @@ class OutputBuilder:
         """
         # Ensure absolute path for output directory
         self.output_dir = os.path.abspath(output_dir) if output_dir else self.BASE_OUTPUT_DIR
-        self.text_dir = os.path.join(self.output_dir, "text")
-        self.json_dir = os.path.join(self.output_dir, "json")
-        self.md_dir = os.path.join(self.output_dir, "md")  # Directory for markdown output
+        self.cli_output_dir = os.path.join(self.output_dir, "cli")
+        self.text_dir = os.path.join(self.cli_output_dir, "text")
+        self.json_dir = os.path.join(self.cli_output_dir, "json")
+        self.md_dir = os.path.join(self.cli_output_dir, "md")
         self.max_lines = max_lines
 
         # If multiple formats are specified, parse them; otherwise, store as single
