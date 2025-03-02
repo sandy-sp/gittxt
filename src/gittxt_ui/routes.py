@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Form, WebSocket, WebSocketDisconnect, HTTPException
 import subprocess
 from pathlib import Path
 import asyncio
@@ -7,9 +7,15 @@ import os
 
 router = APIRouter()
 
-UPLOAD_DIR = Path("src/gittxt_ui/uploads")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# Define the base uploads directory
+UPLOADS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
 
+# Supported output formats and corresponding subdirectories
+OUTPUT_FORMAT_DIRS = {
+    "txt": "text",
+    "json": "json",
+    "md": "md",
+}
 
 @router.post("/scan/")
 async def scan_repo(repo_path: str = Form(...), output_format: str = Form("txt")):
@@ -38,11 +44,24 @@ async def scan_progress(websocket: WebSocket):
     except WebSocketDisconnect:
         print("WebSocket disconnected.")
 
-@router.get("/download/{filename}")
-async def download_file(filename: str):
-    """Serve files from the uploads directory."""
-    file_path = os.path.join(UPLOADS_DIR, filename)
+@router.get("/download/{output_format}/{filename}")
+async def download_file(output_format: str, filename: str):
+    """
+    Serve files dynamically based on the selected output format.
+    
+    Example:
+    - /download/txt/output.txt
+    - /download/json/output.json
+    - /download/md/output.md
+    """
+    # Ensure the requested format is valid
+    if output_format not in OUTPUT_FORMAT_DIRS:
+        raise HTTPException(status_code=400, detail="Invalid output format specified.")
 
-    if os.path.exists(file_path):
-        return FileResponse(file_path, filename=filename)
-    return {"error": "File not found"}
+    # Build the correct file path based on format
+    file_path = os.path.join(UPLOADS_DIR, OUTPUT_FORMAT_DIRS[output_format], filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found.")
+
+    return FileResponse(file_path, filename=filename)
