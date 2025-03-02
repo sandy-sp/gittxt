@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from src.gittxt_ui.app import app
 
-client = TestClient(app)
+client = TestClient(app=app)
 
 def test_homepage():
     """Ensure the homepage loads successfully."""
