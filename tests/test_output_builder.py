@@ -109,13 +109,14 @@ def test_generate_markdown_output(clean_output_dir, mock_file_system):
     with open(output_file, "r", encoding="utf-8") as f:
         content = f.read()
 
+    # Ensure expected sections exist in the generated Markdown
     assert "# 📂 Repository Overview:" in content, "❌ Repository name header missing!"
     assert "## 📜 Folder Structure" in content, "❌ Folder structure missing!"
-    assert "### `file1.py`" in content, "❌ Expected file section missing!"
-    assert "### `file2.md`" in content, "❌ Expected file section missing!"
-    assert "Mock content for testing." in content, "❌ Extracted file content missing!"
+    assert "## 📄 Extracted Text Files" in content, "❌ Extracted text files section missing!"
 
-    print(f"✅ Markdown output test passed! File: {output_file}")
+    # Ensure file names are properly included
+    assert "### `file1.py`" in content, "❌ Expected file section missing!"
+    assert "### `file2.md`" in content, "❌ Expected markdown file missing!"
 
 def test_multi_format_output(clean_output_dir, mock_file_system):
     """

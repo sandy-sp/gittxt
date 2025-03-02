@@ -58,10 +58,15 @@ def test_remote_repo_https(mock_clone, clean_temp_dir):
     mock_clone.return_value = MagicMock()
     repo_handler = RepositoryHandler(TEST_REMOTE_REPO_HTTPS, reuse_existing=False)
     local_path = repo_handler.get_local_path()
+
     assert local_path is not None, "Expected a non-None path for successful HTTPS clone"
-    # The repo name should be 'sandy-sp'
+
+    # Allow `branch=None` in the mock assertion
     expected_path = os.path.join(TEST_TEMP_DIR, "sandy-sp")
-    mock_clone.assert_called_once_with(TEST_REMOTE_REPO_HTTPS, expected_path, depth=1)
+    mock_clone.assert_called_once()
+    args, kwargs = mock_clone.call_args
+    assert args == (TEST_REMOTE_REPO_HTTPS, expected_path), "Incorrect repo path"
+    assert kwargs.get("depth") == 1, "Depth argument missing"
 
 @patch("git.Repo.clone_from")
 def test_remote_repo_ssh(mock_clone, clean_temp_dir):

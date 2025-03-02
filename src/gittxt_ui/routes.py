@@ -8,7 +8,7 @@ import os
 router = APIRouter()
 
 # Define the base uploads directory
-UPLOADS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
+UPLOADS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt_ui/uploads"))
 
 # Supported output formats and corresponding subdirectories
 OUTPUT_FORMAT_DIRS = {

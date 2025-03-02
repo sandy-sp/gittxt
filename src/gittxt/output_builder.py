@@ -159,14 +159,16 @@ class OutputBuilder:
         logger.info(f"✅ Output saved to: {output_file}")
         return output_file
 
-    def _generate_markdown_output(self, files, tree_summary, summary_data, repo_path):
+    def _generate_markdown_output(self, files, tree_summary, summary_data, output_path):
         """Generate a `.md` file with structured repository content."""
-        output_file = os.path.join(self.md_dir, f"{self.repo_name}.md")
+        output_file = os.path.join(output_path, f"{self.repo_name}.md")
         logger.info(f"📝 Writing output to {output_file} (Markdown format)")
+
         with open(output_file, "w", encoding="utf-8") as out:
             out.write(f"# 📂 Repository Overview: {self.repo_name}\n\n")
             out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n\n")
             out.write("## 📊 Summary Report\n")
+
             if summary_data:
                 out.write(f"- **Total Files Processed:** {summary_data['total_files']}\n")
                 out.write(f"- **Total Size:** {summary_data['total_size']} bytes\n")
@@ -174,14 +176,16 @@ class OutputBuilder:
                 if "estimated_tokens" in summary_data:
                     out.write(f"- **Estimated Tokens:** {summary_data['estimated_tokens']}\n")
                 out.write("\n")
+
             out.write("## 📄 Extracted Text Files\n")
             for file_path in files:
+                filename = os.path.basename(file_path)
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
-                relative_path = os.path.relpath(file_path, repo_path)
-                out.write(f"\n### `{relative_path}` (size: {file_size} bytes)\n")
+                out.write(f"\n### `{filename}` (size: {file_size} bytes)\n")
                 out.write("```plaintext\n")
                 content_lines = self.read_file_content(file_path)
                 out.writelines(content_lines)
                 out.write("\n```\n")
+
         logger.info(f"✅ Markdown output saved to: {output_file}")
         return output_file
