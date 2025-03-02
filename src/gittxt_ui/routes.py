@@ -20,11 +20,12 @@ OUTPUT_FORMAT_DIRS = {
 @router.post("/scan/")
 async def scan_repo(repo_path: str = Form(...), output_format: str = Form("txt")):
     """Trigger Gittxt scanning from the web interface."""
-    output_dir = Path(UPLOADS_DIR) / "results"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Ensure consistent output path without redundant nesting
+    output_dir = os.path.join(UPLOADS_DIR, "results", OUTPUT_FORMAT_DIRS.get(output_format, "text"))
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Run the CLI scan command asynchronously using Poetry
-    command = ["poetry", "run", "gittxt", "scan", repo_path, "--output-dir", str(output_dir), "--output-format", output_format]
+    command = ["gittxt", "scan", repo_path, "--output-dir", output_dir, "--output-format", output_format]
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     return {"message": "Scan started", "status": "running"}

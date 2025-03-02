@@ -90,7 +90,7 @@ class RepositoryHandler:
             clone_args["branch"] = self.branch
 
         try:
-            git.Repo.clone_from(self.source, temp_dir, **clone_args)
+            git.Repo.clone_from(self.source, temp_dir, depth=1, branch=self.branch if self.branch else None)
             self.local_path = temp_dir
             RepositoryHandler._clone_cache[cache_key] = temp_dir
             logger.info(f"✅ Clone successful: {temp_dir}")

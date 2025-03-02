@@ -87,25 +87,25 @@ class OutputBuilder:
         """
         tree_summary = self.generate_tree_summary(repo_path)
 
-        # Compute naive token count across all files if summary_data is provided
+        # Compute token count
         if summary_data is not None:
-            total_tokens = 0
-            for file_path in files:
-                lines = self.read_file_content(file_path)
-                total_tokens += self._compute_token_count(lines)
+            total_tokens = sum(self._compute_token_count(self.read_file_content(f)) for f in files)
             summary_data["estimated_tokens"] = total_tokens
 
         output_paths = []
-        # For each requested format, call the specialized generator
+        base_output_path = os.path.join(self.output_dir, self.repo_name)  # Ensure it’s not nested multiple times
+        os.makedirs(base_output_path, exist_ok=True)
+
         for fmt in self.output_formats:
             if fmt == "json":
-                out_file = self._generate_json_output(files, tree_summary, summary_data, repo_path)
+                out_file = self._generate_json_output(files, tree_summary, summary_data, base_output_path)
             elif fmt == "md":
-                out_file = self._generate_markdown_output(files, tree_summary, summary_data, repo_path)
+                out_file = self._generate_markdown_output(files, tree_summary, summary_data, base_output_path)
             else:
-                # Default to txt if unknown or "txt" is specified
-                out_file = self._generate_text_output(files, tree_summary, summary_data, repo_path)
+                out_file = self._generate_text_output(files, tree_summary, summary_data, base_output_path)
+
             output_paths.append(out_file)
+
         return output_paths
 
     def _generate_text_output(self, files, tree_summary, summary_data, repo_path):
