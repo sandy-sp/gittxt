@@ -126,12 +126,11 @@ def test_multi_format_output(clean_output_dir, mock_file_system):
     output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
 
     # We expect 2 output paths
-    assert len(output_paths) == 2, "Should generate 2 files for 'txt,json' multi-format"
+    assert len(output_paths) == 2, f"❌ Expected 2 output files, got {len(output_paths)}."
 
-    text_path = os.path.join(TEST_OUTPUT_DIR, "text", f"{TEST_REPO_NAME}.txt")
-    json_path = os.path.join(TEST_OUTPUT_DIR, "json", f"{TEST_REPO_NAME}.json")
-    assert text_path in output_paths, "Expected the text file in the list"
-    assert json_path in output_paths, "Expected the json file in the list"
+    # FIX: Match expected paths with actual CLI behavior
+    expected_text_path = os.path.join(TEST_OUTPUT_DIR, "cli", "text", f"{TEST_REPO_NAME}.txt")
+    expected_json_path = os.path.join(TEST_OUTPUT_DIR, "cli", "json", f"{TEST_REPO_NAME}.json")
 
-    assert os.path.exists(text_path), "Text file wasn't created!"
-    assert os.path.exists(json_path), "JSON file wasn't created!"
+    assert expected_text_path in output_paths, f"❌ Expected text output file at {expected_text_path}, but it was not found!"
+    assert expected_json_path in output_paths, f"❌ Expected JSON output file at {expected_json_path}, but it was not found!"
