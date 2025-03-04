@@ -1,28 +1,43 @@
 import pytest
 from fastapi.testclient import TestClient
 from pathlib import Path
-from src.gittxt_ui.app import app
-from src.gittxt_ui.routes import UPLOADS_DIR, OUTPUT_FORMAT_DIRS
+import time
+from gittxt_ui.app import app
+from gittxt_ui.routes import UPLOADS_DIR, OUTPUT_FORMAT_DIRS
 
 client = TestClient(app)
 
 def test_ui_scan_and_file_generation():
     """Ensure UI initiates a scan and generates expected output."""
-    response = client.post("/scan/", data={"repo_path": ".", "output_format": "txt"})
+    response = client.post("/scan/", json={"repo_path": "test_repo", "output_format": "txt"})  # ✅ Send JSON instead of form data
     assert response.status_code == 200
     assert response.json()["message"] == "Scan started"
 
-    # Verify the generated output file
-    test_file_path = Path(UPLOADS_DIR) / "text" / "test-output.txt"
-    assert test_file_path.exists(), "Expected file missing after UI scan!"
+    
+    pid = response.json().get("pid")
+    assert pid is not None, "Scan did not return a valid process ID."
+    
+    time.sleep(3)  # Allow time for scanning
+    
+    # Check if scan completed
+    status_response = client.get(f"/scan/status/{pid}")
+    assert status_response.status_code == 200
+    assert status_response.json()["status"] in ["running", "completed"], "Scan did not start properly!"
+    
+    # Verify the generated output file in the correct repo directory
+    repo_output_dir = Path(UPLOADS_DIR) / "results" / "test_repo" / "text"
+    test_file_path = repo_output_dir / "test_repo.txt"
+    assert test_file_path.exists(), f"Expected output file missing: {test_file_path}"
 
 def test_ui_file_serving():
     """Ensure UI can correctly serve files after scan."""
-    # Ensure a dummy file exists
-    test_file_path = Path(UPLOADS_DIR) / "text" / "test-output.txt"
+    repo_output_dir = Path(UPLOADS_DIR) / "results" / "test_repo" / "text"
+    test_file_path = repo_output_dir / "test-output.txt"
+    
     test_file_path.parent.mkdir(parents=True, exist_ok=True)
     test_file_path.write_text("Test content for UI serving.")
-
-    response = client.get("/download/txt/test-output.txt")
+    
+    response = client.get("/download/test_repo/all")
     assert response.status_code == 200, "File download failed!"
     assert "content-disposition" in response.headers, "Missing content disposition header!"
+    assert response.headers["content-type"] == "application/zip", "Incorrect file type for download."

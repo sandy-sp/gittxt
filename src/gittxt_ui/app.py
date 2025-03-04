@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
 from src.gittxt_ui.routes import router
 
-app = FastAPI()
+app = FastAPI()  # ✅ Only define FastAPI instance once
 
 # Mount static files (CSS, JS)
 app.mount("/static", StaticFiles(directory="src/gittxt_ui/static"), name="static")

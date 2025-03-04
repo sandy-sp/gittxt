@@ -1,3 +1,4 @@
+import shutil
 import pytest
 import os
 import subprocess

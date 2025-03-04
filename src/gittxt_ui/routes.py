@@ -1,57 +1,61 @@
-from fastapi import FastAPI, Form, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, Form, WebSocket, WebSocketDisconnect, HTTPException
 import subprocess
 from pathlib import Path
 import asyncio
 import os
 import zipfile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
+from pydantic import BaseModel
 
-app = FastAPI()
+router = APIRouter()  # ✅ Use `router` instead of `app`
 
 UPLOADS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt-outputs/ui"))
 OUTPUT_FORMAT_DIRS = {"txt": "text", "json": "json", "md": "md"}
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="src/gittxt_ui/static"), name="static")
-
 # Load Jinja2 templates
 templates = Environment(loader=FileSystemLoader("src/gittxt_ui/templates"))
 
-@app.get("/")
+class ScanRequest(BaseModel):
+    repo_path: str
+    output_format: str = "txt"
+    include_patterns: str = ""
+    exclude_patterns: str = ""
+    size_limit: int = None
+    docs_only: bool = False
+
+@router.get("/")
 async def homepage():
     """Serve the main HTML page."""
     template = templates.get_template("index.html")
-    return FileResponse(content=template.render(), media_type="text/html")
+    return FileResponse(str(template.filename), media_type="text/html")
 
-@app.post("/scan/")
-async def scan_repo(repo_path: str = Form(...), output_format: str = Form("txt"), 
-                    include_patterns: str = Form(""), exclude_patterns: str = Form(""), 
-                    size_limit: int = Form(None), docs_only: bool = Form(False)):
-    """Trigger Gittxt scanning from the web interface."""
-    output_dir = os.path.join(UPLOADS_DIR, "results", repo_path.split('/')[-1])
+@router.post("/scan/")
+async def scan_repo(scan_data: ScanRequest):
+    """Trigger Gittxt scanning from the web interface with real-time tracking."""
+    output_dir = os.path.join(UPLOADS_DIR, "results", scan_data.repo_path.split('/')[-1])
     os.makedirs(output_dir, exist_ok=True)
     
-    command = ["gittxt", "scan", repo_path, "--output-dir", output_dir, "--output-format", output_format]
-    if include_patterns:
-        command.extend(["--include", include_patterns])
-    if exclude_patterns:
-        command.extend(["--exclude", exclude_patterns])
-    if size_limit:
-        command.extend(["--size-limit", str(size_limit)])
-    if docs_only:
+    command = ["gittxt", "scan", scan_data.repo_path, "--output-dir", output_dir, "--output-format", scan_data.output_format]
+    if scan_data.include_patterns:
+        command.extend(["--include", scan_data.include_patterns])
+    if scan_data.exclude_patterns:
+        command.extend(["--exclude", scan_data.exclude_patterns])
+    if scan_data.size_limit:
+        command.extend(["--size-limit", str(scan_data.size_limit)])
+    if scan_data.docs_only:
         command.append("--docs-only")
     
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    return {"message": "Scan started", "status": "running"}
+    return {"message": "Scan started", "status": "running", "pid": process.pid}
 
-@app.websocket("/ws/progress/")
+@router.websocket("/ws/progress/")
 async def scan_progress(websocket: WebSocket):
     """WebSocket route for real-time scan progress updates."""
     await websocket.accept()
+    log_file = os.path.join(UPLOADS_DIR, "scan_progress.log")
     try:
-        log_file = os.path.join(UPLOADS_DIR, "scan_progress.log")
         while True:
             await asyncio.sleep(0.5)
             if os.path.exists(log_file):
@@ -62,7 +66,16 @@ async def scan_progress(websocket: WebSocket):
     except WebSocketDisconnect:
         print("WebSocket disconnected.")
 
-@app.get("/download/{repo_name}/all")
+@router.get("/scan/status/{pid}")
+async def get_scan_status(pid: int):
+    """Check the status of the scan process."""
+    try:
+        os.kill(pid, 0)
+        return JSONResponse(content={"status": "running"})
+    except OSError:
+        return JSONResponse(content={"status": "completed"})
+
+@router.get("/download/{repo_name}/all")
 async def download_all(repo_name: str):
     """Compress and serve all scanned output formats for a given repository."""
     repo_output_dir = os.path.join(UPLOADS_DIR, "results", repo_name)
