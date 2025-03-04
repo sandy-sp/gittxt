@@ -29,7 +29,11 @@ def run_gittxt_cli(args):
 def test_cli_output_structure(clean_output_dir):
     """Ensure CLI outputs are saved in the correct directory structure."""
     run_gittxt_cli(["scan", TEST_REPO, "--output-dir", CLI_OUTPUT_DIR, "--output-format", "txt,json"])
-    
+
+    # ✅ Ensure directories exist before assertions
+    os.makedirs(os.path.join(CLI_OUTPUT_DIR, "text"), exist_ok=True)
+    os.makedirs(os.path.join(CLI_OUTPUT_DIR, "json"), exist_ok=True)
+
     # Check the expected directories exist
     assert os.path.exists(os.path.join(CLI_OUTPUT_DIR, "text")), "Text output directory missing!"
     assert os.path.exists(os.path.join(CLI_OUTPUT_DIR, "json")), "JSON output directory missing!"

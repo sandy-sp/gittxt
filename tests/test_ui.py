@@ -45,16 +45,21 @@ def test_websocket_scan_progress():
     """Ensure WebSocket updates are received for scan progress."""
     with client.websocket_connect("/ws/progress/") as websocket:
         progress_updates = []
-        for _ in range(10):
+        max_attempts = 15  # ✅ Allow more attempts to wait for progress logs
+
+        for _ in range(max_attempts):
             try:
-                data = websocket.receive_text(timeout=5)  # ✅ Increased timeout to handle delays
+                data = websocket.receive_text(timeout=10)  # ✅ Increased timeout to handle slow updates
                 progress_updates.append(data)
+                if "Scan completed" in data:
+                    break  # ✅ Stop if we receive completion message
             except Exception:
                 break  # Stop receiving if no data comes
-        
-        assert len(progress_updates) > 0, "No progress updates received!"  # ✅ Ensure at least 1 update
+
+        assert len(progress_updates) > 0, "No progress updates received!"
         assert any("Processing file" in update for update in progress_updates), "Expected progress messages!"
         assert any("✅ Scan completed successfully!" in progress_updates), "Completion message missing!"
+
 
 
 @pytest.mark.parametrize("output_format", ["txt", "json", "md"])

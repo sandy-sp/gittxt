@@ -8,6 +8,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()  # ✅ Use `router` instead of `app`
 
@@ -47,7 +50,18 @@ async def scan_repo(scan_data: ScanRequest):
     if scan_data.docs_only:
         command.append("--docs-only")
     
+    logger.info(f"Executing scan command: {command}")  # ✅ Log scan execution
+    
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    log_file = os.path.join(UPLOADS_DIR, "scan_progress.log")
+    with open(log_file, "w") as f:
+        f.write("Processing started...\n")  # ✅ Ensure progress is logged
+    
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    # ✅ Wait for scan to finish to ensure output files are created
+    process.wait()
     return {"message": "Scan started", "status": "running", "pid": process.pid}
 
 @router.websocket("/ws/progress/")
