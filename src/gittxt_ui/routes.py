@@ -5,11 +5,25 @@ import asyncio
 import os
 import zipfile
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from jinja2 import Environment, FileSystemLoader
 
 app = FastAPI()
 
 UPLOADS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt-outputs/ui"))
 OUTPUT_FORMAT_DIRS = {"txt": "text", "json": "json", "md": "md"}
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="src/gittxt_ui/static"), name="static")
+
+# Load Jinja2 templates
+templates = Environment(loader=FileSystemLoader("src/gittxt_ui/templates"))
+
+@app.get("/")
+async def homepage():
+    """Serve the main HTML page."""
+    template = templates.get_template("index.html")
+    return FileResponse(content=template.render(), media_type="text/html")
 
 @app.post("/scan/")
 async def scan_repo(repo_path: str = Form(...), output_format: str = Form("txt"), 
