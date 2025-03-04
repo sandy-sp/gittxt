@@ -14,27 +14,26 @@ class ConfigManager:
     @staticmethod
     def _determine_default_output_dir():
         """
-        Choose a user-accessible default directory based on the OS.
-        - Windows: ~/Documents/Gittxt
-        - Mac: ~/Documents/Gittxt
-        - Linux/Other: ~/Gittxt
+        Choose a unified default directory for both CLI & UI outputs based on the OS.
+        - Windows: ~/Documents/Gittxt/processed
+        - Mac: ~/Documents/Gittxt/processed
+        - Linux/Other: ~/Gittxt/processed
         """
         system_name = platform.system().lower()
         home_dir = os.path.expanduser("~")
 
         if system_name.startswith("win"):
-            # Windows
-            return os.path.abspath(os.path.join(home_dir, "Documents", "Gittxt"))
+            return os.path.abspath(os.path.join(home_dir, "Documents", "Gittxt", "processed"))
         elif system_name.startswith("darwin"):
-            # macOS
-            return os.path.abspath(os.path.join(home_dir, "Documents", "Gittxt"))
+            return os.path.abspath(os.path.join(home_dir, "Documents", "Gittxt", "processed"))
         else:
-            # Linux / Other Unix
-            return os.path.abspath(os.path.join(home_dir, "Gittxt"))
+            return os.path.abspath(os.path.join(home_dir, "Gittxt", "processed"))
 
     # Default Configuration
     DEFAULT_CONFIG = {
         "output_dir": _determine_default_output_dir.__func__(),  # Evaluate method at import
+        "cli_output_dir": os.path.join(_determine_default_output_dir.__func__(), "cli"),
+        "ui_output_dir": os.path.join(_determine_default_output_dir.__func__(), "ui"),
         "size_limit": None,  # No size limit by default
         "include_patterns": [],
         "exclude_patterns": [".git", "node_modules", "__pycache__", ".log"],
@@ -58,8 +57,10 @@ class ConfigManager:
             # Merge user config with defaults (user settings take priority)
             config = {**cls.DEFAULT_CONFIG, **user_config}
 
-            # Ensure `output_dir` is always absolute
+            # Ensure all output directories are absolute
             config["output_dir"] = os.path.abspath(config["output_dir"])
+            config["cli_output_dir"] = os.path.join(config["output_dir"], "cli")
+            config["ui_output_dir"] = os.path.join(config["output_dir"], "ui")
 
             logger.info(f"✅ Loaded configuration from {cls.CONFIG_FILE}")
             return config
