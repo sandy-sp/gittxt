@@ -1,41 +1,130 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="results">
-        <h2>Scan Results</h2>
+<div class="results-header">
+    <h2><i class="bi bi-check-circle-fill"></i> Scan Complete</h2>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> New Scan
+    </a>
+</div>
 
-        <div class="summary-section">
-            <h3>📊 Summary</h3>
-            <ul>
-                <li>Total Files: {{ summary.total_files }}</li>
-                <li>Total Size: {{ summary.total_size }} bytes</li>
-                <li>File Types: {{ ', '.join(summary.file_types) }}</li>
-                {% if summary.estimated_tokens %}
-                <li>Estimated Tokens: {{ summary.estimated_tokens }}</li>
-                {% endif %}
-            </ul>
+<div class="card">
+    <h3><i class="bi bi-graph-up"></i> Summary</h3>
+    <div class="summary-stats">
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="bi bi-file-earmark"></i>
+            </div>
+            <div class="stat-value">{{ summary.total_files }}</div>
+            <div class="stat-label">Files</div>
         </div>
-
-        <div class="tree-section">
-            <h3>📂 Repository Structure</h3>
-            <pre>{{ tree_summary }}</pre>
+        
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="bi bi-hdd"></i>
+            </div>
+            <div class="stat-value">{{ (summary.total_size / 1024)|round|int }} KB</div>
+            <div class="stat-label">Total Size</div>
         </div>
-
-        <div class="downloads-section">
-            <h3>📥 Generated Files</h3>
-            <ul>
-                {% for file in output_files %}
-                <li>
-                    <a href="{{ url_for('download_file', filename=file) }}" class="download-link">
-                        {{ file.split('/')[-1] }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
+        
+        {% if summary.estimated_tokens %}
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="bi bi-chat-square-text"></i>
+            </div>
+            <div class="stat-value">{{ summary.estimated_tokens }}</div>
+            <div class="stat-label">Est. Tokens</div>
         </div>
-
-        <a href="{{ url_for('index') }}" class="btn-secondary">Scan Another Repository</a>
+        {% endif %}
+    </div>
+    
+    <div class="file-types">
+        <h4>File Types</h4>
+        <div class="badge-container">
+            {% for file_type in summary.file_types %}
+            <span class="badge file-type">{{ file_type }}</span>
+            {% endfor %}
+        </div>
     </div>
 </div>
+
+<div class="card">
+    <h3><i class="bi bi-download"></i> Generated Files</h3>
+    <div class="downloads-list">
+        {% for file in output_files %}
+        <div class="download-card">
+            <div class="download-info">
+                <div class="download-icon">
+                    {% if file.endswith('.txt') %}
+                    <i class="bi bi-file-earmark-text"></i>
+                    {% elif file.endswith('.json') %}
+                    <i class="bi bi-file-earmark-code"></i>
+                    {% elif file.endswith('.md') %}
+                    <i class="bi bi-markdown"></i>
+                    {% else %}
+                    <i class="bi bi-file-earmark"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="download-name">{{ file.split('/')[-1] }}</div>
+                    <div class="download-meta">
+                        {% set file_size = namespace(value=0) %}
+                        {% try %}
+                            {% set file_size.value = (os.path.getsize(file) / 1024)|round|int %}
+                        {% except %}
+                            {% set file_size.value = 0 %}
+                        {% endtry %}
+                        {{ file_size.value }} KB
+                    </div>
+                </div>
+            </div>
+            <a href="{{ url_for('download_file', filename=file) }}" class="btn btn-secondary download-btn">
+                <i class="bi bi-download"></i> Download
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h3><i class="bi bi-folder"></i> Repository Structure</h3>
+    <div class="tree-view">{{ tree_summary }}</div>
+</div>
+
+<div class="download-icon">
+    {% if file.endswith('.txt') %}
+    <i class="bi bi-file-earmark-text"></i>
+    {% elif file.endswith('.json') %}
+    <i class="bi bi-file-earmark-code"></i>
+    {% elif file.endswith('.md') %}
+    <i class="bi bi-markdown"></i>
+    {% elif file.endswith('.py') %}
+    <i class="bi bi-filetype-py"></i>
+    {% elif file.endswith('.js') %}
+    <i class="bi bi-filetype-js"></i>
+    {% elif file.endswith('.html') %}
+    <i class="bi bi-filetype-html"></i>
+    {% elif file.endswith('.css') %}
+    <i class="bi bi-filetype-css"></i>
+    {% elif file.endswith('.java') %}
+    <i class="bi bi-filetype-java"></i>
+    {% else %}
+    <i class="bi bi-file-earmark"></i>
+    {% endif %}
+</div>
+
+<div class="download-card">
+    <div class="download-info">
+
+    <div class="download-actions">
+        <button class="btn btn-secondary preview-file-btn" data-path="{{ file }}">
+            <i class="bi bi-eye"></i>
+        </button>
+        <a href="{{ url_for('download_file', filename=file) }}" class="btn btn-primary download-btn">
+            <i class="bi bi-download"></i> Download
+        </a>
+    </div>
+</div>
+</div>
+
 {% endblock %}

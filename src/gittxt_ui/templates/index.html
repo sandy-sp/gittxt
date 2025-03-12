@@ -1,56 +1,174 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="scan-form">
-        <h2>Scan Repository</h2>
+<div class="card">
+    <h2><i class="bi bi-git"></i> Repository Scanner</h2>
+    
+    {% if error %}
+    <div class="alert alert-error">
+        <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" id="scan-form">
+        {{ form.csrf_token }}
         
-        {% if error %}
-        <div class="error-message">
-            {{ error }}
+        <div class="form-group">
+            <label for="repo_url">
+                <i class="bi bi-link-45deg"></i> {{ form.repo_url.label }}
+            </label>
+            {{ form.repo_url(class="form-control", placeholder="Enter GitHub URL or local path (e.g., https://github.com/user/repo or /path/to/repo)") }}
+            <small class="form-text">Enter a GitHub repository URL or a local repository path</small>
         </div>
-        {% endif %}
 
-        <form method="POST">
-            {{ form.csrf_token }}
-            
-            <div class="form-group">
-                <label>{{ form.repo_url.label }}</label>
-                {{ form.repo_url(class="form-control", placeholder="Enter repository URL or local path") }}
-            </div>
+        <div class="form-actions repo-actions">
+            <button type="button" id="preview-repo" class="btn btn-secondary">
+                <i class="bi bi-eye"></i> Preview
+            </button>
+        </div>
 
-            <div class="form-group">
-                <label>{{ form.output_format.label }}</label>
-                {{ form.output_format(class="form-control") }}
-            </div>
+        <div class="form-group">
+            <label for="output_format">
+                <i class="bi bi-file-earmark-text"></i> {{ form.output_format.label }}
+            </label>
+            {{ form.output_format(class="form-control") }}
+            <small class="form-text">Hold Ctrl/Cmd to select multiple formats</small>
+        </div>
 
-            <div class="form-group">
-                <label>{{ form.include_patterns.label }}</label>
+        <div class="form-row">
+            <div class="form-group col">
+                <label for="include_patterns">
+                    <i class="bi bi-filter"></i> {{ form.include_patterns.label }}
+                </label>
                 {{ form.include_patterns(class="form-control", placeholder=".py,.md,.txt") }}
+                <small class="form-text">Comma-separated file patterns to include</small>
             </div>
 
-            <div class="form-group">
-                <label>{{ form.exclude_patterns.label }}</label>
+            <div class="form-group col">
+                <label for="exclude_patterns">
+                    <i class="bi bi-filter-circle"></i> {{ form.exclude_patterns.label }}
+                </label>
                 {{ form.exclude_patterns(class="form-control", placeholder="node_modules/,.git/") }}
+                <small class="form-text">Comma-separated file patterns to exclude</small>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label>{{ form.size_limit.label }}</label>
-                {{ form.size_limit(class="form-control", placeholder="e.g., 1000000") }}
-            </div>
+        <div class="form-group">
+            <label for="size_limit">
+                <i class="bi bi-hdd"></i> {{ form.size_limit.label }}
+            </label>
+            {{ form.size_limit(class="form-control", placeholder="e.g., 1000000") }}
+            <small class="form-text">Maximum file size in bytes (1MB = 1000000)</small>
+        </div>
 
-            <div class="form-group checkbox">
+        <div class="checkbox-group">
+            <div class="checkbox-item">
                 {{ form.docs_only() }}
-                <label>{{ form.docs_only.label }}</label>
+                <label for="docs_only">
+                    <i class="bi bi-file-earmark-text"></i> {{ form.docs_only.label }}
+                </label>
             </div>
 
-            <div class="form-group checkbox">
+            <div class="checkbox-item">
                 {{ form.auto_filter() }}
-                <label>{{ form.auto_filter.label }}</label>
+                <label for="auto_filter">
+                    <i class="bi bi-funnel"></i> {{ form.auto_filter.label }}
+                </label>
             </div>
+        </div>
 
-            <button type="submit" class="btn-primary">Scan Repository</button>
-        </form>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="scan-button">
+                <i class="bi bi-search"></i> Scan Repository
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2><i class="bi bi-info-circle"></i> About Gittxt</h2>
+    <p>Gittxt extracts text from Git repositories and formats it for AI processing, LLMs, and documentation.</p>
+    
+    <h3>Features</h3>
+    <ul>
+        <li><strong>Multiple Output Formats:</strong> Generate TXT, JSON, or Markdown outputs</li>
+        <li><strong>Smart Filtering:</strong> Automatically exclude binary files, large files, and common unwanted patterns</li>
+        <li><strong>Documentation Focus:</strong> Option to extract only documentation files</li>
+        <li><strong>Repository Structure:</strong> View the repository structure in a tree format</li>
+    </ul>
+</div>
+
+<div class="card help-card">
+    <h2><i class="bi bi-question-circle"></i> Help & Tips</h2>
+    
+    <div class="accordion" id="helpAccordion">
+        <div class="accordion-item">
+            <h3 class="accordion-header" id="headingOne">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                    How to use Gittxt
+                </button>
+            </h3>
+            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne">
+                <div class="accordion-body">
+                    <p>Gittxt extracts text from Git repositories for use with AI models, LLMs, and documentation.</p>
+                    <ol>
+                        <li>Enter a GitHub repository URL or local repository path</li>
+                        <li>Select the desired output formats</li>
+                        <li>Configure optional filters and settings</li>
+                        <li>Click "Scan Repository" to generate the output</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item">
+            <h3 class="accordion-header" id="headingTwo">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                    Repository URL Format
+                </button>
+            </h3>
+            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo">
+                <div class="accordion-body">
+                    <p>You can use the following formats:</p>
+                    <ul>
+                        <li><strong>GitHub URL:</strong> https://github.com/username/repository</li>
+                        <li><strong>Local path:</strong> /path/to/repository</li>
+                        <li><strong>Relative path:</strong> ./my-repository</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item">
+            <h3 class="accordion-header" id="headingThree">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                    File Filtering Options
+                </button>
+            </h3>
+            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree">
+                <div class="accordion-body">
+                    <p>Control which files are included in the output:</p>
+                    <ul>
+                        <li><strong>Include Patterns:</strong> Comma-separated list of file patterns to include (e.g., .py,.md,.txt)</li>
+                        <li><strong>Exclude Patterns:</strong> Comma-separated list of file patterns to exclude (e.g., node_modules/,.git/)</li>
+                        <li><strong>Size Limit:</strong> Maximum file size in bytes (e.g., 1000000 for 1MB)</li>
+                        <li><strong>Documentation Files Only:</strong> Only include README files, documentation folders, etc.</li>
+                        <li><strong>Auto-filter:</strong> Automatically exclude common unwanted files (binaries, logs, etc.)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<div class="card recent-scans-card" id="recent-scans-card">
+    <h2><i class="bi bi-clock-history"></i> Recent Scans</h2>
+    <div id="recent-scans" class="recent-scans-list">
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No recent scans</p>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
