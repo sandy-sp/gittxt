@@ -62,6 +62,15 @@ def install():
     click.echo("Installation / setup complete. You can now run 'gittxt scan' to test.\n")
 
 @cli.command()
+@click.option('--port', default=5000, help='Port to run the web interface on')
+@click.option('--host', default='127.0.0.1', help='Host to run the web interface on')
+def web(port, host):
+    """Launch the web interface."""
+    from src.gittxt_ui.app import create_app
+    app = create_app()
+    app.run(host=host, port=port)
+
+@cli.command()
 @click.argument("repos", nargs=-1)  # Allow multiple repositories
 @click.option("--include", multiple=True, help="Include only files matching these patterns.")
 @click.option("--exclude", multiple=True, help="Exclude files matching these patterns.")
@@ -74,14 +83,7 @@ def install():
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 @click.option("--docs-only", is_flag=True, help="Only extract documentation files (README, docs/, etc.).")
 @click.option("--auto-filter", is_flag=True, help="Skip common unwanted/binary files automatically.")
-@click.option('--port', default=5000, help='Port to run the web interface on')
-@click.option('--host', default='127.0.0.1', help='Host to run the web interface on')
-@click.pass_context
-def web(ctx, port, host):
-    """Launch the web interface."""
-    from src.gittxt_ui.app import create_app
-    app = create_app()
-    app.run(host=host, port=port)
+
 def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
          max_lines, summary, debug, docs_only, auto_filter):
     """
