@@ -21,7 +21,7 @@
 
 ---
 
-## 🆕 Release v1.4.0
+## 🆕 Release v1.4.1
 
 ### New Features & Enhancements
 - **Interactive Installation:**  
@@ -52,7 +52,7 @@
 
 ### Via PIP
 ```bash
-pip install gittxt==1.4.0
+pip install gittxt==1.4.1
 ```
 
 ### First-Time Setup (Interactive)

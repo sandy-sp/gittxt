@@ -92,28 +92,40 @@ class OutputBuilder:
                 r'[\n\t]+',                    # New lines and tabs
                 r'\s+'                         # Whitespace
             ]
-            pattern = '|'.join(f'({p})' for p in patterns)
-            return [token for token in re.findall(pattern, text) if any(token)]
+            # Use non-capturing groups (?:...) in the join
+            pattern = '|'.join(patterns)
+            return [token for token in re.findall(pattern, text) if token]
 
         total_tokens = 0
         for line in file_content_lines:
-            # Process each line
-            tokens = split_into_tokens(line)
-            
-            # Additional token counting rules
-            for token in tokens:
-                # Base token count
-                token_count = 1
+            try:
+                # Process each line
+                tokens = split_into_tokens(line)
                 
-                # Adjust for longer tokens that might be split further by LLM
-                if len(token) > 12:  # Most LLMs split long tokens
-                    token_count += len(token) // 8  # Approximate subword tokenization
-                
-                # Account for special tokens
-                if token.strip() in {'\n', '\t', ' '}:
-                    token_count = 1  # Count whitespace as single tokens
-                
-                total_tokens += token_count
+                # Additional token counting rules
+                for token in tokens:
+                    # Ensure token is a string
+                    if not isinstance(token, str):
+                        token = str(token)
+                    
+                    # Base token count
+                    token_count = 1
+                    
+                    # Adjust for longer tokens that might be split further by LLM
+                    if len(token) > 12:  # Most LLMs split long tokens
+                        token_count += len(token) // 8  # Approximate subword tokenization
+                    
+                    # Account for special tokens
+                    if token.strip() in {'\n', '\t', ' '}:
+                        token_count = 1  # Count whitespace as single tokens
+                    
+                    total_tokens += token_count
+
+            except Exception as e:
+                # Add error handling to help debug issues
+                logger.error(f"Error processing line: {line}")
+                logger.error(f"Error details: {str(e)}")
+                continue
 
         # Add a small overhead for special tokens (e.g., BOS, EOS)
         total_tokens += 2
