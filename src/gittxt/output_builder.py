@@ -1,6 +1,8 @@
 import os
 import json
+import re
 import subprocess
+from typing import List
 from gittxt.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -70,14 +72,52 @@ class OutputBuilder:
             logger.error(f"❌ Error reading {file_path}: {e}")
             return [f"[Error reading {file_path}: {e}]\n"]
 
-    def _compute_token_count(self, file_content_lines):
+    def _compute_token_count(self, file_content_lines: List[str]) -> int:
         """
-        Very naive token count: splits each line by whitespace and sums.
-        This is purely for demonstration in v2.0.0.
+        Compute a more accurate token count estimation for LLM processing.
+        This implementation follows common tokenization patterns used by LLMs.
+        
+        Args:
+            file_content_lines: List of strings, each representing a line of text
+        
+        Returns:
+            int: Estimated number of tokens
         """
+        def split_into_tokens(text: str) -> List[str]:
+            # Handle common code and text patterns
+            patterns = [
+                r'[A-Za-z]+(?:[A-Z][a-z]+)*',  # CamelCase and words
+                r'\d+(?:\.\d+)?',              # Numbers including decimals
+                r'[^\w\s]+',                   # Special characters and punctuation
+                r'[\n\t]+',                    # New lines and tabs
+                r'\s+'                         # Whitespace
+            ]
+            pattern = '|'.join(f'({p})' for p in patterns)
+            return [token for token in re.findall(pattern, text) if any(token)]
+
         total_tokens = 0
         for line in file_content_lines:
-            total_tokens += len(line.strip().split())
+            # Process each line
+            tokens = split_into_tokens(line)
+            
+            # Additional token counting rules
+            for token in tokens:
+                # Base token count
+                token_count = 1
+                
+                # Adjust for longer tokens that might be split further by LLM
+                if len(token) > 12:  # Most LLMs split long tokens
+                    token_count += len(token) // 8  # Approximate subword tokenization
+                
+                # Account for special tokens
+                if token.strip() in {'\n', '\t', ' '}:
+                    token_count = 1  # Count whitespace as single tokens
+                
+                total_tokens += token_count
+
+        # Add a small overhead for special tokens (e.g., BOS, EOS)
+        total_tokens += 2
+        
         return total_tokens
 
     def generate_output(self, files, repo_path, summary_data=None):

@@ -1,5 +1,13 @@
 # 🚀 Gittxt: Get Text of Your Repo for AI, LLMs & Docs!
 
+[![Release](https://img.shields.io/github/release/sandy-sp/gittxt.svg)](https://github.com/sandy-sp/gittxt/releases)
+[![PyPI version](https://badge.fury.io/py/gittxt.svg)](https://pypi.org/project/gittxt/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/gittxt)](https://pypi.org/project/gittxt/)
+![GitHub repo size](https://img.shields.io/github/repo-size/sandy-sp/gittxt)
+![GitHub top language](https://img.shields.io/github/languages/top/sandy-sp/gittxt)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Status](https://github.com/sandy-sp/gittxt/actions/workflows/release.yml/badge.svg)](https://github.com/sandy-sp/gittxt/actions)
+
 **Gittxt** is a **lightweight CLI tool** that extracts text from **Git repositories** and formats it into AI-friendly outputs (`.txt`, `.json`, `.md`). Whether you’re using ChatGPT, Grok, Ollama or any LLM, Gittxt helps you process repositories for insights, training, and documentation.
 
 ---
@@ -13,7 +21,7 @@
 
 ---
 
-## 🆕 Release v1.3.1
+## 🆕 Release v1.4.0
 
 ### New Features & Enhancements
 - **Interactive Installation:**  
@@ -35,13 +43,16 @@
 - **Improved Logging & Caching:**  
   Faster, more accurate scanning with incremental caching and a rotating log file system.
 
+- **Improved Token Estimation:**
+  Enhanced token counting algorithm with better accuracy for LLM processing, including support for CamelCase, special characters, and subword tokenization patterns.
+
 ---
 
 ## 📥 Installation
 
 ### Via PIP
 ```bash
-pip install gittxt==1.3.1
+pip install gittxt==1.4.0
 ```
 
 ### First-Time Setup (Interactive)
