@@ -45,7 +45,7 @@ class OutputBuilder:
     def generate_tree_summary(self, repo_path):
         """Generate a folder structure summary using 'tree' command."""
         try:
-            return subprocess.check_output(["tree", repo_path, "-L", "2"], text=True)
+            return subprocess.check_output(["tree", repo_path], text=True)
         except FileNotFoundError:
             logger.warning("⚠️ Tree command not found, skipping repository structure summary.")
             return "⚠️ Tree command not available."
