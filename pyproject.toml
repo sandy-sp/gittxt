@@ -54,3 +54,4 @@ flask-wtf = "^1.2.1"
 
 [tool.poetry.scripts]
 gittxt = "gittxt.cli:main"
+gittxt-web = "gittxt.web.app:create_app"

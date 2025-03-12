@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="results">
+        <h2>Scan Results</h2>
+
+        <div class="summary-section">
+            <h3>📊 Summary</h3>
+            <ul>
+                <li>Total Files: {{ summary.total_files }}</li>
+                <li>Total Size: {{ summary.total_size }} bytes</li>
+                <li>File Types: {{ ', '.join(summary.file_types) }}</li>
+                {% if summary.estimated_tokens %}
+                <li>Estimated Tokens: {{ summary.estimated_tokens }}</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="tree-section">
+            <h3>📂 Repository Structure</h3>
+            <pre>{{ tree_summary }}</pre>
+        </div>
+
+        <div class="downloads-section">
+            <h3>📥 Generated Files</h3>
+            <ul>
+                {% for file in output_files %}
+                <li>
+                    <a href="{{ url_for('download_file', filename=file) }}" class="download-link">
+                        {{ file.split('/')[-1] }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <a href="{{ url_for('index') }}" class="btn-secondary">Scan Another Repository</a>
+    </div>
+</div>
+{% endblock %}

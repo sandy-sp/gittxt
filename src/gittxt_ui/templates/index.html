@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="scan-form">
+        <h2>Scan Repository</h2>
+        
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            {{ form.csrf_token }}
+            
+            <div class="form-group">
+                <label>{{ form.repo_url.label }}</label>
+                {{ form.repo_url(class="form-control", placeholder="Enter repository URL or local path") }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.output_format.label }}</label>
+                {{ form.output_format(class="form-control") }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.include_patterns.label }}</label>
+                {{ form.include_patterns(class="form-control", placeholder=".py,.md,.txt") }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.exclude_patterns.label }}</label>
+                {{ form.exclude_patterns(class="form-control", placeholder="node_modules/,.git/") }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.size_limit.label }}</label>
+                {{ form.size_limit(class="form-control", placeholder="e.g., 1000000") }}
+            </div>
+
+            <div class="form-group checkbox">
+                {{ form.docs_only() }}
+                <label>{{ form.docs_only.label }}</label>
+            </div>
+
+            <div class="form-group checkbox">
+                {{ form.auto_filter() }}
+                <label>{{ form.auto_filter.label }}</label>
+            </div>
+
+            <button type="submit" class="btn-primary">Scan Repository</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

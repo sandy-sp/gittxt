@@ -2,7 +2,6 @@ import click
 import os
 import sys
 import logging
-
 from gittxt.config import ConfigManager
 from gittxt.logger import Logger
 from gittxt.scanner import Scanner
@@ -75,6 +74,14 @@ def install():
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 @click.option("--docs-only", is_flag=True, help="Only extract documentation files (README, docs/, etc.).")
 @click.option("--auto-filter", is_flag=True, help="Skip common unwanted/binary files automatically.")
+@click.option('--port', default=5000, help='Port to run the web interface on')
+@click.option('--host', default='127.0.0.1', help='Host to run the web interface on')
+@click.pass_context
+def web(ctx, port, host):
+    """Launch the web interface."""
+    from src.gittxt_ui.app import create_app
+    app = create_app()
+    app.run(host=host, port=port)
 def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
          max_lines, summary, debug, docs_only, auto_filter):
     """
