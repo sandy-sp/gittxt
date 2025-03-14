@@ -3,8 +3,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const outputFormat = document.querySelector('select[name="output_format"]');
     if (outputFormat) {
         outputFormat.setAttribute('multiple', 'true');
-        outputFormat.style.height = '100px');
+        outputFormat.style.height = '100px';
     }
+
+        // Improve theme persistence
+        const themeToggle = document.getElementById('theme-toggle');
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-fill"></i>';
+    
+        // Toggle theme when button is clicked
+        themeToggle.addEventListener('click', function() {
+            let theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            themeToggle.innerHTML = theme === 'dark' ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-fill"></i>';
+            localStorage.setItem('theme', theme);
+        });
+    });
 
     // Add loading state to form submission
     const form = document.getElementById('scan-form');
@@ -81,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
             el.textContent = formatFileSize(bytes);
         }
     });
-});
+;
 
 function createProgressBar() {
     const progressContainer = document.createElement('div');
