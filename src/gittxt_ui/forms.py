@@ -1,13 +1,14 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SelectMultipleField, BooleanField
-from wtforms.validators import DataRequired, Optional, URL
+from wtforms.validators import DataRequired, Optional
 
 class ScanForm(FlaskForm):
     repo_url = StringField('Repository URL or Path', validators=[DataRequired()])
     output_format = SelectMultipleField(
         'Output Format',
         choices=[('txt', 'Text'), ('json', 'JSON'), ('md', 'Markdown')],
-        default=['txt']
+        default=['txt'],
+        coerce=str  # Ensures form data is handled correctly
     )
     include_patterns = StringField('Include Patterns (comma-separated)', validators=[Optional()])
     exclude_patterns = StringField('Exclude Patterns (comma-separated)', validators=[Optional()])
