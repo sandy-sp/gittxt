@@ -143,7 +143,7 @@ class Scanner:
     def generate_tree_summary(self):
         """Generate a folder structure summary using 'tree' command (if available)."""
         try:
-            return subprocess.check_output(["tree", self.root_path, "-L", "2"], text=True)
+            return subprocess.check_output(["tree", self.root_path], text=True)
         except FileNotFoundError:
             logger.warning("⚠️ Tree command not found, skipping repository structure summary.")
             return "⚠️ Tree command not available."
