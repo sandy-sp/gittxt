@@ -21,6 +21,7 @@ def cli():
     Subcommands:
       install  -> Interactive config setup
       scan     -> Scan one or more repositories
+      web      -> Launch web interface
     """
     pass
 
@@ -65,7 +66,9 @@ def install():
 @click.option('--port', default=5000, help='Port to run the web interface on')
 @click.option('--host', default='127.0.0.1', help='Host to run the web interface on')
 def web(port, host):
-    """Launch the web interface."""
+    """
+    Launch the web interface.
+    """
     from src.gittxt_ui.app import create_app
     app = create_app()
     app.run(host=host, port=port)
@@ -75,7 +78,7 @@ def web(port, host):
 @click.option("--include", multiple=True, help="Include only files matching these patterns.")
 @click.option("--exclude", multiple=True, help="Exclude files matching these patterns.")
 @click.option("--size-limit", type=int, help="Exclude files larger than this size (bytes).")
-@click.option("--branch", type=str, help="Specify a Git branch (for remote repos).")
+@click.option("--branch", type=str, help="Manually specify a Git branch (optional override).")
 @click.option("--output-dir", type=click.Path(), default=None, help="Override config's output directory.")
 @click.option("--output-format", default=None, help="Comma-separated output formats, e.g. 'txt,json,md'. Default from config.")
 @click.option("--max-lines", type=int, default=None, help="Limit number of lines per file.")
@@ -83,21 +86,25 @@ def web(port, host):
 @click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
 @click.option("--docs-only", is_flag=True, help="Only extract documentation files (README, docs/, etc.).")
 @click.option("--auto-filter", is_flag=True, help="Skip common unwanted/binary files automatically.")
-
 def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
          max_lines, summary, debug, docs_only, auto_filter):
     """
     Scan one or more repositories (local or remote), extracting text and generating outputs.
-
+    \b
     Examples:
       gittxt scan . --output-format txt,json
       gittxt scan https://github.com/user/repo1 repo2 --docs-only --summary
+      gittxt scan https://github.com/user/repo/tree/dev/src/utils
+    \b
+    If a GitHub URL includes a branch in the path (e.g. '/tree/dev'),
+    that branch is automatically detected. Use --branch only if you wish
+    to override or if the URL does not specify it.
     """
     if not repos:
         click.echo("❌ No repositories specified. Provide at least one path or URL.")
         sys.exit(1)
 
-    # If --debug flag is set, update the logger level and echo the expected debug message.
+    # If --debug flag is set, update the logger level and echo the debug message.
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
         msg = "🔍 Debug mode enabled."
@@ -107,20 +114,20 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
     # Determine final output directory (CLI option overrides config)
     final_output_dir = output_dir or config.get("output_dir")
 
-    # Use output format from CLI if provided; otherwise default from config.
+    # Determine final output format(s)
     chosen_format = output_format if output_format else config.get("output_format", "txt")
 
-    # Use CLI provided max_lines or config value.
+    # Determine max lines to read per file
     final_max_lines = max_lines if max_lines is not None else config.get("max_lines")
 
-    # Build include and exclude patterns.
+    # Build include and exclude patterns
     include_patterns = list(include) if include else config.get("include_patterns", [])
     exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
 
-    # Determine size limit.
+    # Determine size limit
     final_size_limit = size_limit if size_limit else config.get("size_limit")
 
-    # Reuse existing repositories flag from config.
+    # Reuse existing repositories from config
     reuse_existing = config.get("reuse_existing_repos", True)
 
     all_output_files = []
@@ -128,16 +135,27 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
     for repo_source in repos:
         logger.info(f"🚀 Scanning repository source: {repo_source}")
 
-        # Handle repository (local or remote)
+        # Create a RepositoryHandler.
+        # If the user provided --branch, it overrides any branch found in the URL.
         repo_handler = RepositoryHandler(repo_source, branch=branch, reuse_existing=reuse_existing)
-        repo_path = repo_handler.get_local_path()
-        if not repo_path:
+        local_repo_path = repo_handler.get_local_path()
+        if not local_repo_path:
             logger.error("❌ Failed to access repository. Skipping this repo...")
             continue
 
-        # Initialize the Scanner with new flags.
+        # If the user’s GitHub URL included a sub_path (like '/tree/dev/src/utils'),
+        # we can restrict scanning to that subfolder or file.
+        scan_target = local_repo_path
+        if repo_handler.sub_path:
+            scan_target = os.path.join(local_repo_path, repo_handler.sub_path)
+            if not os.path.exists(scan_target):
+                logger.warning(f"⚠️ Sub-path from URL does not exist locally: {scan_target}")
+                logger.warning("    Scanning entire repository instead.")
+                scan_target = local_repo_path  # fallback
+
+        # Initialize the Scanner with user-specified filters.
         scanner = Scanner(
-            root_path=repo_path,
+            root_path=scan_target,
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
             size_limit=final_size_limit,
@@ -152,7 +170,7 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
 
         logger.info(f"✅ Processing {len(valid_files)} text files from {repo_source}...")
 
-        # Collect summary statistics.
+        # Gather summary statistics
         total_size = sum(os.path.getsize(f) for f in valid_files)
         file_types = {os.path.splitext(f)[1] for f in valid_files}
         summary_data = {
@@ -161,7 +179,8 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
             "file_types": list(file_types)
         }
 
-        repo_name = os.path.basename(os.path.normpath(repo_path))
+        # Use the final folder name of local_repo_path as the "repo name"
+        repo_name = os.path.basename(os.path.normpath(local_repo_path))
 
         # Initialize OutputBuilder (supports multiple formats)
         builder = OutputBuilder(
@@ -171,9 +190,11 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
             output_format=chosen_format
         )
 
-        generated_files = builder.generate_output(valid_files, repo_path, summary_data)
+        # Generate outputs (txt, json, md, etc.)
+        generated_files = builder.generate_output(valid_files, local_repo_path, summary_data)
         all_output_files.extend(generated_files)
 
+        # Print summary if requested
         if summary:
             logger.info("📊 Summary Report:")
             logger.info(f" - Scanned {summary_data['total_files']} text files")
@@ -187,12 +208,13 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
     if not all_output_files:
         click.echo("❌ No outputs were generated. Verify your repository or filtering options.")
     else:
-        logger.info(f"✅ Completed scanning of {len(repos)} repositories. Output files: {all_output_files}")
+        logger.info(f"✅ Completed scanning of {len(repos)} repositories.")
+        logger.info(f"   Generated files: {all_output_files}")
 
 def main():
     """
-    Retain this entrypoint so that running `python src/gittxt/cli.py ...`
-    works. Typically, you'd install the package and call `gittxt` directly.
+    Entry point so that running `python src/gittxt/cli.py ...` works.
+    Typically, you'd install the package and call `gittxt` directly.
     """
     cli()
 
