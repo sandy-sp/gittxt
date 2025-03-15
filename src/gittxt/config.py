@@ -6,8 +6,11 @@ from gittxt.logger import Logger
 logger = Logger.get_logger(__name__)
 
 class ConfigManager:
-    """Handles configuration loading and management for Gittxt."""
-
+    """
+    Handles configuration loading and management for Gittxt, allowing CLI overrides,
+    flexible output formats, logging configurations, and repository settings.
+    """
+    
     SRC_DIR = os.path.dirname(__file__)
     CONFIG_FILE = os.path.join(SRC_DIR, "gittxt-config.json")
 
@@ -21,27 +24,28 @@ class ConfigManager:
         """
         system_name = platform.system().lower()
         home_dir = os.path.expanduser("~")
-
+        
         if system_name.startswith("win"):
-            # Windows
             return os.path.abspath(os.path.join(home_dir, "Documents", "Gittxt"))
         elif system_name.startswith("darwin"):
-            # macOS
             return os.path.abspath(os.path.join(home_dir, "Documents", "Gittxt"))
         else:
-            # Linux / Other Unix
             return os.path.abspath(os.path.join(home_dir, "Gittxt"))
 
     # Default Configuration
     DEFAULT_CONFIG = {
-        "output_dir": _determine_default_output_dir.__func__(),  # Evaluate method at import
-        "size_limit": None,  # No size limit by default
+        "output_dir": _determine_default_output_dir.__func__(),
+        "size_limit": None,
         "include_patterns": [],
         "exclude_patterns": [".git", "node_modules", "__pycache__", ".log"],
         "output_format": "txt",
-        "max_lines": None,
-        "reuse_existing_repos": True,  # Prevent redundant cloning
-        "logging_level": "INFO"        # Default logging level
+        "reuse_existing_repos": True,
+        "logging_level": "INFO",
+        "enable_file_logging": True,
+        "max_log_bytes": 5_000_000,
+        "backup_count": 2,
+        "verbose": False,  # New verbose mode
+        "max_cache_size": 10  # Dynamic repository caching
     }
 
     @classmethod
@@ -50,17 +54,15 @@ class ConfigManager:
         if not os.path.exists(cls.CONFIG_FILE):
             logger.warning("⚠️ Config file not found. Using default settings.")
             return cls.DEFAULT_CONFIG
-
+        
         try:
             with open(cls.CONFIG_FILE, "r", encoding="utf-8") as f:
                 user_config = json.load(f)
-
+            
             # Merge user config with defaults (user settings take priority)
             config = {**cls.DEFAULT_CONFIG, **user_config}
-
-            # Ensure `output_dir` is always absolute
             config["output_dir"] = os.path.abspath(config["output_dir"])
-
+            
             logger.info(f"✅ Loaded configuration from {cls.CONFIG_FILE}")
             return config
         except (json.JSONDecodeError, IOError) as e:
