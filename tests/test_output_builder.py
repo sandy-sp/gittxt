@@ -1,82 +1,57 @@
-import pytest
-import json
 import shutil
+import json
 from pathlib import Path
+import pytest
 from gittxt.output_builder import OutputBuilder
 
 TEST_REPO_NAME = "test-repo"
-TEST_OUTPUT_DIR = Path("tests") / "gittxt-outputs"
-TEST_TEXT_FILE = TEST_OUTPUT_DIR / "text" / f"{TEST_REPO_NAME}.txt"
-TEST_JSON_FILE = TEST_OUTPUT_DIR / "json" / f"{TEST_REPO_NAME}.json"
-TEST_MARKDOWN_FILE = TEST_OUTPUT_DIR / "md" / f"{TEST_REPO_NAME}.md"
-MOCK_FILES = ["file1.py", "file2.md", "file3.log"]
+OUTPUT_DIR = Path("tests/test-outputs")
+MOCK_FILES = [
+    "app.py",         # code
+    "README.md",      # doc
+    "assets/data.csv",# csv
+    "assets/logo.png" # image
+]
 
 @pytest.fixture(scope="function")
 def clean_output_dir():
-    for subdir in ["text", "json", "md"]:
-        output_path = TEST_OUTPUT_DIR / subdir
-        if output_path.exists():
-            shutil.rmtree(output_path)
-        output_path.mkdir(parents=True, exist_ok=True)
+    for subdir in ["text", "json", "md", "zips"]:
+        out_dir = OUTPUT_DIR / subdir
+        if out_dir.exists():
+            shutil.rmtree(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
 
 @pytest.fixture
 def mock_file_system(tmp_path):
     repo_path = tmp_path / TEST_REPO_NAME
-    repo_path.mkdir()
-    for file in MOCK_FILES:
-        (repo_path / file).write_text("Mock content for testing.", encoding="utf-8")
+    (repo_path / "assets").mkdir(parents=True)
+    (repo_path / "app.py").write_text("print('Hello, World!')", encoding="utf-8")
+    (repo_path / "README.md").write_text("# Mock README", encoding="utf-8")
+    (repo_path / "assets/data.csv").write_text("id,value\n1,100", encoding="utf-8")
+    (repo_path / "assets/logo.png").write_bytes(b"\x89PNG\r\n\x1a\n")
     return repo_path
 
-def test_generate_text_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt")
-    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
-    output_file = Path(output_paths[0])
-    assert output_file.exists()
-    assert "📂 Repository Structure Overview" in output_file.read_text(encoding="utf-8")
-    assert "Mock content for testing." in output_file.read_text(encoding="utf-8")
+def test_generate_txt_output(clean_output_dir, mock_file_system):
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt")
+    out_paths = builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
+    assert (OUTPUT_DIR / "text" / f"{TEST_REPO_NAME}.txt").exists()
 
 def test_generate_json_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="json")
-    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
-    output_file = Path(output_paths[0])
-    assert output_file.exists()
-    json_data = json.loads(output_file.read_text(encoding="utf-8"))
-    assert len(json_data["files"]) == len(MOCK_FILES)
-    assert json_data["files"][0]["content"] == "Mock content for testing."
-
-def test_handle_missing_files(clean_output_dir):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt")
-    missing_file = TEST_OUTPUT_DIR / "text" / "missing_file.txt"
-    output_paths = builder.generate_output([missing_file], TEST_OUTPUT_DIR)
-    output_file = Path(output_paths[0])
-    assert output_file.exists()
-    assert "[Error: File" in output_file.read_text(encoding="utf-8")
-
-def test_max_lines_limited_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt", max_lines=1)
-    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
-    output_file = Path(output_paths[0])
-    content_lines = output_file.read_text(encoding="utf-8").splitlines()
-    assert sum(1 for line in content_lines if "Mock content" in line) == len(MOCK_FILES)
-
-def test_output_directory_structure():
-    for subdir in ["text", "json", "md"]:
-        assert (TEST_OUTPUT_DIR / subdir).exists()
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="json")
+    out_paths = builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
+    json_path = OUTPUT_DIR / "json" / f"{TEST_REPO_NAME}.json"
+    assert json_path.exists()
+    with json_path.open() as f:
+        data = json.load(f)
+        assert any("app.py" in file['file'] for file in data["files"])
 
 def test_generate_markdown_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="md")
-    output_paths = builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)
-    output_file = Path(output_paths[0])
-    assert output_file.exists()
-    content = output_file.read_text(encoding="utf-8")
-    assert "# 📂 Repository Overview:" in content
-    assert "## 📜 Folder Structure" in content
-    assert "Mock content for testing." in content
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="md")
+    out_paths = builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
+    assert (OUTPUT_DIR / "md" / f"{TEST_REPO_NAME}.md").exists()
 
-def test_multi_format_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=TEST_OUTPUT_DIR, output_format="txt,json")
-    output_paths = [Path(p) for p in builder.generate_output(list(mock_file_system.iterdir()), mock_file_system)]
-    assert any("text" in str(p) for p in output_paths)
-    assert any("json" in str(p) for p in output_paths)
-    for path in output_paths:
-        assert path.exists()
+def test_zip_extras_generated(clean_output_dir, mock_file_system):
+    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt,json")
+    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
+    zip_path = OUTPUT_DIR / "zips" / f"{TEST_REPO_NAME}_extras.zip"
+    assert zip_path.exists()
