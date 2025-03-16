@@ -1,62 +1,64 @@
 from pathlib import Path
 import json
 import platform
+import os
 from gittxt.logger import Logger
+from dotenv import load_dotenv
 
 logger = Logger.get_logger(__name__)
 
+# Load .env file if present
+load_dotenv()
+
 class ConfigManager:
-    """Handles configuration loading and management for Gittxt."""
+    """Handles configuration loading and environment overrides."""
 
     SRC_DIR = Path(__file__).parent.resolve()
     CONFIG_FILE = SRC_DIR / "gittxt-config.json"
 
     @staticmethod
     def _determine_default_output_dir():
-        """
-        Choose a user-accessible default directory based on the OS.
-        - Windows: ~/Documents/Gittxt
-        - Mac: ~/Documents/Gittxt
-        - Linux/Other: ~/Gittxt
-        """
         system_name = platform.system().lower()
         home_dir = Path.home()
-
         if system_name.startswith("win") or system_name.startswith("darwin"):
             return (home_dir / "Documents" / "Gittxt").resolve()
         else:
             return (home_dir / "Gittxt").resolve()
 
     DEFAULT_CONFIG = {
-        "output_dir": str(_determine_default_output_dir.__func__()),  # evaluated at import
+        "output_dir": str(_determine_default_output_dir.__func__()),
         "size_limit": None,
         "include_patterns": [],
         "exclude_patterns": [".git", "node_modules", "__pycache__", ".log"],
         "output_format": "txt",
-        "max_lines": None,
-        "reuse_existing_repos": True,
+        "file_types": "code,docs",
         "logging_level": "INFO"
     }
 
     @classmethod
     def load_config(cls):
-        """Load configuration from gittxt-config.json, fallback to defaults if missing or invalid."""
-        if not cls.CONFIG_FILE.exists():
-            logger.warning("⚠️ Config file not found. Using default settings.")
-            return cls.DEFAULT_CONFIG
+        config = cls.DEFAULT_CONFIG.copy()
 
-        try:
-            with cls.CONFIG_FILE.open("r", encoding="utf-8") as f:
-                user_config = json.load(f)
+        if cls.CONFIG_FILE.exists():
+            try:
+                with cls.CONFIG_FILE.open("r", encoding="utf-8") as f:
+                    user_config = json.load(f)
+                config.update(user_config)
+            except (json.JSONDecodeError, IOError) as e:
+                logger.error(f"❌ Error loading config file: {e}. Using defaults.")
 
-            config = {**cls.DEFAULT_CONFIG, **user_config}
-            config["output_dir"] = str(Path(config["output_dir"]).resolve())
+        # .env overrides
+        config["output_dir"] = os.getenv("GITTXT_OUTPUT_DIR", config["output_dir"])
+        config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
+        config["file_types"] = os.getenv("GITTXT_FILE_TYPES", config["file_types"])
+        config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
+        config["size_limit"] = int(os.getenv("GITTXT_SIZE_LIMIT", config["size_limit"] or 0)) or None
 
-            logger.info(f"✅ Loaded configuration from {cls.CONFIG_FILE}")
-            return config
-        except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"❌ Error loading config file: {e}. Using defaults.")
-            return cls.DEFAULT_CONFIG
+        # Path normalization
+        config["output_dir"] = str(Path(config["output_dir"]).resolve())
+
+        logger.info(f"✅ Loaded configuration (with .env overrides if any)")
+        return config
 
     @classmethod
     def save_default_config(cls):
@@ -74,5 +76,4 @@ class ConfigManager:
         except Exception as e:
             logger.error(f"❌ Failed to update configuration file: {e}")
 
-# Ensure a default config exists upon import
 ConfigManager.save_default_config()
