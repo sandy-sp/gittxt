@@ -1,7 +1,8 @@
 import os
 import json
-import subprocess
 from gittxt.logger import Logger
+from gittxt.utils.tree_utils import generate_tree
+from pathlib import Path
 
 logger = Logger.get_logger(__name__)
 
@@ -43,15 +44,9 @@ class OutputBuilder:
         logger.debug(f"Requested output formats: {self.output_formats}")
 
     def generate_tree_summary(self, repo_path):
-        """Generate a folder structure summary using 'tree' command."""
-        try:
-            return subprocess.check_output(["tree", repo_path], text=True)
-        except FileNotFoundError:
-            logger.warning("⚠️ Tree command not found, skipping repository structure summary.")
-            return "⚠️ Tree command not available."
-        except Exception as e:
-            logger.error(f"❌ Error generating tree summary: {e}")
-            return "⚠️ Error generating repository structure."
+        """Generate a folder structure summary (native Python)."""
+        tree_str = generate_tree(Path(repo_path))
+        return tree_str or "⚠️ No files found or directory empty."
 
     def read_file_content(self, file_path):
         """

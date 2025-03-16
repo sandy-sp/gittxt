@@ -3,8 +3,9 @@ import mimetypes
 import sqlite3
 import concurrent.futures
 import hashlib
-import subprocess
 from gittxt.logger import Logger
+from gittxt.utils.tree_utils import generate_tree
+from pathlib import Path
 
 logger = Logger.get_logger(__name__)
 
@@ -141,15 +142,9 @@ class Scanner:
         return False
 
     def generate_tree_summary(self):
-        """Generate a folder structure summary using 'tree' command (if available)."""
-        try:
-            return subprocess.check_output(["tree", self.root_path], text=True)
-        except FileNotFoundError:
-            logger.warning("⚠️ Tree command not found, skipping repository structure summary.")
-            return "⚠️ Tree command not available."
-        except subprocess.SubprocessError as e:
-            logger.error(f"❌ Error generating tree summary: {e}")
-            return "⚠️ Error generating repository structure."
+        """Generate a folder structure summary (native Python)."""
+        tree_str = generate_tree(Path(self.root_path))
+        return tree_str or "⚠️ No files found or directory empty."
 
     def get_file_hash(self, file_path):
         """Generate SHA256 hash of the file content for caching."""
