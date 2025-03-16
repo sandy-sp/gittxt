@@ -1,102 +1,64 @@
 from pathlib import Path
 import git
-from urllib.parse import urlparse
 from gittxt.logger import Logger
+from gittxt.utils.repo_url_parser import parse_github_url
 
 logger = Logger.get_logger(__name__)
 
 class RepositoryHandler:
-    """Handles remote and local Git repository management for Gittxt."""
+    """Handles GitHub repo cloning and local directory resolution."""
 
     BASE_OUTPUT_DIR = (Path(__file__).parent / "../gittxt-outputs").resolve()
     TEMP_DIR = BASE_OUTPUT_DIR / "temp"
 
-    _clone_cache = {}
-
-    def __init__(self, source, branch=None, reuse_existing=True):
+    def __init__(self, source: str, branch: str = None):
         """
         Initialize repository handler.
 
-        :param source: Local path or remote Git URL.
-        :param branch: Git branch to clone (if applicable).
-        :param reuse_existing: Reuse already cloned repositories to prevent redundancy.
+        :param source: Local path or remote GitHub URL.
+        :param branch: Override branch (optional).
         """
-        if self.is_remote_repo(source):
-            self.source = source
-        else:
-            self.source = Path(source).resolve()
-        self.branch = branch
-        self.reuse_existing = reuse_existing
-        self.local_path = None
+        self.source = source
+        self.branch_override = branch
+        self.repo_meta = {}
 
     def is_remote_repo(self, source: str) -> bool:
-        parsed_url = urlparse(source)
-        if parsed_url.scheme in ("http", "https", "git"):
-            return True
-        if parsed_url.netloc and parsed_url.path:
-            return True
-        if source.startswith("git@"):
-            return True
-        if source.endswith(".git"):
-            return True
-        return False
+        return "github.com" in source or source.startswith("git@")
 
-    def get_repo_name(self) -> str or None:
-        if isinstance(self.source, Path) and self.source.exists():
-            return self.source.name
-        if isinstance(self.source, str):
-            parsed_url = urlparse(self.source)
-            repo_name = Path(parsed_url.path).stem
-            if not repo_name:
-                logger.error(f"❌ Could not extract repository name from: {self.source}")
-                return None
-            return repo_name
-        return None
-
-    def clone_repository(self) -> str or None:
-        repo_name = self.get_repo_name()
-        if not repo_name:
-            return None
-
-        cache_key = (self.source, self.branch)
-        if self.reuse_existing and cache_key in RepositoryHandler._clone_cache:
-            logger.info(f"✅ Repository already cloned (cache): {RepositoryHandler._clone_cache[cache_key]}")
-            self.local_path = RepositoryHandler._clone_cache[cache_key]
-            return str(self.local_path)
-
+    def _prepare_temp_dir(self, repo_name: str) -> Path:
         temp_dir = self.TEMP_DIR / repo_name
         temp_dir.mkdir(parents=True, exist_ok=True)
+        return temp_dir
 
-        if self.reuse_existing and temp_dir.exists():
-            logger.info(f"✅ Repository already cloned: {temp_dir}")
-            self.local_path = temp_dir
-            RepositoryHandler._clone_cache[cache_key] = temp_dir
-            return str(temp_dir)
-
+    def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path):
         logger.info(f"🚀 Cloning repository into: {temp_dir}")
-
         clone_args = {"depth": 1}
-        if self.branch:
-            clone_args["branch"] = self.branch
+        if branch:
+            clone_args["branch"] = branch
+        git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
+        logger.info(f"✅ Clone successful: {temp_dir}")
 
-        try:
-            git.Repo.clone_from(self.source, str(temp_dir), **clone_args)
-            self.local_path = temp_dir
-            RepositoryHandler._clone_cache[cache_key] = temp_dir
-            logger.info(f"✅ Clone successful: {temp_dir}")
-            return str(temp_dir)
-        except git.exc.GitCommandError as e:
-            logger.error(f"❌ Git error while cloning repository: {e}")
-        except Exception as e:
-            logger.error(f"❌ Unexpected error during cloning: {e}")
+    def get_local_path(self) -> tuple[str, str]:
+        """
+        Return repo folder path + subdirectory (if provided).
 
-        return None
-
-    def get_local_path(self) -> str or None:
+        Returns:
+            (repo_path, subdir)
+        """
         if self.is_remote_repo(self.source):
-            return self.clone_repository()
-        if isinstance(self.source, Path) and self.source.exists():
-            logger.info(f"✅ Using local repository: {self.source}")
-            return str(self.source)
-        logger.error(f"❌ Invalid repository path: {self.source}")
-        return None
+            parsed = parse_github_url(self.source)
+            git_url = f"https://github.com/{parsed['owner']}/{parsed['repo']}.git"
+            branch = self.branch_override or parsed.get("branch", "main")
+            subdir = parsed.get("subdir") or ""
+
+            repo_name = parsed["repo"]
+            temp_dir = self._prepare_temp_dir(repo_name)
+            self._clone_remote_repo(git_url, branch, temp_dir)
+            return str(temp_dir), subdir
+        else:
+            path = Path(self.source).resolve()
+            if not path.exists():
+                logger.error(f"❌ Invalid local repo path: {self.source}")
+                return None, ""
+            logger.info(f"✅ Using local repository: {path}")
+            return str(path), ""
