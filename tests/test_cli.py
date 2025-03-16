@@ -1,90 +1,67 @@
-import pytest
-import shutil
 import subprocess
+import shutil
 from pathlib import Path
-from gittxt.config import ConfigManager
-
-config = ConfigManager.load_config()
+import pytest
 
 TEST_REPO = Path("tests/test-repo").resolve()
-TEST_OUTPUT_DIR = Path(config["output_dir"]) / "test-cli"
-TEXT_OUTPUT_PATH = TEST_OUTPUT_DIR / "text" / "test-repo.txt"
-JSON_OUTPUT_PATH = TEST_OUTPUT_DIR / "json" / "test-repo.json"
+OUTPUT_DIR = Path("tests/test-outputs")
 
 @pytest.fixture(scope="function")
 def clean_output_dir():
-    if TEST_OUTPUT_DIR.exists():
-        shutil.rmtree(TEST_OUTPUT_DIR)
-    TEST_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    if OUTPUT_DIR.exists():
+        shutil.rmtree(OUTPUT_DIR)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-def run_gittxt_command(args):
+def run_gittxt(args):
     cmd = ["python", "src/gittxt/cli.py"] + args
     result = subprocess.run(cmd, capture_output=True, text=True)
     print("\n--- STDOUT ---\n", result.stdout)
     print("\n--- STDERR ---\n", result.stderr)
     return result
 
-def test_cli_help():
-    result = run_gittxt_command(["--help"])
-    assert "Usage:" in result.stdout or result.stderr
-    assert "install" in result.stdout or result.stderr
-    assert "scan" in result.stdout or result.stderr
-
-def test_cli_basic_scan(clean_output_dir):
-    result = run_gittxt_command(["scan", str(TEST_REPO), "--output-dir", str(TEST_OUTPUT_DIR)])
+def test_basic_scan_txt(clean_output_dir):
+    result = run_gittxt(["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR)])
     assert "✅ Processing" in result.stdout or result.stderr
-    assert TEXT_OUTPUT_PATH.exists()
+    assert (OUTPUT_DIR / "text" / "test-repo.txt").exists()
 
-def test_cli_include_exclude(clean_output_dir):
-    result = run_gittxt_command([
-        "scan", str(TEST_REPO),
-        "--include", ".py",
-        "--include", ".md",
-        "--exclude", "node_modules",
-        "--exclude", "__pycache__",
-        "--output-dir", str(TEST_OUTPUT_DIR)
-    ])
-    assert "✅ Processing" in result.stdout or result.stderr
-    assert TEXT_OUTPUT_PATH.exists()
+def test_multi_format_scan(clean_output_dir):
+    result = run_gittxt(["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR), "--output-format", "txt,json,md"])
+    assert (OUTPUT_DIR / "text" / "test-repo.txt").exists()
+    assert (OUTPUT_DIR / "json" / "test-repo.json").exists()
+    assert (OUTPUT_DIR / "md" / "test-repo.md").exists()
 
-def test_cli_output_format_json(clean_output_dir):
-    result = run_gittxt_command([
-        "scan", str(TEST_REPO),
-        "--output-format", "json",
-        "--output-dir", str(TEST_OUTPUT_DIR)
-    ])
-    assert "✅ Output saved to:" in result.stdout or result.stderr
-    assert JSON_OUTPUT_PATH.exists()
+def test_summary_flag(clean_output_dir):
+    result = run_gittxt(["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR), "--summary", "--non-interactive"])
+    assert "📊 Processed" in result.stdout or result.stderr
 
-def test_cli_summary_flag(clean_output_dir):
-    result = run_gittxt_command([
+def test_file_types_flag(clean_output_dir):
+    result = run_gittxt([
         "scan", str(TEST_REPO),
-        "--summary",
-        "--output-dir", str(TEST_OUTPUT_DIR)
+        "--output-dir", str(OUTPUT_DIR),
+        "--file-types", "code,docs",
+        "--non-interactive"
     ])
-    assert "📊 Summary Report" in result.stdout or result.stderr
+    output_txt = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
+    assert "app.py" in output_txt
+    assert "README.md" in output_txt
+    assert "data.csv" not in output_txt  # CSV should be excluded
 
-def test_cli_debug_flag(clean_output_dir):
-    result = run_gittxt_command([
+def test_zip_generation(clean_output_dir):
+    result = run_gittxt([
         "scan", str(TEST_REPO),
-        "--debug",
-        "--output-dir", str(TEST_OUTPUT_DIR)
+        "--output-dir", str(OUTPUT_DIR),
+        "--file-types", "all",
+        "--non-interactive"
     ])
-    assert "🔍 Debug mode enabled." in result.stdout or result.stderr
+    zip_path = OUTPUT_DIR / "zips" / "test-repo_extras.zip"
+    assert zip_path.exists()
 
-def test_cli_summary_report(clean_output_dir):
-    result = run_gittxt_command([
+def test_exclude_pattern(clean_output_dir):
+    result = run_gittxt([
         "scan", str(TEST_REPO),
-        "--summary",
-        "--output-dir", str(TEST_OUTPUT_DIR)
+        "--output-dir", str(OUTPUT_DIR),
+        "--exclude", "docs",
+        "--non-interactive"
     ])
-    assert "📊 Summary Report" in result.stdout or result.stderr
-
-def test_cli_multi_format(clean_output_dir):
-    result = run_gittxt_command([
-        "scan", str(TEST_REPO),
-        "--output-format", "txt,json",
-        "--output-dir", str(TEST_OUTPUT_DIR)
-    ])
-    assert TEXT_OUTPUT_PATH.exists()
-    assert JSON_OUTPUT_PATH.exists()
+    output_txt = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
+    assert "overview.md" not in output_txt  # docs/ folder excluded
