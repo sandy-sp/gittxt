@@ -1,15 +1,14 @@
-import os
+from pathlib import Path
 import json
 from gittxt.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
-from pathlib import Path
 
 logger = Logger.get_logger(__name__)
 
 class OutputBuilder:
     """Handles output generation for scanned repositories, including multi-format support and token counts."""
 
-    BASE_OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt-outputs"))
+    BASE_OUTPUT_DIR = (Path(__file__).parent / "../gittxt-outputs").resolve()
 
     def __init__(self, repo_name, output_dir=None, max_lines=None, output_format="txt"):
         """
@@ -20,31 +19,26 @@ class OutputBuilder:
         :param max_lines: Maximum number of lines per file (for large file handling).
         :param output_format: Output format(s). Can be "txt", "json", "md", or comma-separated, e.g. "txt,json".
         """
-        # Ensure absolute path for output directory
-        self.output_dir = os.path.abspath(output_dir) if output_dir else self.BASE_OUTPUT_DIR
-        self.text_dir = os.path.join(self.output_dir, "text")
-        self.json_dir = os.path.join(self.output_dir, "json")
-        self.md_dir = os.path.join(self.output_dir, "md")  # Directory for markdown output
+        self.output_dir = Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
+        self.text_dir = self.output_dir / "text"
+        self.json_dir = self.output_dir / "json"
+        self.md_dir = self.output_dir / "md"
         self.max_lines = max_lines
 
-        # If multiple formats are specified, parse them; otherwise, store as single
         if "," in output_format:
             self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
         else:
             self.output_formats = [output_format.lower()]
 
-        self.repo_name = repo_name
-
-        # Ensure output directories exist
-        os.makedirs(self.text_dir, exist_ok=True)
-        os.makedirs(self.json_dir, exist_ok=True)
-        os.makedirs(self.md_dir, exist_ok=True)
+        # Create directories
+        for folder in [self.text_dir, self.json_dir, self.md_dir]:
+            folder.mkdir(parents=True, exist_ok=True)
 
         logger.debug(f"Output directory resolved to: {self.output_dir}")
         logger.debug(f"Requested output formats: {self.output_formats}")
 
     def generate_tree_summary(self, repo_path):
-        """Generate a folder structure summary (native Python)."""
+        """Generate a folder structure summary."""
         tree_str = generate_tree(Path(repo_path))
         return tree_str or "⚠️ No files found or directory empty."
 
@@ -53,12 +47,13 @@ class OutputBuilder:
         Read file content with optional line limits and handle missing files.
         Returns a list of lines (strings).
         """
-        if not os.path.exists(file_path):
+        file_path = Path(file_path)
+        if not file_path.exists():
             logger.error(f"⚠️ File not found: {file_path}")
             return [f"[Error: File '{file_path}' not found]\n"]
 
         try:
-            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            with file_path.open("r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()
                 return lines[:self.max_lines] if self.max_lines else lines
         except Exception as e:
@@ -66,23 +61,13 @@ class OutputBuilder:
             return [f"[Error reading {file_path}: {e}]\n"]
 
     def _compute_token_count(self, file_content_lines):
-        """
-        Very naive token count: splits each line by whitespace and sums.
-        This is purely for demonstration in v2.0.0.
-        """
-        total_tokens = 0
-        for line in file_content_lines:
-            total_tokens += len(line.strip().split())
+        total_tokens = sum(len(line.strip().split()) for line in file_content_lines)
         return total_tokens
 
     def generate_output(self, files, repo_path, summary_data=None):
-        """
-        Generate final outputs in one or more formats.
-        Returns a list of output file paths.
-        """
+        """Generate final outputs in one or more formats."""
         tree_summary = self.generate_tree_summary(repo_path)
 
-        # Compute naive token count across all files if summary_data is provided
         if summary_data is not None:
             total_tokens = 0
             for file_path in files:
@@ -91,23 +76,20 @@ class OutputBuilder:
             summary_data["estimated_tokens"] = total_tokens
 
         output_paths = []
-        # For each requested format, call the specialized generator
         for fmt in self.output_formats:
             if fmt == "json":
                 out_file = self._generate_json_output(files, tree_summary, summary_data, repo_path)
             elif fmt == "md":
                 out_file = self._generate_markdown_output(files, tree_summary, summary_data, repo_path)
             else:
-                # Default to txt if unknown or "txt" is specified
                 out_file = self._generate_text_output(files, tree_summary, summary_data, repo_path)
-            output_paths.append(out_file)
+            output_paths.append(str(out_file))
         return output_paths
 
     def _generate_text_output(self, files, tree_summary, summary_data, repo_path):
-        """Generate a `.txt` file with extracted text and folder structure summary."""
-        output_file = os.path.join(self.text_dir, f"{self.repo_name}.txt")
+        output_file = self.text_dir / f"{self.repo_name}.txt"
         logger.info(f"📝 Writing output to {output_file} (TXT format)")
-        with open(output_file, "w", encoding="utf-8") as out:
+        with output_file.open("w", encoding="utf-8") as out:
             out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
             if summary_data:
                 out.write("📊 Summary Report:\n")
@@ -118,9 +100,8 @@ class OutputBuilder:
                     out.write(f" - Estimated Tokens: {summary_data['estimated_tokens']}\n")
                 out.write("\n")
             for file_path in files:
-                # Compute relative path from repository root to sanitize output.
-                relative_path = os.path.relpath(file_path, repo_path)
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
+                relative_path = str(Path(file_path).relative_to(repo_path))
+                file_size = Path(file_path).stat().st_size if Path(file_path).exists() else "Unknown"
                 out.write(f"=== File: {relative_path} (size: {file_size} bytes) ===\n")
                 content_lines = self.read_file_content(file_path)
                 out.writelines(content_lines)
@@ -129,8 +110,7 @@ class OutputBuilder:
         return output_file
 
     def _generate_json_output(self, files, tree_summary, summary_data, repo_path):
-        """Generate a `.json` file with structured repository content."""
-        output_file = os.path.join(self.json_dir, f"{self.repo_name}.json")
+        output_file = self.json_dir / f"{self.repo_name}.json"
         logger.info(f"📝 Writing output to {output_file} (JSON format)")
         output_data = {
             "repository_structure": tree_summary,
@@ -138,27 +118,24 @@ class OutputBuilder:
             "files": []
         }
         for file_path in files:
-            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
-            content = "".join(self.read_file_content(file_path))
-            relative_path = os.path.relpath(file_path, repo_path)
+            file = Path(file_path)
+            file_size = file.stat().st_size if file.exists() else "Unknown"
+            content = "".join(self.read_file_content(file))
+            relative_path = str(file.relative_to(repo_path))
             output_data["files"].append({
                 "file": relative_path,
                 "size": file_size,
                 "content": content.strip()
             })
-        try:
-            with open(output_file, "w", encoding="utf-8") as json_file:
-                json.dump(output_data, json_file, indent=4)
-        except TypeError as e:
-            logger.error(f"❌ Error saving JSON output: {e}")
+        with output_file.open("w", encoding="utf-8") as json_file:
+            json.dump(output_data, json_file, indent=4)
         logger.info(f"✅ Output saved to: {output_file}")
         return output_file
 
     def _generate_markdown_output(self, files, tree_summary, summary_data, repo_path):
-        """Generate a `.md` file with structured repository content."""
-        output_file = os.path.join(self.md_dir, f"{self.repo_name}.md")
+        output_file = self.md_dir / f"{self.repo_name}.md"
         logger.info(f"📝 Writing output to {output_file} (Markdown format)")
-        with open(output_file, "w", encoding="utf-8") as out:
+        with output_file.open("w", encoding="utf-8") as out:
             out.write(f"# 📂 Repository Overview: {self.repo_name}\n\n")
             out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n\n")
             out.write("## 📊 Summary Report\n")
@@ -171,11 +148,12 @@ class OutputBuilder:
                 out.write("\n")
             out.write("## 📄 Extracted Text Files\n")
             for file_path in files:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else "Unknown"
-                relative_path = os.path.relpath(file_path, repo_path)
+                file = Path(file_path)
+                file_size = file.stat().st_size if file.exists() else "Unknown"
+                relative_path = str(file.relative_to(repo_path))
                 out.write(f"\n### `{relative_path}` (size: {file_size} bytes)\n")
                 out.write("```plaintext\n")
-                content_lines = self.read_file_content(file_path)
+                content_lines = self.read_file_content(file)
                 out.writelines(content_lines)
                 out.write("\n```\n")
         logger.info(f"✅ Markdown output saved to: {output_file}")

@@ -1,11 +1,10 @@
-import os
+from pathlib import Path
 import mimetypes
 import sqlite3
 import concurrent.futures
 import hashlib
 from gittxt.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
-from pathlib import Path
 
 logger = Logger.get_logger(__name__)
 
@@ -15,8 +14,8 @@ class Scanner:
     Now supports optional 'docs_only' and 'auto_filter' toggles for advanced filtering.
     """
 
-    BASE_CACHE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gittxt-outputs/cache"))
-    CACHE_DB = os.path.join(BASE_CACHE_DIR, "scan_cache.db")
+    BASE_CACHE_DIR = (Path(__file__).parent / "../gittxt-outputs/cache").resolve()
+    CACHE_DB = BASE_CACHE_DIR / "scan_cache.db"
 
     def __init__(
         self,
@@ -37,7 +36,7 @@ class Scanner:
         :param docs_only: If True, only documentation files (README, .md, .rst, .txt, etc.) are processed.
         :param auto_filter: If True, automatically skip common unwanted/binary file types.
         """
-        self.root_path = os.path.abspath(root_path)
+        self.root_path = Path(root_path).resolve()
         self.include_patterns = self._parse_patterns(include_patterns)
         self.exclude_patterns = self._parse_patterns(exclude_patterns)
         self.size_limit = size_limit
@@ -48,7 +47,7 @@ class Scanner:
 
     def _initialize_cache(self):
         """Ensure SQLite cache database is set up for incremental scanning."""
-        os.makedirs(self.BASE_CACHE_DIR, exist_ok=True)
+        self.BASE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self.CACHE_DB)
         cursor = conn.cursor()
         cursor.execute(
@@ -62,7 +61,7 @@ class Scanner:
         logger.debug("✅ Cache database initialized")
 
     def clear_cache(self):
-        """Clear the cache database. Used for testing and ensuring fresh scans."""
+        """Clear the cache database."""
         conn = sqlite3.connect(self.CACHE_DB)
         cursor = conn.cursor()
         cursor.execute("DELETE FROM file_cache")
@@ -71,23 +70,13 @@ class Scanner:
         logger.info("🗑️ Cache cleared.")
 
     def _parse_patterns(self, patterns):
-        """Convert comma-separated string patterns into a list of stripped patterns."""
         if isinstance(patterns, str):
             return [p.strip() for p in patterns.split(",")]
         return patterns if patterns else []
 
-    def _is_documentation_file(self, file_path):
-        """
-        Determine if the file is considered 'documentation'.
-
-        A file is considered documentation if:
-          - Its extension is one of: .md, .rst, .txt, OR
-          - Its basename starts with common doc keywords (e.g. readme, license, contributing, changelog), OR
-          - It is located in a directory named exactly 'docs' (case-insensitive).
-        """
-        basename = os.path.basename(file_path).lower()
-        _, ext = os.path.splitext(basename)
-        ext = ext.lower()
+    def _is_documentation_file(self, file_path: Path):
+        basename = file_path.name.lower()
+        ext = file_path.suffix.lower()
 
         doc_extensions = {".md", ".rst", ".txt"}
         if ext in doc_extensions:
@@ -97,41 +86,25 @@ class Scanner:
         if any(basename.startswith(keyword) for keyword in doc_filenames):
             return True
 
-        norm_path = os.path.normpath(file_path)
-        path_parts = norm_path.split(os.sep)
-        if "docs" in path_parts:
+        if "docs" in file_path.parts:
             return True
 
         return False
 
-    def _auto_filter_file(self, file_path):
-        """
-        Skip common unwanted or binary file types automatically.
-        E.g., .log, .gz, .tar, .jpg, .csv, etc.
-        """
-        auto_exclude_ext = {
-            ".log", ".gz", ".tar", ".jpg", ".jpeg", ".png", ".csv", ".pdf", ".doc", ".docx"
-        }
-        basename = os.path.basename(file_path).lower()
-        _, ext = os.path.splitext(basename)
-        if ext.lower() in auto_exclude_ext:
+    def _auto_filter_file(self, file_path: Path):
+        auto_exclude_ext = {".log", ".gz", ".tar", ".jpg", ".jpeg", ".png", ".csv", ".pdf", ".doc", ".docx"}
+        if file_path.suffix.lower() in auto_exclude_ext:
             logger.debug(f"❌ Auto-filter skipping file: {file_path}")
             return True
         return False
 
-    def is_text_file(self, file_path):
-        """
-        Determine if a file is text-based using MIME type detection.
-        Also maintains an explicit set of known binary extensions.
-        """
-        binary_extensions = {
-            ".mp4", ".avi", ".mov", ".tar.gz", ".zip", ".exe", ".bin", ".jpeg", ".png", ".gif", ".pdf"
-        }
-        if any(file_path.endswith(ext) for ext in binary_extensions):
+    def is_text_file(self, file_path: Path):
+        binary_extensions = {".mp4", ".avi", ".mov", ".tar.gz", ".zip", ".exe", ".bin", ".jpeg", ".png", ".gif", ".pdf"}
+        if any(str(file_path).endswith(ext) for ext in binary_extensions):
             logger.debug(f"❌ Skipping binary file based on extension: {file_path}")
             return False
 
-        mime_type, _ = mimetypes.guess_type(file_path)
+        mime_type, _ = mimetypes.guess_type(str(file_path))
         if not mime_type:
             return False
 
@@ -142,15 +115,13 @@ class Scanner:
         return False
 
     def generate_tree_summary(self):
-        """Generate a folder structure summary (native Python)."""
-        tree_str = generate_tree(Path(self.root_path))
+        tree_str = generate_tree(self.root_path)
         return tree_str or "⚠️ No files found or directory empty."
 
-    def get_file_hash(self, file_path):
-        """Generate SHA256 hash of the file content for caching."""
+    def get_file_hash(self, file_path: Path):
         try:
             hasher = hashlib.sha256()
-            with open(file_path, "rb") as f:
+            with file_path.open("rb") as f:
                 while chunk := f.read(8192):
                     hasher.update(chunk)
             return hasher.hexdigest()
@@ -159,12 +130,6 @@ class Scanner:
             return None
 
     def scan_directory(self):
-        """
-        Scan directory using multi-threading, filtering, and caching.
-        Returns:
-          valid_files: A list of text files that pass all filters.
-          tree_summary: Output of 'tree' command or fallback.
-        """
         valid_files = []
         tree_summary = self.generate_tree_summary()
 
@@ -173,8 +138,8 @@ class Scanner:
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = {
-                executor.submit(self.process_file, os.path.join(root, file)): file
-                for root, _, files in os.walk(self.root_path) for file in files
+                executor.submit(self.process_file, file_path): file_path
+                for file_path in self.root_path.rglob("*") if file_path.is_file()
             }
 
             for future in concurrent.futures.as_completed(futures):
@@ -182,7 +147,7 @@ class Scanner:
                 if result:
                     file_path, is_text = result
                     if is_text:
-                        valid_files.append(file_path)
+                        valid_files.append(str(file_path))
 
         cursor.execute("SELECT COUNT(*) FROM file_cache WHERE hash IS NOT NULL")
         cached_file_count = cursor.fetchone()[0]
@@ -192,45 +157,34 @@ class Scanner:
         logger.info(f"✅ Scanning complete. {len(valid_files)} text files found.")
         return valid_files, tree_summary
 
-    def process_file(self, file_path):
-        """
-        Process a file and determine if it should be included or skipped.
-        Returns (file_path, True) if valid, otherwise None.
-        """
-        file_path = os.path.abspath(file_path)
+    def process_file(self, file_path: Path):
+        file_path = file_path.resolve()
 
-        # 1. Skip excluded patterns.
-        if any(pattern in file_path for pattern in self.exclude_patterns):
+        if any(pattern in str(file_path) for pattern in self.exclude_patterns):
             logger.debug(f"❌ Skipping excluded file: {file_path}")
             return None
 
-        # 2. If docs_only is True, skip non-documentation files.
         if self.docs_only and not self._is_documentation_file(file_path):
             logger.debug(f"❌ Skipping non-doc file (docs_only): {file_path}")
             return None
 
-        # 3. Skip files not in include list (if specified).
-        if self.include_patterns and not any(file_path.endswith(p) for p in self.include_patterns):
+        if self.include_patterns and not any(str(file_path).endswith(p) for p in self.include_patterns):
             logger.debug(f"❌ Skipping file not in include list: {file_path}")
             return None
 
-        # 4. Skip oversized files.
-        if self.size_limit and os.path.getsize(file_path) > self.size_limit:
+        if self.size_limit and file_path.stat().st_size > self.size_limit:
             logger.debug(f"⚠️ Skipping oversized file: {file_path}")
             return None
 
-        # 5. If auto_filter is enabled, skip common unwanted files.
         if self.auto_filter and self._auto_filter_file(file_path):
             return None
 
-        # 6. Skip non-text files.
         if not self.is_text_file(file_path):
             return None
 
-        # 7. Check cache.
         conn = sqlite3.connect(self.CACHE_DB)
         cursor = conn.cursor()
-        cursor.execute("SELECT hash FROM file_cache WHERE path = ?", (file_path,))
+        cursor.execute("SELECT hash FROM file_cache WHERE path = ?", (str(file_path),))
         cached_entry = cursor.fetchone()
 
         file_hash = self.get_file_hash(file_path)
@@ -243,8 +197,7 @@ class Scanner:
             conn.close()
             return None
 
-        # 8. Update cache.
-        cursor.execute("REPLACE INTO file_cache (path, hash) VALUES (?, ?)", (file_path, file_hash))
+        cursor.execute("REPLACE INTO file_cache (path, hash) VALUES (?, ?)", (str(file_path), file_hash))
         conn.commit()
         conn.close()
 

@@ -1,5 +1,5 @@
+from pathlib import Path
 import click
-import os
 import sys
 import logging
 
@@ -11,107 +11,82 @@ from gittxt.output_builder import OutputBuilder
 
 logger = Logger.get_logger(__name__)
 
-# Load configuration once; CLI options may override these.
+# Load configuration once
 config = ConfigManager.load_config()
 
 @click.group()
 def cli():
-    """
-    Gittxt v2.0.0 CLI
-
-    Subcommands:
-      install  -> Interactive config setup
-      scan     -> Scan one or more repositories
-    """
+    """Gittxt v1.3.1 CLI
+        Subcommands:
+            install  -> Interactive config setup
+            scan     -> Scan one or more repositories"""
     pass
 
 @cli.command()
 def install():
-    """
-    Interactive install command that prompts the user for key config options
-    and saves them into gittxt-config.json.
-    """
+    """Interactive install command that updates gittxt-config.json"""
     click.echo("Welcome to Gittxt v2.0.0 interactive setup!")
     click.echo("We'll update your local gittxt-config.json...")
 
-    # Current output directory
+    # Output directory
     current_out_dir = config.get("output_dir", "")
     click.echo(f"\nCurrent default output directory: {current_out_dir}")
     change_out_dir = click.prompt("Would you like to change it? (y/n)", default="n")
     if change_out_dir.lower().startswith("y"):
         new_dir = click.prompt("Enter the new output directory", default=current_out_dir)
-        config["output_dir"] = os.path.abspath(os.path.expanduser(new_dir))
+        config["output_dir"] = str(Path(new_dir).expanduser().resolve())
         click.echo(f"✅ Updated output_dir to: {config['output_dir']}")
 
-    # Current logging level
+    # Logging level
     current_log_level = config.get("logging_level", "INFO")
     click.echo(f"\nCurrent logging level: {current_log_level}")
     new_level = click.prompt("Enter new logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL or skip)", default=current_log_level)
     config["logging_level"] = new_level.upper()
     click.echo(f"✅ Updated logging_level to: {config['logging_level']}")
 
-    # Optional: enable/disable file logging
+    # File logging toggle
     enable_file_logging = config.get("enable_file_logging", True)
     click.echo(f"\nFile logging currently enabled: {enable_file_logging}")
     new_file_logging = click.prompt("Enable file logging? (y/n)", default="y" if enable_file_logging else "n")
     config["enable_file_logging"] = True if new_file_logging.lower().startswith("y") else False
     click.echo(f"✅ Updated enable_file_logging to: {config['enable_file_logging']}")
 
-    # Save updates
     ConfigManager.save_config_updates(config)
     click.echo("\n✅ Gittxt config updated successfully!")
     click.echo("Installation / setup complete. You can now run 'gittxt scan' to test.\n")
 
 @cli.command()
-@click.argument("repos", nargs=-1)  # Allow multiple repositories
-@click.option("--include", multiple=True, help="Include only files matching these patterns.")
-@click.option("--exclude", multiple=True, help="Exclude files matching these patterns.")
-@click.option("--size-limit", type=int, help="Exclude files larger than this size (bytes).")
-@click.option("--branch", type=str, help="Specify a Git branch (for remote repos).")
-@click.option("--output-dir", type=click.Path(), default=None, help="Override config's output directory.")
-@click.option("--output-format", default=None, help="Comma-separated output formats, e.g. 'txt,json,md'. Default from config.")
-@click.option("--max-lines", type=int, default=None, help="Limit number of lines per file.")
-@click.option("--summary", is_flag=True, help="Show a summary report of scanned files.")
-@click.option("--debug", is_flag=True, help="Enable debug mode for verbose logging.")
-@click.option("--docs-only", is_flag=True, help="Only extract documentation files (README, docs/, etc.).")
-@click.option("--auto-filter", is_flag=True, help="Skip common unwanted/binary files automatically.")
+@click.argument("repos", nargs=-1)
+@click.option("--include", multiple=True)
+@click.option("--exclude", multiple=True)
+@click.option("--size-limit", type=int)
+@click.option("--branch", type=str)
+@click.option("--output-dir", type=click.Path(), default=None)
+@click.option("--output-format", default=None)
+@click.option("--max-lines", type=int, default=None)
+@click.option("--summary", is_flag=True)
+@click.option("--debug", is_flag=True)
+@click.option("--docs-only", is_flag=True)
+@click.option("--auto-filter", is_flag=True)
 def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
          max_lines, summary, debug, docs_only, auto_filter):
-    """
-    Scan one or more repositories (local or remote), extracting text and generating outputs.
+    """Scan one or more repositories (local or remote)"""
 
-    Examples:
-      gittxt scan . --output-format txt,json
-      gittxt scan https://github.com/user/repo1 repo2 --docs-only --summary
-    """
     if not repos:
         click.echo("❌ No repositories specified. Provide at least one path or URL.")
         sys.exit(1)
 
-    # If --debug flag is set, update the logger level and echo the expected debug message.
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
-        msg = "🔍 Debug mode enabled."
-        logger.debug(msg)
-        click.echo(msg)
+        logger.debug("🔍 Debug mode enabled.")
+        click.echo("🔍 Debug mode enabled.")
 
-    # Determine final output directory (CLI option overrides config)
-    final_output_dir = output_dir or config.get("output_dir")
-
-    # Use output format from CLI if provided; otherwise default from config.
+    final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     chosen_format = output_format if output_format else config.get("output_format", "txt")
-
-    # Use CLI provided max_lines or config value.
     final_max_lines = max_lines if max_lines is not None else config.get("max_lines")
-
-    # Build include and exclude patterns.
     include_patterns = list(include) if include else config.get("include_patterns", [])
     exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
-
-    # Determine size limit.
     final_size_limit = size_limit if size_limit else config.get("size_limit")
-
-    # Reuse existing repositories flag from config.
     reuse_existing = config.get("reuse_existing_repos", True)
 
     all_output_files = []
@@ -119,14 +94,12 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
     for repo_source in repos:
         logger.info(f"🚀 Scanning repository source: {repo_source}")
 
-        # Handle repository (local or remote)
         repo_handler = RepositoryHandler(repo_source, branch=branch, reuse_existing=reuse_existing)
         repo_path = repo_handler.get_local_path()
         if not repo_path:
             logger.error("❌ Failed to access repository. Skipping this repo...")
             continue
 
-        # Initialize the Scanner with new flags.
         scanner = Scanner(
             root_path=repo_path,
             include_patterns=include_patterns,
@@ -143,18 +116,16 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
 
         logger.info(f"✅ Processing {len(valid_files)} text files from {repo_source}...")
 
-        # Collect summary statistics.
-        total_size = sum(os.path.getsize(f) for f in valid_files)
-        file_types = {os.path.splitext(f)[1] for f in valid_files}
+        total_size = sum(Path(f).stat().st_size for f in valid_files)
+        file_types = {Path(f).suffix for f in valid_files}
         summary_data = {
             "total_files": len(valid_files),
             "total_size": total_size,
             "file_types": list(file_types)
         }
 
-        repo_name = os.path.basename(os.path.normpath(repo_path))
+        repo_name = Path(repo_path).name
 
-        # Initialize OutputBuilder (supports multiple formats)
         builder = OutputBuilder(
             repo_name=repo_name,
             output_dir=final_output_dir,
@@ -181,10 +152,6 @@ def scan(repos, include, exclude, size_limit, branch, output_dir, output_format,
         logger.info(f"✅ Completed scanning of {len(repos)} repositories. Output files: {all_output_files}")
 
 def main():
-    """
-    Retain this entrypoint so that running `python src/gittxt/cli.py ...`
-    works. Typically, you'd install the package and call `gittxt` directly.
-    """
     cli()
 
 if __name__ == "__main__":
