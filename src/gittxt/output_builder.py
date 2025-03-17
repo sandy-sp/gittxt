@@ -4,6 +4,7 @@ from gittxt.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
 from gittxt.utils.cleanup_utils import zip_files
 from gittxt.utils.filetype_utils import classify_file
+from gittxt.utils.summary_utils import generate_summary
 
 try:
     from tqdm import tqdm
@@ -50,19 +51,16 @@ class OutputBuilder:
                 text_files.append(file)
             elif file_type in {"image", "media"}:
                 asset_files.append(file)
-
         # Progress bar here for text file output generation
-        iter_files = (
-            tqdm(text_files, desc="Generating text outputs") if tqdm else text_files
-        )
+        tqdm(text_files, desc="Generating text outputs") if tqdm else text_files
 
         for fmt in self.output_formats:
             if fmt == "json":
-                out = self._generate_json(iter_files, tree_summary, repo_path)
+                out = self._generate_json(text_files, tree_summary, repo_path)
             elif fmt == "md":
-                out = self._generate_markdown(iter_files, tree_summary, repo_path)
+                out = self._generate_markdown(text_files, tree_summary, repo_path)
             else:
-                out = self._generate_text(iter_files, tree_summary, repo_path)
+                out = self._generate_text(text_files, tree_summary, repo_path)
             logger.info(f"📄 {fmt.upper()} output ready at: {out}")
 
         if asset_files:
@@ -80,14 +78,21 @@ class OutputBuilder:
                 rel = Path(file).relative_to(repo_path)
                 content = self.read_file_content(file)
                 if content:
-                    out.write(f"=== FILE: {rel} ===\n")
-                    out.write(content.strip())
-                    out.write("\n\n" + "=" * 50 + "\n\n")
+                    out.write(f"=== FILE: {rel} ===\n{content.strip()}\n\n{'='*50}\n\n")
+            # Generate summary
+            summary = generate_summary(files)
+            summary_str = "\n".join([f"{k}: {v}" for k, v in summary.items()])
+            out.write("\n📊 Summary Report:\n")
+            out.write(summary_str)
         return output_file
 
     def _generate_json(self, files, tree_summary, repo_path):
         output_file = self.json_dir / f"{self.repo_name}.json"
-        data = {"repository_structure": tree_summary, "files": []}
+        data = {
+            "repository_structure": tree_summary,
+            "files": [],
+            "summary": generate_summary(files),  # keep dict for JSON
+        }
         for file in files:
             rel = Path(file).relative_to(repo_path)
             content = self.read_file_content(file)
@@ -101,7 +106,7 @@ class OutputBuilder:
         output_file = self.md_dir / f"{self.repo_name}.md"
         with output_file.open("w", encoding="utf-8") as out:
             out.write(f"# 📂 Repository Overview: `{self.repo_name}`\n\n")
-            out.write(f"## 📜 Folder Structure\n```plaintext\n{tree_summary}\n```\n")
+            out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n")
             out.write("## 📄 Extracted Files\n")
             for file in files:
                 rel = Path(file).relative_to(repo_path)
@@ -109,6 +114,11 @@ class OutputBuilder:
                 if content:
                     lang = self._detect_code_language(rel.suffix)
                     out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
+
+            # Markdown Summary block
+            summary = generate_summary(files)
+            summary_md = "\n".join([f"- **{k}**: {v}" for k, v in summary.items()])
+            out.write(f"\n---\n\n## 📊 Summary Report\n\n{summary_md}")
         return output_file
 
     def _detect_code_language(self, suffix: str) -> str:

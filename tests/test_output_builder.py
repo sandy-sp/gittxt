@@ -37,7 +37,10 @@ def mock_file_system(tmp_path):
 def test_generate_txt_output(clean_output_dir, mock_file_system):
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt")
     builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    assert (OUTPUT_DIR / "text" / f"{TEST_REPO_NAME}.txt").exists()
+    txt_path = OUTPUT_DIR / "text" / f"{TEST_REPO_NAME}.txt"
+    assert txt_path.exists()
+    content = txt_path.read_text()
+    assert "📊 Summary Report:" in content
 
 
 def test_generate_json_output(clean_output_dir, mock_file_system):
@@ -48,12 +51,16 @@ def test_generate_json_output(clean_output_dir, mock_file_system):
     with json_path.open() as f:
         data = json.load(f)
         assert any("app.py" in file["file"] for file in data["files"])
+        assert "summary" in data
 
 
 def test_generate_markdown_output(clean_output_dir, mock_file_system):
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="md")
     builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    assert (OUTPUT_DIR / "md" / f"{TEST_REPO_NAME}.md").exists()
+    md_path = OUTPUT_DIR / "md" / f"{TEST_REPO_NAME}.md"
+    assert md_path.exists()
+    content = md_path.read_text()
+    assert "## 📊 Summary Report" in content
 
 
 def test_zip_extras_generated(clean_output_dir, mock_file_system):
