@@ -104,7 +104,7 @@ Options:
 ├── md/
 │   └── repo-name.md
 └── zips/
-    └── repo-name_extras.zip  # Optional ZIP for assets (images, csv, etc.)
+    └── repo-name_bundle.zip  # Optional ZIP for assets (images, csv, etc.)
 ```
 
 ---
