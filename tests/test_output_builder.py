@@ -74,7 +74,7 @@ def test_zip_contains_output_and_assets(clean_output_dir, mock_file_system):
     assert zip_path.exists()
 
     # Inside test_zip_contains_output_and_assets()
-    with zipfile.ZipFile(zip_path, 'r') as zf:
+    with zipfile.ZipFile(zip_path, "r") as zf:
         zip_contents = zf.namelist()
 
         # Normalize using pathlib's PurePath for zip internal paths

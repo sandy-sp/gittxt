@@ -93,16 +93,13 @@ class OutputBuilder:
         data = {
             "repository_structure": tree_summary,
             "summary": generate_summary(files),
-            "files": []
+            "files": [],
         }
         for file in files:
             rel = Path(file).relative_to(repo_path)
             content = self.read_file_content(file)
             if content:
-                data["files"].append({
-                    "file": str(rel),
-                    "content": content.strip()
-                })
+                data["files"].append({"file": str(rel), "content": content.strip()})
         with output_file.open("w", encoding="utf-8") as json_file:
             json.dump(data, json_file, indent=4)
         return output_file
