@@ -54,6 +54,8 @@ def scan(repos, include, exclude, size_limit, branch, output_dir,
     include_patterns = list(include) if include else []
     exclude_patterns = list(exclude) if exclude else []
 
+    logger.info("🧹 Applying default filters: ['.git', '__pycache__', 'node_modules', '.log']")
+
     # Interactive inclusion prompt (optional)
     if not non_interactive:
         click.echo(f"Selected file types to include: {file_types}")

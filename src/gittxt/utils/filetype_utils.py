@@ -2,8 +2,6 @@ from pathlib import Path
 import mimetypes
 from binaryornot.check import is_binary
 
-# ----------- Classification Logic -----------
-
 def is_text_file(file: Path) -> bool:
     """
     Detects if the file is a readable text file using binary detection + MIME fallback.
@@ -46,25 +44,28 @@ def is_media_file(file: Path) -> bool:
     media_extensions = {".mp4", ".avi", ".mov", ".wav", ".mp3"}
     return file.suffix.lower() in media_extensions
 
-# ----------- Main Classifier -----------
+def is_meta_file(file: Path) -> bool:
+    meta_files = {
+        ".gitignore", ".dockerignore", "Makefile", "Dockerfile",
+        "pyproject.toml", "setup.cfg", "requirements.txt",
+        "MANIFEST.in", "LICENSE"
+    }
+    return file.name in meta_files
 
 def classify_file(file: Path) -> str:
     """
     Classify a file into:
     - code: Source code files (.py, .js, etc.)
-    - doc: Documentation (.md, .txt, .rst)
+    - doc: Documentation (.md, .txt, .rst) & Meta Files
     - image: Images (png, jpg, svg, etc.)
     - csv: CSV / JSON / YAML data
     - media: Video or audio
     - text: Miscellaneous text files
     - other: Binary or unsupported formats
     """
-    if not file.exists() or not file.is_file():
-        return "other"
-
     if is_code_file(file):
         return "code"
-    if is_doc_file(file):
+    if is_doc_file(file) or is_meta_file(file):
         return "docs"
     if is_image_file(file):
         return "image"
@@ -74,6 +75,4 @@ def classify_file(file: Path) -> str:
         return "media"
     if is_text_file(file):
         return "text"
-
     return "other"
-
