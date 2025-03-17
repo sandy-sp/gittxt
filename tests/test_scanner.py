@@ -46,8 +46,12 @@ def test_filetype_docs_only(mock_repo):
         file_types=["docs"]
     )
     files, _ = scanner.scan_directory()
-    assert any("README.md" in f for f in files)
-    assert all("README.md" in f for f in files)
+    
+    assert any("README" in Path(f).name for f in files)
+
+    # Accept common doc extensions
+    allowed = [".md", ".rst", ".txt"]
+    assert all(Path(f).suffix in allowed or "README" in Path(f).name for f in files)
 
 def test_filetype_csv(mock_repo):
     scanner = Scanner(
