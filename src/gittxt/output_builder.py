@@ -51,7 +51,8 @@ class OutputBuilder:
                 out = self._generate_markdown(text_files, tree_summary, repo_path)
             else:
                 out = self._generate_text(text_files, tree_summary, repo_path)
-            logger.info(f"✅ Output generated: {out}")
+
+            logger.info(f"📄 {fmt.upper()} output ready at: {out}")
 
         # Zip non-code assets (images/csv/media)
         if asset_files:
