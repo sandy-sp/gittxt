@@ -65,7 +65,7 @@ def classify_file(file: Path) -> str:
     if is_code_file(file):
         return "code"
     if is_doc_file(file):
-        return "doc"
+        return "docs"
     if is_image_file(file):
         return "image"
     if is_csv_or_data_file(file):
