@@ -6,11 +6,6 @@ from gittxt.utils.cleanup_utils import zip_files
 from gittxt.utils.filetype_utils import classify_file
 from gittxt.utils.summary_utils import generate_summary
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = None
-
 logger = Logger.get_logger(__name__)
 
 
@@ -51,8 +46,6 @@ class OutputBuilder:
                 text_files.append(file)
             elif file_type in {"image", "media"}:
                 asset_files.append(file)
-        # Progress bar here for text file output generation
-        tqdm(text_files, desc="Generating text outputs") if tqdm else text_files
 
         for fmt in self.output_formats:
             if fmt == "json":
@@ -73,31 +66,39 @@ class OutputBuilder:
     def _generate_text(self, files, tree_summary, repo_path):
         output_file = self.text_dir / f"{self.repo_name}.txt"
         with output_file.open("w", encoding="utf-8") as out:
+            # Repo tree
             out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
+
+            # Summary FIRST
+            summary = generate_summary(files)
+            summary_str = "\n".join([f"{k}: {v}" for k, v in summary.items()])
+            out.write("\n📊 Summary Report:\n")
+            out.write(summary_str)
+            out.write("\n\n")
+
+            # Files section LAST
             for file in files:
                 rel = Path(file).relative_to(repo_path)
                 content = self.read_file_content(file)
                 if content:
                     out.write(f"=== FILE: {rel} ===\n{content.strip()}\n\n{'='*50}\n\n")
-            # Generate summary
-            summary = generate_summary(files)
-            summary_str = "\n".join([f"{k}: {v}" for k, v in summary.items()])
-            out.write("\n📊 Summary Report:\n")
-            out.write(summary_str)
         return output_file
 
     def _generate_json(self, files, tree_summary, repo_path):
         output_file = self.json_dir / f"{self.repo_name}.json"
         data = {
             "repository_structure": tree_summary,
-            "files": [],
-            "summary": generate_summary(files),  # keep dict for JSON
+            "summary": generate_summary(files),
+            "files": []
         }
         for file in files:
             rel = Path(file).relative_to(repo_path)
             content = self.read_file_content(file)
             if content:
-                data["files"].append({"file": str(rel), "content": content.strip()})
+                data["files"].append({
+                    "file": str(rel),
+                    "content": content.strip()
+                })
         with output_file.open("w", encoding="utf-8") as json_file:
             json.dump(data, json_file, indent=4)
         return output_file
@@ -107,6 +108,13 @@ class OutputBuilder:
         with output_file.open("w", encoding="utf-8") as out:
             out.write(f"# 📂 Repository Overview: `{self.repo_name}`\n\n")
             out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n")
+
+            # Summary second
+            summary = generate_summary(files)
+            summary_md = "\n".join([f"- **{k}**: {v}" for k, v in summary.items()])
+            out.write(f"\n## 📊 Summary Report\n\n{summary_md}\n")
+
+            # Files section last
             out.write("## 📄 Extracted Files\n")
             for file in files:
                 rel = Path(file).relative_to(repo_path)
@@ -114,11 +122,6 @@ class OutputBuilder:
                 if content:
                     lang = self._detect_code_language(rel.suffix)
                     out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
-
-            # Markdown Summary block
-            summary = generate_summary(files)
-            summary_md = "\n".join([f"- **{k}**: {v}" for k, v in summary.items()])
-            out.write(f"\n---\n\n## 📊 Summary Report\n\n{summary_md}")
         return output_file
 
     def _detect_code_language(self, suffix: str) -> str:
