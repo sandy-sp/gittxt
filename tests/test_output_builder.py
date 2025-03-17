@@ -1,4 +1,5 @@
 import shutil
+import zipfile
 import json
 from pathlib import Path
 import pytest
@@ -63,10 +64,20 @@ def test_generate_markdown_output(clean_output_dir, mock_file_system):
     assert "## 📊 Summary Report" in content
 
 
-def test_zip_extras_generated(clean_output_dir, mock_file_system):
+def test_zip_contains_output_and_assets(clean_output_dir, mock_file_system):
     builder = OutputBuilder(
         TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt,json"
     )
     builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    zip_path = OUTPUT_DIR / "zips" / f"{TEST_REPO_NAME}_extras.zip"
+
+    zip_path = OUTPUT_DIR / "zips" / f"{TEST_REPO_NAME}_bundle.zip"
     assert zip_path.exists()
+
+    with zipfile.ZipFile(zip_path, 'r') as zf:
+        zip_contents = zf.namelist()
+        # Check processed files are inside
+        assert any("test-repo.txt" in name for name in zip_contents)
+        assert any("test-repo.json" in name for name in zip_contents)
+        # Check non-text assets are inside
+        assert any("data.csv" in name for name in zip_contents)
+        assert any("logo.png" in name for name in zip_contents)
