@@ -5,7 +5,7 @@ from gittxt.config import ConfigManager
 # Package Metadata
 __version__ = "1.5.0"
 __author__ = "Sandeep Paidipati"
-__description__ = "Get Text of Your Repo for AI, LLMs & Docs!"
+__description__ = "Gittxt: Get text from Git repositories in AI-ready formats"
 
 # Initialize logger + load config
 logger = Logger.get_logger(__name__)

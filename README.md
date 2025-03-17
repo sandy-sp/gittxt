@@ -1,10 +1,18 @@
+> 🚀 **LLM Dataset Extractor from GitHub Repos** | AI & NLP-ready text pipelines
+
 # 📝 Gittxt: Get text from Git repositories in AI-ready formats.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-≥3.8-blue)](pyproject.toml)
-[![Linted with Ruff](https://img.shields.io/badge/linter-ruff-%23007ACC.svg)](https://github.com/charliermarsh/ruff)
+[![PyPI version](https://badge.fury.io/py/gittxt.svg)](https://pypi.org/project/gittxt/)
+[![Release](https://img.shields.io/github/release/sandy-sp/gittxt.svg)](https://github.com/sandy-sp/gittxt/releases)
 [![Tested with Pytest](https://img.shields.io/badge/tested%20with-pytest-9cf.svg)](https://docs.pytest.org/en/stable/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/gittxt)](https://pypi.org/project/gittxt/)
+![GitHub repo size](https://img.shields.io/github/repo-size/sandy-sp/gittxt)
+![GitHub top language](https://img.shields.io/github/languages/top/sandy-sp/gittxt)
+[![Build Status](https://github.com/sandy-sp/gittxt/actions/workflows/release.yml/badge.svg)](https://github.com/sandy-sp/gittxt/actions)
 [![Made for LLMs](https://img.shields.io/badge/LLM%20ready-Yes-brightgreen)](https://github.com/sandy-sp/gittxt)
+[![Linted with Ruff](https://img.shields.io/badge/linter-ruff-%23007ACC.svg)](https://github.com/charliermarsh/ruff)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
 
@@ -52,7 +60,7 @@ pip install gittxt
 ## ⚙️ Quickstart Example
 
 ```bash
-gittxt scan https://github.com/user/repo.git --output-format txt,json --file-types code,docs --summary
+gittxt scan https://github.com/sandy-sp/gittxt.git --output-format txt,json --file-types code,docs --summary
 ```
 
 👉 This will:
