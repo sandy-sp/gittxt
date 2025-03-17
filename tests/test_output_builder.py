@@ -79,5 +79,5 @@ def test_zip_contains_output_and_assets(clean_output_dir, mock_file_system):
         assert any("test-repo.txt" in name for name in zip_contents)
         assert any("test-repo.json" in name for name in zip_contents)
         # Check non-text assets are inside
-        assert any("data.csv" in name for name in zip_contents)
-        assert any("logo.png" in name for name in zip_contents)
+        assert any("assets/data.csv" in name or "data.csv" in name for name in zip_contents)
+        assert any("assets/logo.png" in name or "logo.png" in name for name in zip_contents)
