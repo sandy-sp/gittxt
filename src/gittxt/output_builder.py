@@ -5,6 +5,11 @@ from gittxt.utils.tree_utils import generate_tree
 from gittxt.utils.cleanup_utils import zip_files
 from gittxt.utils.filetype_utils import classify_file
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
+
 logger = Logger.get_logger(__name__)
 
 class OutputBuilder:
@@ -32,7 +37,6 @@ class OutputBuilder:
     def generate_output(self, files, repo_path):
         tree_summary = generate_tree(Path(repo_path))
 
-        # Split into two sets: text-convertible and non-text (assets)
         text_files = []
         asset_files = []
 
@@ -43,18 +47,18 @@ class OutputBuilder:
             elif file_type in {"image", "media"}:
                 asset_files.append(file)
 
-        # Handle TXT, JSON, MD outputs
+        # Progress bar here for text file output generation
+        iter_files = tqdm(text_files, desc="Generating text outputs") if tqdm else text_files
+
         for fmt in self.output_formats:
             if fmt == "json":
-                out = self._generate_json(text_files, tree_summary, repo_path)
+                out = self._generate_json(iter_files, tree_summary, repo_path)
             elif fmt == "md":
-                out = self._generate_markdown(text_files, tree_summary, repo_path)
+                out = self._generate_markdown(iter_files, tree_summary, repo_path)
             else:
-                out = self._generate_text(text_files, tree_summary, repo_path)
-
+                out = self._generate_text(iter_files, tree_summary, repo_path)
             logger.info(f"📄 {fmt.upper()} output ready at: {out}")
 
-        # Zip non-code assets (images/csv/media)
         if asset_files:
             zip_path = self.zip_dir / f"{self.repo_name}_extras.zip"
             zip_files(asset_files, zip_path)
