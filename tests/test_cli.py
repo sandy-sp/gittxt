@@ -113,9 +113,8 @@ def test_zip_generation(clean_output_dir):
             "--non-interactive",
         ]
     )
-    zip_path = OUTPUT_DIR / "zips" / "test-repo_extras.zip"
+    zip_path = OUTPUT_DIR / "zips" / "test-repo_bundle.zip"
     assert zip_path.exists()
-
 
 def test_exclude_pattern(clean_output_dir):
     run_gittxt(
