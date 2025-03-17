@@ -9,6 +9,7 @@ from gittxt.repository import RepositoryHandler
 from gittxt.scanner import Scanner
 from gittxt.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder, zip_files
+from gittxt.utils.filetype_utils import classify_file
 
 logger = Logger.get_logger(__name__)
 config = ConfigManager.load_config()
@@ -95,12 +96,21 @@ def scan(repos, include, exclude, size_limit, branch, output_dir,
             logger.info(f"📦 Packaged non-code assets into: {zip_path}")
 
         if summary:
-            logger.info(f"📊 Processed {len(valid_files)} files from {repo_name}")
+            total_types = {}
+            for f in valid_files:
+                ftype = classify_file(Path(f))
+                total_types[ftype] = total_types.get(ftype, 0) + 1
+
+            logger.info("📊 Summary Report:")
+            logger.info(f" - Total files processed: {len(valid_files)}")
+            logger.info(f" - Output formats: {output_format}")
+            logger.info(f" - File type breakdown: {total_types}")
 
         if is_remote:
             cleanup_temp_folder(Path(repo_path))
 
-    logger.info("✅ Gittxt scan completed.")
+        logger.info("✅ Gittxt scan completed.\n")
+
 
 def main():
     cli()
