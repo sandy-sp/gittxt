@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 
+
 def match_include(file_path: Path, include_patterns: List[str]) -> bool:
     """
     Check if the file matches any of the include patterns (e.g., ".py", ".md").
@@ -13,6 +14,7 @@ def match_include(file_path: Path, include_patterns: List[str]) -> bool:
         return True  # Default to include all if no patterns
     return any(str(file_path).endswith(pattern) for pattern in include_patterns)
 
+
 def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
     """
     Check if the file should be excluded based on folder or extension.
@@ -23,6 +25,7 @@ def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
     """
     path_str = str(file_path)
     return any(pattern in path_str for pattern in exclude_patterns)
+
 
 def normalize_patterns(patterns: List[str]) -> List[str]:
     """

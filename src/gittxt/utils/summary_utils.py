@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Dict
 
+
 def estimate_tokens_from_file(file_path: Path) -> int:
     """
     Estimate tokens based on word count.
@@ -12,6 +13,7 @@ def estimate_tokens_from_file(file_path: Path) -> int:
             return int(len(words) / 0.75)
     except Exception:
         return 0
+
 
 def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
     """
@@ -25,7 +27,7 @@ def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Di
         "total_files": len(file_paths),
         "total_size": 0,
         "file_types": set(),
-        "estimated_tokens": 0
+        "estimated_tokens": 0,
     }
 
     for file in file_paths:

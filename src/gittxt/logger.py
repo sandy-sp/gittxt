@@ -10,9 +10,11 @@ except ImportError:
 
 try:
     import colorama
+
     colorama.init()
 except ImportError:
     colorama = None  # fallback if colorama is not available
+
 
 class Logger:
     """Handles logging configuration for Gittxt, including colored CLI output."""
@@ -31,7 +33,7 @@ class Logger:
             "INFO": colorama.Fore.GREEN,
             "WARNING": colorama.Fore.YELLOW,
             "ERROR": colorama.Fore.RED,
-            "CRITICAL": colorama.Fore.MAGENTA
+            "CRITICAL": colorama.Fore.MAGENTA,
         }
         reset = colorama.Style.RESET_ALL
         color = colors.get(level, "")
@@ -49,7 +51,7 @@ class Logger:
             "INFO": logging.INFO,
             "WARNING": logging.WARNING,
             "ERROR": logging.ERROR,
-            "CRITICAL": logging.CRITICAL
+            "CRITICAL": logging.CRITICAL,
         }
         log_level = level_map.get(log_level_str.upper(), logging.INFO)
 
@@ -72,7 +74,9 @@ class Logger:
             Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
         )
         rotating_file_handler.setLevel(log_level)
-        rotating_file_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
+        rotating_file_handler.setFormatter(
+            logging.Formatter(log_format, datefmt=date_format)
+        )
         logging.root.addHandler(rotating_file_handler)
 
     @staticmethod
@@ -81,16 +85,19 @@ class Logger:
             def format(self, record):
                 msg = super().format(record)
                 return Logger._colorize(record.levelname, msg)
+
         return ColoredFormatter("%(levelname)s - %(message)s")
 
     @staticmethod
     def get_logger(name):
         return logging.getLogger(name)
 
+
 Logger.setup_logger()
 
 if "-sp" in sys.argv:
-    print("""
+    print(
+        """
         🔥 **You've unlocked the Gittxt Easter Egg!** 🚀  
         🔗 Connect with me on LinkedIn: **[Sandeep Paidipati](https://www.linkedin.com/in/sandeep-paidipati/)**  
         📩 Add me & let's chat about anything!                                                                                                      
@@ -123,5 +130,6 @@ if "-sp" in sys.argv:
                                    6666666                                                          
                                   666669                                                            
                                   66                                                                                                                                       
-    """)
+    """
+    )
     sys.exit(0)

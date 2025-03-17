@@ -12,6 +12,7 @@ except ImportError:
 
 logger = Logger.get_logger(__name__)
 
+
 class Scanner:
     """
     Scans directories, filters files by type, and returns valid files.
@@ -36,7 +37,9 @@ class Scanner:
     def _passes_filters(self, file_path: Path) -> bool:
         if pattern_utils.match_exclude(file_path, self.exclude_patterns):
             return False
-        if self.include_patterns and not pattern_utils.match_include(file_path, self.include_patterns):
+        if self.include_patterns and not pattern_utils.match_include(
+            file_path, self.include_patterns
+        ):
             return False
         if self.size_limit and file_path.stat().st_size > self.size_limit:
             return False
@@ -58,7 +61,9 @@ class Scanner:
         valid_files = []
         files = list(self.root_path.rglob("*"))
 
-        iter_files = tqdm(files, desc="Scanning files") if self.progress and tqdm else files
+        iter_files = (
+            tqdm(files, desc="Scanning files") if self.progress and tqdm else files
+        )
 
         for file in iter_files:
             if not file.is_file():

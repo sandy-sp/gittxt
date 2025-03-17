@@ -2,6 +2,7 @@ from pathlib import Path
 import mimetypes
 from binaryornot.check import is_binary
 
+
 def is_text_file(file: Path) -> bool:
     """
     Detects if the file is a readable text file using binary detection + MIME fallback.
@@ -17,40 +18,68 @@ def is_text_file(file: Path) -> bool:
     except Exception:
         return False
 
+
 def get_mime_type(file: Path) -> str:
     """
     Returns the MIME type of the file, defaults to 'application/octet-stream'.
     """
     mime_type, _ = mimetypes.guess_type(str(file))
-    return mime_type or 'application/octet-stream'
+    return mime_type or "application/octet-stream"
+
 
 def is_code_file(file: Path) -> bool:
-    code_extensions = {".py", ".js", ".ts", ".java", ".cpp", ".c", ".cs", ".go", ".rb", ".php", ".sh"}
+    code_extensions = {
+        ".py",
+        ".js",
+        ".ts",
+        ".java",
+        ".cpp",
+        ".c",
+        ".cs",
+        ".go",
+        ".rb",
+        ".php",
+        ".sh",
+    }
     return file.suffix.lower() in code_extensions
+
 
 def is_doc_file(file: Path) -> bool:
     doc_extensions = {".md", ".rst", ".txt", ".adoc"}
-    return file.suffix.lower() in doc_extensions or file.name.lower().startswith("readme")
+    return file.suffix.lower() in doc_extensions or file.name.lower().startswith(
+        "readme"
+    )
+
 
 def is_image_file(file: Path) -> bool:
     image_extensions = {".png", ".jpg", ".jpeg", ".gif", ".svg"}
     return file.suffix.lower() in image_extensions
 
+
 def is_csv_or_data_file(file: Path) -> bool:
     data_extensions = {".csv", ".json", ".yaml", ".yml"}
     return file.suffix.lower() in data_extensions
+
 
 def is_media_file(file: Path) -> bool:
     media_extensions = {".mp4", ".avi", ".mov", ".wav", ".mp3"}
     return file.suffix.lower() in media_extensions
 
+
 def is_meta_file(file: Path) -> bool:
     meta_files = {
-        ".gitignore", ".dockerignore", "Makefile", "Dockerfile",
-        "pyproject.toml", "setup.cfg", "requirements.txt",
-        "MANIFEST.in", "LICENSE"
+        ".gitignore",
+        ".dockerignore",
+        "Makefile",
+        "Dockerfile",
+        "pyproject.toml",
+        "setup.cfg",
+        "requirements.txt",
+        "MANIFEST.in",
+        "LICENSE",
     }
     return file.name in meta_files
+
 
 def classify_file(file: Path) -> str:
     """

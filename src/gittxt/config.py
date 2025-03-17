@@ -10,6 +10,7 @@ logger = Logger.get_logger(__name__)
 # Load .env file if present
 load_dotenv()
 
+
 class ConfigManager:
     """Handles configuration loading and environment overrides."""
 
@@ -32,7 +33,7 @@ class ConfigManager:
         "exclude_patterns": [".git", "node_modules", "__pycache__", ".log"],
         "output_format": "txt",
         "file_types": "code,docs",
-        "logging_level": "INFO"
+        "logging_level": "INFO",
     }
 
     @classmethod
@@ -49,10 +50,16 @@ class ConfigManager:
 
         # .env overrides
         config["output_dir"] = os.getenv("GITTXT_OUTPUT_DIR", config["output_dir"])
-        config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
+        config["output_format"] = os.getenv(
+            "GITTXT_OUTPUT_FORMAT", config["output_format"]
+        )
         config["file_types"] = os.getenv("GITTXT_FILE_TYPES", config["file_types"])
-        config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
-        config["size_limit"] = int(os.getenv("GITTXT_SIZE_LIMIT", config["size_limit"] or 0)) or None
+        config["logging_level"] = os.getenv(
+            "GITTXT_LOGGING_LEVEL", config["logging_level"]
+        )
+        config["size_limit"] = (
+            int(os.getenv("GITTXT_SIZE_LIMIT", config["size_limit"] or 0)) or None
+        )
 
         # Path normalization
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
@@ -75,5 +82,6 @@ class ConfigManager:
             logger.info(f"✅ Configuration updated in {cls.CONFIG_FILE}")
         except Exception as e:
             logger.error(f"❌ Failed to update configuration file: {e}")
+
 
 ConfigManager.save_default_config()

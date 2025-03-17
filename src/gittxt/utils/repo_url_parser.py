@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 import re
 
+
 def parse_github_url(url: str) -> dict:
     """
     Parse a GitHub URL to extract owner, repository name, branch, and optional subdirectory.
@@ -12,15 +13,12 @@ def parse_github_url(url: str) -> dict:
     - SSH URL: git@github.com:user/repo.git
     """
 
-    data = {
-        "owner": None,
-        "repo": None,
-        "branch": None,
-        "subdir": None
-    }
+    data = {"owner": None, "repo": None, "branch": None, "subdir": None}
 
     # Handle SSH URL: git@github.com:user/repo.git
-    ssh_pattern = re.compile(r"git@github\.com:(?P<owner>[^/]+)/(?P<repo>[^.]+)(\.git)?")
+    ssh_pattern = re.compile(
+        r"git@github\.com:(?P<owner>[^/]+)/(?P<repo>[^.]+)(\.git)?"
+    )
     ssh_match = ssh_pattern.match(url)
     if ssh_match:
         data.update(ssh_match.groupdict())
@@ -56,7 +54,7 @@ if __name__ == "__main__":
         "https://github.com/sandy-sp/gittxt",
         "https://github.com/sandy-sp/gittxt/tree/UI-Dev",
         "https://github.com/sandy-sp/gittxt/tree/ui-dev-2/src/gittxt_ui",
-        "git@github.com:sandy-sp/gittxt.git"
+        "git@github.com:sandy-sp/gittxt.git",
     ]
     for url in test_urls:
         print(parse_github_url(url))

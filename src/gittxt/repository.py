@@ -5,6 +5,7 @@ from gittxt.utils.repo_url_parser import parse_github_url
 
 logger = Logger.get_logger(__name__)
 
+
 class RepositoryHandler:
     """Handles GitHub repo cloning and local directory resolution."""
 
@@ -69,7 +70,9 @@ class RepositoryHandler:
 
             # OPTIONAL: only apply strict .git check if you want to force "real repos"
             if not (path / ".git").exists():
-                logger.warning(f"⚠️ No .git directory found in: {self.source} (treated as non-Git repo)")
+                logger.warning(
+                    f"⚠️ No .git directory found in: {self.source} (treated as non-Git repo)"
+                )
 
             logger.info(f"✅ Using local repository: {path}")
             return str(path), "", self.is_remote

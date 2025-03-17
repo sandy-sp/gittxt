@@ -12,13 +12,17 @@ except ImportError:
 
 logger = Logger.get_logger(__name__)
 
+
 class OutputBuilder:
     """Handles output generation for scanned repositories."""
+
     BASE_OUTPUT_DIR = (Path(__file__).parent / "../gittxt-outputs").resolve()
 
     def __init__(self, repo_name, output_dir=None, output_format="txt"):
         self.repo_name = repo_name
-        self.output_dir = Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
+        self.output_dir = (
+            Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
+        )
         self.text_dir = self.output_dir / "text"
         self.json_dir = self.output_dir / "json"
         self.md_dir = self.output_dir / "md"
@@ -48,7 +52,9 @@ class OutputBuilder:
                 asset_files.append(file)
 
         # Progress bar here for text file output generation
-        iter_files = tqdm(text_files, desc="Generating text outputs") if tqdm else text_files
+        iter_files = (
+            tqdm(text_files, desc="Generating text outputs") if tqdm else text_files
+        )
 
         for fmt in self.output_formats:
             if fmt == "json":
@@ -76,7 +82,7 @@ class OutputBuilder:
                 if content:
                     out.write(f"=== FILE: {rel} ===\n")
                     out.write(content.strip())
-                    out.write("\n\n" + "="*50 + "\n\n")
+                    out.write("\n\n" + "=" * 50 + "\n\n")
         return output_file
 
     def _generate_json(self, files, tree_summary, repo_path):
@@ -86,10 +92,7 @@ class OutputBuilder:
             rel = Path(file).relative_to(repo_path)
             content = self.read_file_content(file)
             if content:
-                data["files"].append({
-                    "file": str(rel),
-                    "content": content.strip()
-                })
+                data["files"].append({"file": str(rel), "content": content.strip()})
         with output_file.open("w", encoding="utf-8") as json_file:
             json.dump(data, json_file, indent=4)
         return output_file
@@ -119,7 +122,6 @@ class OutputBuilder:
             ".md": "markdown",
             ".yml": "yaml",
             ".yaml": "yaml",
-            ".txt": "plaintext"
+            ".txt": "plaintext",
         }
         return mapping.get(suffix.lower(), "plaintext")
-    

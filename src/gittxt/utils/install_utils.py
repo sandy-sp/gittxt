@@ -2,6 +2,7 @@ from pathlib import Path
 import click
 from gittxt.config import ConfigManager
 
+
 def run_interactive_install():
     """
     Interactive install wizard to set up gittxt-config.json.
@@ -15,14 +16,19 @@ def run_interactive_install():
     current_out_dir = config.get("output_dir", "")
     click.echo(f"Current output directory: {current_out_dir}")
     if click.confirm("Would you like to change it?", default=False):
-        new_dir = click.prompt("Enter the new output directory", default=current_out_dir)
+        new_dir = click.prompt(
+            "Enter the new output directory", default=current_out_dir
+        )
         config["output_dir"] = str(Path(new_dir).expanduser().resolve())
         click.echo(f"✅ Updated output_dir to: {config['output_dir']}")
 
     # Logging level setup
     current_log_level = config.get("logging_level", "INFO")
     click.echo(f"\nCurrent logging level: {current_log_level}")
-    new_level = click.prompt("Enter new logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", default=current_log_level)
+    new_level = click.prompt(
+        "Enter new logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL)",
+        default=current_log_level,
+    )
     config["logging_level"] = new_level.upper()
     click.echo(f"✅ Updated logging_level to: {config['logging_level']}")
 
