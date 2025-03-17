@@ -62,8 +62,7 @@ def scan(repos, include, exclude, size_limit, branch, output_dir,
     for repo_source in repos:
         logger.info(f"🚀 Processing repository: {repo_source}")
         repo_handler = RepositoryHandler(repo_source, branch=branch)
-        repo_path, subdir = repo_handler.get_local_path()
-
+        repo_path, subdir, is_remote = repo_handler.get_local_path()
         scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
         scanner = Scanner(
             root_path=scan_root,
@@ -98,7 +97,8 @@ def scan(repos, include, exclude, size_limit, branch, output_dir,
         if summary:
             logger.info(f"📊 Processed {len(valid_files)} files from {repo_name}")
 
-        cleanup_temp_folder(Path(repo_path))
+        if is_remote:
+            cleanup_temp_folder(Path(repo_path))
 
     logger.info("✅ Gittxt scan completed.")
 
