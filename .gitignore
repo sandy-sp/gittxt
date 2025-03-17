@@ -1,19 +1,36 @@
-# Ignore Python cache
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
 
-# Virtual environment
-venv/
-
-# Git-related
-.git
-
-# Local build files
+# Distribution / Packaging
+build/
 dist/
+.eggs/
+*.egg-info/
 
-# Ignore pytest cache 
+# Virtualenvs / Envs
+.venv/
+.env/
+.env.*
+
+# Poetry / Pip artifacts
+.poetry/
+.poetry.lock
+
+# Caches
+.mypy_cache/
 .pytest_cache/
+.coverage
+.cache/
 
-# Ignore VSCode settings
+# Editor/OS files
 .vscode/
+.DS_Store
+
+# Output folders
+src/gittxt-outputs/
+src/gittxt-logs/
+
+# PyInstaller
+*.spec
