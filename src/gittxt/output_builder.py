@@ -69,7 +69,9 @@ class OutputBuilder:
                 rel = Path(file).relative_to(repo_path)
                 content = self.read_file_content(file)
                 if content:
-                    out.write(f"=== {rel} ===\n{content}\n\n")
+                    out.write(f"=== FILE: {rel} ===\n")
+                    out.write(content.strip())
+                    out.write("\n\n" + "="*50 + "\n\n")
         return output_file
 
     def _generate_json(self, files, tree_summary, repo_path):
@@ -79,7 +81,10 @@ class OutputBuilder:
             rel = Path(file).relative_to(repo_path)
             content = self.read_file_content(file)
             if content:
-                data["files"].append({"file": str(rel), "content": content})
+                data["files"].append({
+                    "file": str(rel),
+                    "content": content.strip()
+                })
         with output_file.open("w", encoding="utf-8") as json_file:
             json.dump(data, json_file, indent=4)
         return output_file
@@ -87,12 +92,29 @@ class OutputBuilder:
     def _generate_markdown(self, files, tree_summary, repo_path):
         output_file = self.md_dir / f"{self.repo_name}.md"
         with output_file.open("w", encoding="utf-8") as out:
-            out.write(f"# 📂 Repository Overview: {self.repo_name}\n\n")
-            out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n")
+            out.write(f"# 📂 Repository Overview: `{self.repo_name}`\n\n")
+            out.write(f"## 📜 Folder Structure\n```plaintext\n{tree_summary}\n```\n")
             out.write("## 📄 Extracted Files\n")
             for file in files:
                 rel = Path(file).relative_to(repo_path)
                 content = self.read_file_content(file)
                 if content:
-                    out.write(f"\n### `{rel}`\n```plaintext\n{content}\n```\n")
+                    lang = self._detect_code_language(rel.suffix)
+                    out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
         return output_file
+
+    def _detect_code_language(self, suffix: str) -> str:
+        # Basic language hint for markdown fenced blocks
+        mapping = {
+            ".py": "python",
+            ".js": "javascript",
+            ".ts": "typescript",
+            ".sh": "bash",
+            ".json": "json",
+            ".md": "markdown",
+            ".yml": "yaml",
+            ".yaml": "yaml",
+            ".txt": "plaintext"
+        }
+        return mapping.get(suffix.lower(), "plaintext")
+    
