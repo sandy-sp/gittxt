@@ -1,5 +1,13 @@
 # Contributor Covenant Code of Conduct
 
+Welcome to the **Gittxt** community!
+
+We value collaboration, innovation, and inclusivity. Whether you're contributing code, opening issues, or engaging in discussions, we strive to foster a respectful and harassment-free environment for all contributors.
+
+Our community standards are guided by the Contributor Covenant Code of Conduct outlined below.
+
+---
+
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our
