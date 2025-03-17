@@ -89,7 +89,7 @@ def scan(repos, include, exclude, size_limit, branch, output_dir,
             output_format=output_format
         )
 
-        generated_files = builder.generate_output(valid_files, scan_root)
+        builder.generate_output(valid_files, repo_path)
 
         # Zip non-code assets (images/csvs)
         if "all" in file_types or "images" in file_types or "csv" in file_types:
