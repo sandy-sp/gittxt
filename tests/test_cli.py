@@ -39,10 +39,21 @@ def test_multi_format_scan(clean_output_dir):
     assert (OUTPUT_DIR / "md" / "test-repo.md").exists()
 
 def test_summary_flag(clean_output_dir):
-    result = run_gittxt(["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR), "--summary", "--non-interactive"])
-    assert "📊 Summary Report" in result.stdout
-    assert "Total files processed" in result.stdout
-    assert "file type breakdown" in result.stdout.lower()
+    output = run_gittxt([
+        "scan", str(TEST_REPO),
+        "--output-dir", str(OUTPUT_DIR),
+        "--summary",
+        "--non-interactive"
+    ]).stdout
+
+    # Normalize output once
+    output_lower = output.lower()
+
+    # Assert CLI summary structure
+    assert "📊 summary report" in output_lower
+    assert "total files processed" in output_lower
+    assert "output formats:" in output_lower
+    assert "file type breakdown" in output_lower
 
 def test_file_types_flag(clean_output_dir):
     result = run_gittxt([
