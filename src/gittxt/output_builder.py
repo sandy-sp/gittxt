@@ -115,7 +115,7 @@ class OutputBuilder:
             out.write(f"\n## 📊 Summary Report\n\n{summary_md}\n")
 
             # Files section last
-            out.write("## 📄 Extracted Files\n")
+            out.write("\n## 📄 Extracted Files\n")
             for file in files:
                 rel = Path(file).relative_to(repo_path)
                 content = self.read_file_content(file)
