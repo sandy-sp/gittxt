@@ -50,17 +50,20 @@ def test_file_types_flag(clean_output_dir):
         "--non-interactive"
     ])
     output_txt = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
-    
-    # Split into file content sections (skip tree section)
-    file_blocks = output_txt.split("=== ")
-    
-    # Extract only processed files (ignore the tree part)
-    file_content_blocks = [block for block in file_blocks if block.strip().startswith("assets/") or block.strip().startswith("app.py") or block.strip().startswith("README.md")]
 
-    # Assertions based on file sections only
-    assert any("app.py" in block for block in file_content_blocks)
-    assert any("README.md" in block for block in file_content_blocks)
-    assert not any("data.csv" in block for block in file_content_blocks)  # CSV should be excluded
+    # Skip tree by splitting at first file block
+    if "=== FILE: " in output_txt:
+        tree_part, file_part = output_txt.split("=== FILE: ", 1)
+    else:
+        tree_part, file_part = output_txt, ""
+
+    # Scan headers in file blocks only
+    file_blocks = ["=== FILE: " + block for block in file_part.split("=== FILE: ") if block.strip()]
+    file_headers = [block.split("=== FILE: ")[-1].split(" ===")[0].strip() for block in file_blocks]
+
+    assert "app.py" in " ".join(file_headers)
+    assert "README.md" in " ".join(file_headers)
+    assert "data.csv" not in " ".join(file_headers)
 
 def test_zip_generation(clean_output_dir):
     result = run_gittxt([

@@ -23,8 +23,8 @@ def test_includes_code_only(mock_repo):
         file_types=["code"]
     )
     files, _ = scanner.scan_directory()
-    assert any("app.py" in f for f in files)
-    assert all(f.endswith(".py") for f in files)
+    assert any("app.py" in str(f) for f in files)
+    assert all(str(f).endswith(".py") for f in files)
 
 def test_excludes_assets_folder(mock_repo):
     scanner = Scanner(
@@ -62,7 +62,7 @@ def test_filetype_csv(mock_repo):
         file_types=["csv"]
     )
     files, _ = scanner.scan_directory()
-    assert any("data.csv" in f for f in files)
+    assert any("data.csv" in str(f) for f in files)
 
 def test_image_files_filtered(mock_repo):
     scanner = Scanner(
@@ -73,7 +73,7 @@ def test_image_files_filtered(mock_repo):
         file_types=["image"]
     )
     files, _ = scanner.scan_directory()
-    assert any("logo.png" in f for f in files)
+    assert any("logo.png" in str(f) for f in files)
 
 def test_size_limit(mock_repo):
     scanner = Scanner(
@@ -84,4 +84,4 @@ def test_size_limit(mock_repo):
         file_types=["all"]
     )
     files, _ = scanner.scan_directory()
-    assert not any("big.txt" in f for f in files)
+    assert not any("big.txt" in str(f) for f in files)
