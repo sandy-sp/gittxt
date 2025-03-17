@@ -1,21 +1,45 @@
-# Security Policy
+# 🔐 Security Policy
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+As Gittxt is currently in **v1.5.0**, we aim to provide security updates for the latest release only.
 
 | Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+|---------|--------------------|
+| 1.5.0   | ✅ Actively supported |
+| < 1.4.1 | ❌ Not supported     |
+
+---
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+We are committed to ensuring the security of Gittxt and the safety of its users. If you discover a vulnerability, please follow the process below.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+### 📩 How to Report
+- Email **sandeep.paidipati@gmail.com** with the following:
+  - Description of the vulnerability
+  - Steps to reproduce
+  - Impact assessment (e.g., data leakage, remote execution, etc.)
+  - Suggested mitigation (if available)
+  
+Please do **NOT** file public issues for security vulnerabilities.
+
+### 🕒 Response Timeline
+- We aim to acknowledge your report within **3 business days**.
+- After triage, remediation will typically occur within **30 days**, depending on severity.
+
+### 🔒 Disclosure
+We practice **responsible disclosure**. We ask that reporters:
+- Avoid publicly disclosing vulnerabilities prior to a confirmed patch release.
+- Coordinate with us for coordinated disclosure timelines, if needed.
+
+---
+
+## Our Commitment
+- We treat security issues with urgency.
+- Critical vulnerabilities may lead to expedited releases.
+- Credits will be given to researchers who responsibly disclose bugs (unless anonymity is requested).
+
+Thank you for helping make **Gittxt** a safer project!
+
+---
