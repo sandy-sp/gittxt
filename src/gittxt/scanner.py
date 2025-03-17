@@ -8,7 +8,7 @@ from gittxt.utils.tree_utils import generate_tree
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = None  # fallback if progress disabled
+    tqdm = None
 
 logger = Logger.get_logger(__name__)
 
@@ -44,9 +44,11 @@ class Scanner:
 
     def _passes_filetype_filter(self, file_path: Path) -> bool:
         detected_type = filetype_utils.classify_file(file_path)
-        return self.file_types == {"all"} or detected_type in self.file_types
+        if self.file_types == {"all"}:
+            return True
+        return detected_type in self.file_types
 
-    def scan_directory(self) -> Tuple[List[str], str]:
+    def scan_directory(self) -> Tuple[List[Path], str]:
         """
         Scans directory and filters files based on type and patterns.
         Returns:
@@ -65,7 +67,7 @@ class Scanner:
                 continue
             if not self._passes_filetype_filter(file):
                 continue
-            valid_files.append(str(file))
+            valid_files.append(file.resolve())
 
         logger.info(f"✅ Scanned {len(valid_files)} valid files.")
         tree_summary = generate_tree(self.root_path)
