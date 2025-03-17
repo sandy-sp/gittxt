@@ -9,7 +9,6 @@ logger = Logger.get_logger(__name__)
 
 class OutputBuilder:
     """Handles output generation for scanned repositories."""
-
     BASE_OUTPUT_DIR = (Path(__file__).parent / "../gittxt-outputs").resolve()
 
     def __init__(self, repo_name, output_dir=None, output_format="txt"):
@@ -19,41 +18,48 @@ class OutputBuilder:
         self.json_dir = self.output_dir / "json"
         self.md_dir = self.output_dir / "md"
         self.zip_dir = self.output_dir / "zips"
-
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
-
         for folder in [self.text_dir, self.json_dir, self.md_dir, self.zip_dir]:
             folder.mkdir(parents=True, exist_ok=True)
 
-    def read_file_content(self, file_path):
+    def read_file_content(self, file_path: Path):
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 return f.read()
-        except Exception as e:
-            logger.error(f"❌ Error reading {file_path}: {e}")
-            return "[Error reading file]"
+        except Exception:
+            return None
 
     def generate_output(self, files, repo_path):
         tree_summary = generate_tree(Path(repo_path))
-        extras = []
 
+        # Split into two sets: text-convertible and non-text (assets)
+        text_files = []
+        asset_files = []
+
+        for file in files:
+            file_type = classify_file(file)
+            if file_type in {"code", "docs", "csv", "text"}:
+                text_files.append(file)
+            elif file_type in {"image", "media"}:
+                asset_files.append(file)
+
+        # Handle TXT, JSON, MD outputs
         for fmt in self.output_formats:
             if fmt == "json":
-                out = self._generate_json(files, tree_summary, repo_path)
+                out = self._generate_json(text_files, tree_summary, repo_path)
             elif fmt == "md":
-                out = self._generate_markdown(files, tree_summary, repo_path)
+                out = self._generate_markdown(text_files, tree_summary, repo_path)
             else:
-                out = self._generate_text(files, tree_summary, repo_path)
+                out = self._generate_text(text_files, tree_summary, repo_path)
             logger.info(f"✅ Output generated: {out}")
 
-        # Detect non-code files to ZIP
-        extras = [Path(f) for f in files if classify_file(Path(f)) in {"image", "csv", "media"}]
-        if extras:
+        # Zip non-code assets (images/csv/media)
+        if asset_files:
             zip_path = self.zip_dir / f"{self.repo_name}_extras.zip"
-            zip_files(extras, zip_path)
-            logger.info(f"📦 Zipped non-code assets into: {zip_path}")
+            zip_files(asset_files, zip_path)
+            logger.info(f"📦 Zipped non-text assets into: {zip_path}")
 
-        return files
+        return text_files
 
     def _generate_text(self, files, tree_summary, repo_path):
         output_file = self.text_dir / f"{self.repo_name}.txt"
@@ -61,22 +67,19 @@ class OutputBuilder:
             out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
             for file in files:
                 rel = Path(file).relative_to(repo_path)
-                out.write(f"=== {rel} ===\n")
-                out.write(self.read_file_content(file) + "\n\n")
+                content = self.read_file_content(file)
+                if content:
+                    out.write(f"=== {rel} ===\n{content}\n\n")
         return output_file
 
     def _generate_json(self, files, tree_summary, repo_path):
         output_file = self.json_dir / f"{self.repo_name}.json"
-        data = {
-            "repository_structure": tree_summary,
-            "files": []
-        }
+        data = {"repository_structure": tree_summary, "files": []}
         for file in files:
             rel = Path(file).relative_to(repo_path)
-            data["files"].append({
-                "file": str(rel),
-                "content": self.read_file_content(file)
-            })
+            content = self.read_file_content(file)
+            if content:
+                data["files"].append({"file": str(rel), "content": content})
         with output_file.open("w", encoding="utf-8") as json_file:
             json.dump(data, json_file, indent=4)
         return output_file
@@ -89,7 +92,7 @@ class OutputBuilder:
             out.write("## 📄 Extracted Files\n")
             for file in files:
                 rel = Path(file).relative_to(repo_path)
-                out.write(f"\n### `{rel}`\n```plaintext\n")
-                out.write(self.read_file_content(file))
-                out.write("\n```\n")
+                content = self.read_file_content(file)
+                if content:
+                    out.write(f"\n### `{rel}`\n```plaintext\n{content}\n```\n")
         return output_file
