@@ -40,7 +40,9 @@ def test_multi_format_scan(clean_output_dir):
 
 def test_summary_flag(clean_output_dir):
     result = run_gittxt(["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR), "--summary", "--non-interactive"])
-    assert "📊 Processed" in result.stdout or result.stderr
+    assert "📊 Summary Report" in result.stdout
+    assert "Total files processed" in result.stdout
+    assert "file type breakdown" in result.stdout.lower()
 
 def test_file_types_flag(clean_output_dir):
     result = run_gittxt([
