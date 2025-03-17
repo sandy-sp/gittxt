@@ -21,6 +21,7 @@ class RepositoryHandler:
         self.source = source
         self.branch_override = branch
         self.repo_meta = {}
+        self.is_remote = self.is_remote_repo(self.source)
 
     def is_remote_repo(self, source: str) -> bool:
         return "github.com" in source or source.startswith("git@")
@@ -54,11 +55,21 @@ class RepositoryHandler:
             repo_name = parsed["repo"]
             temp_dir = self._prepare_temp_dir(repo_name)
             self._clone_remote_repo(git_url, branch, temp_dir)
-            return str(temp_dir), subdir
+            return str(temp_dir), subdir, self.is_remote
         else:
             path = Path(self.source).resolve()
             if not path.exists():
                 logger.error(f"❌ Invalid local repo path: {self.source}")
                 return None, ""
+
+            # Accept non-git folders for local testing
+            if not path.is_dir():
+                logger.error(f"❌ Provided path is not a directory: {self.source}")
+                return None, ""
+
+            # OPTIONAL: only apply strict .git check if you want to force "real repos"
+            if not (path / ".git").exists():
+                logger.warning(f"⚠️ No .git directory found in: {self.source} (treated as non-Git repo)")
+
             logger.info(f"✅ Using local repository: {path}")
-            return str(path), ""
+            return str(path), "", self.is_remote
