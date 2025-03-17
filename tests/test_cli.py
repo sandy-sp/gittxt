@@ -83,10 +83,15 @@ def test_exclude_pattern(clean_output_dir):
         "--non-interactive"
     ])
     output_txt = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
-    
-    # Split into file content sections
-    file_blocks = output_txt.split("=== ")
-    file_content_blocks = [block for block in file_blocks if block.strip().startswith("docs/")]
 
-    # overview.md should not appear in the content section
-    assert not any("overview.md" in block for block in file_content_blocks)
+    # Skip tree view, focus only on file content sections
+    if "=== FILE: " in output_txt:
+        tree_part, file_part = output_txt.split("=== FILE: ", 1)
+    else:
+        tree_part, file_part = output_txt, ""
+
+    file_blocks = ["=== FILE: " + block for block in file_part.split("=== FILE: ") if block.strip()]
+    file_headers = [block.split("=== FILE: ")[-1].split(" ===")[0].strip() for block in file_blocks]
+
+    # Ensure overview.md is not in processed content (docs/ was excluded)
+    assert not any("overview.md" in header for header in file_headers)
