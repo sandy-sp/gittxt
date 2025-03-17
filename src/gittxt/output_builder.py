@@ -39,6 +39,7 @@ class OutputBuilder:
 
         text_files = []
         asset_files = []
+        output_files = []
 
         for file in files:
             file_type = classify_file(file)
@@ -55,11 +56,14 @@ class OutputBuilder:
             else:
                 out = self._generate_text(text_files, tree_summary, repo_path)
             logger.info(f"📄 {fmt.upper()} output ready at: {out}")
+            output_files.append(out)
 
-        if asset_files:
-            zip_path = self.zip_dir / f"{self.repo_name}_extras.zip"
-            zip_files(asset_files, zip_path)
-            logger.info(f"📦 Zipped non-text assets into: {zip_path}")
+        # Collect all output files + assets into ZIP
+        if output_files or asset_files:
+            zip_path = self.zip_dir / f"{self.repo_name}_bundle.zip"
+            files_to_zip = output_files + asset_files
+            zip_files(files_to_zip, zip_path)
+            logger.info(f"📦 Zipped bundle created: {zip_path}")
 
         return text_files
 
