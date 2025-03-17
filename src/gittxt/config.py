@@ -57,7 +57,7 @@ class ConfigManager:
         # Path normalization
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
 
-        logger.info(f"✅ Loaded configuration (with .env overrides if any)")
+        logger.info("✅ Loaded configuration (with .env overrides if any)")
         return config
 
     @classmethod
