@@ -20,7 +20,7 @@ def run_gittxt(args):
     return result
 
 def test_basic_scan_txt(clean_output_dir):
-    result = run_gittxt([
+    run_gittxt([
         "scan", str(TEST_REPO),
         "--output-dir", str(OUTPUT_DIR),
         "--non-interactive"
@@ -28,7 +28,7 @@ def test_basic_scan_txt(clean_output_dir):
     assert (OUTPUT_DIR / "text" / "test-repo.txt").exists()
 
 def test_multi_format_scan(clean_output_dir):
-    result = run_gittxt([
+    run_gittxt([
         "scan", str(TEST_REPO),
         "--output-dir", str(OUTPUT_DIR),
         "--output-format", "txt,json,md",
@@ -56,7 +56,7 @@ def test_summary_flag(clean_output_dir):
     assert "file type breakdown" in output_lower
 
 def test_file_types_flag(clean_output_dir):
-    result = run_gittxt([
+    run_gittxt([
         "scan", str(TEST_REPO),
         "--output-dir", str(OUTPUT_DIR),
         "--file-types", "code,docs",
@@ -66,9 +66,9 @@ def test_file_types_flag(clean_output_dir):
 
     # Skip tree by splitting at first file block
     if "=== FILE: " in output_txt:
-        tree_part, file_part = output_txt.split("=== FILE: ", 1)
+        _, file_part = output_txt.split("=== FILE: ", 1)
     else:
-        tree_part, file_part = output_txt, ""
+        _, file_part = output_txt, ""
 
     # Scan headers in file blocks only
     file_blocks = ["=== FILE: " + block for block in file_part.split("=== FILE: ") if block.strip()]
@@ -79,7 +79,7 @@ def test_file_types_flag(clean_output_dir):
     assert "data.csv" not in " ".join(file_headers)
 
 def test_zip_generation(clean_output_dir):
-    result = run_gittxt([
+    run_gittxt([
         "scan", str(TEST_REPO),
         "--output-dir", str(OUTPUT_DIR),
         "--file-types", "all",
@@ -89,7 +89,7 @@ def test_zip_generation(clean_output_dir):
     assert zip_path.exists()
 
 def test_exclude_pattern(clean_output_dir):
-    result = run_gittxt([
+    run_gittxt([
         "scan", str(TEST_REPO),
         "--output-dir", str(OUTPUT_DIR),
         "--exclude", "docs",
@@ -99,9 +99,9 @@ def test_exclude_pattern(clean_output_dir):
 
     # Skip tree view, focus only on file content sections
     if "=== FILE: " in output_txt:
-        tree_part, file_part = output_txt.split("=== FILE: ", 1)
+        _, file_part = output_txt.split("=== FILE: ", 1)
     else:
-        tree_part, file_part = output_txt, ""
+        _, file_part = output_txt, ""
 
     file_blocks = ["=== FILE: " + block for block in file_part.split("=== FILE: ") if block.strip()]
     file_headers = [block.split("=== FILE: ")[-1].split(" ===")[0].strip() for block in file_blocks]
