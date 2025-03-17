@@ -2,17 +2,22 @@
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
+[project]
 name = "gittxt"
 version = "1.5.0"
 description = "Get Text of Your Repo for AI, LLMs & Docs!"
-authors = ["Sandeep Paidipati <sandeep.paidipati@gmail.com>"]
-license = "MIT"
 readme = "README.md"
-repository = "https://github.com/sandy-sp/gittxt"
-homepage = "https://github.com/sandy-sp/gittxt"
+license = { text = "MIT" }
+authors = [{ name = "Sandeep Paidipati", email = "sandeep.paidipati@gmail.com" }]
+requires-python = ">=3.8"
 keywords = ["git", "text-extraction", "cli-tool", "AI", "LLM", "NLP", "repository", "machine-learning"]
 classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -23,42 +28,47 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 
+dependencies = [
+    "click>=8.1.3",
+    "gitpython>=3.1.40",
+    "colorama>=0.4.6",
+    "python-dotenv>=1.0.0",
+    "binaryornot>=0.4.4",
+    "tqdm>=4.66.0"
+]
+
+[project.urls]
+Repository = "https://github.com/sandy-sp/gittxt"
+Homepage = "https://github.com/sandy-sp/gittxt"
+
+[project.scripts]
+gittxt = "gittxt.cli:main"
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.poetry]
 packages = [
     { include = "gittxt", from = "src" }
 ]
-
 include = [
     "README.md",
     "LICENSE",
     "pyproject.toml",
     "MANIFEST.in",
-    "src/gittxt/**/*.py",
     "src/gittxt-logs/**",
-    "src/gittxt-outputs/**"
+    "src/gittxt-outputs/**",
+    "src/gittxt/**/*.py"
 ]
-
-exclude = [
-    "tests/**",
-    ".github/**",
-    ".vscode/**",
-    ".pytest_cache/**",
-    "docs/**"
-]
-
-[tool.poetry.dependencies]
-python = "^3.8"
-click = "^8.1.3"
-gitpython = "^3.1.40"
-colorama = "^0.4.6"
-python-dotenv = "^1.0.0"
-binaryornot = "^0.4.4"
-tqdm = "^4.66.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"
 pytest-mock = "^3.0"
 ruff = "^0.2.0"
 black = "^24.0.0"
-
-[tool.poetry.scripts]
-gittxt = "gittxt.cli:main"
