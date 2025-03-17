@@ -33,12 +33,12 @@ def mock_file_system(tmp_path):
 
 def test_generate_txt_output(clean_output_dir, mock_file_system):
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt")
-    out_paths = builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
+    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
     assert (OUTPUT_DIR / "text" / f"{TEST_REPO_NAME}.txt").exists()
 
 def test_generate_json_output(clean_output_dir, mock_file_system):
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="json")
-    out_paths = builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
+    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
     json_path = OUTPUT_DIR / "json" / f"{TEST_REPO_NAME}.json"
     assert json_path.exists()
     with json_path.open() as f:
@@ -47,7 +47,7 @@ def test_generate_json_output(clean_output_dir, mock_file_system):
 
 def test_generate_markdown_output(clean_output_dir, mock_file_system):
     builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="md")
-    out_paths = builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
+    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
     assert (OUTPUT_DIR / "md" / f"{TEST_REPO_NAME}.md").exists()
 
 def test_zip_extras_generated(clean_output_dir, mock_file_system):
