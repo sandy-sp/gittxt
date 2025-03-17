@@ -23,6 +23,7 @@ dist/
 .pytest_cache/
 .coverage
 .cache/
+.ruff_cache/
 
 # Editor/OS files
 .vscode/
