@@ -2,80 +2,116 @@
 
 import asyncio
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
+import uuid
 
 from gittxt.repository import RepositoryHandler
 from gittxt.scanner import Scanner
 from gittxt.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
+from gittxt.logger import Logger
 
-# We store all scanning states here. 
-# Production systems might use a real DB instead.
+logger = Logger.get_logger(__name__)
+
+# Store scanning tasks in memory
 SCANS: Dict[str, dict] = {}
 
-async def run_scan_task(scan_id: str, repo_url: str, file_types: str, output_format: str, progress_callback):
+# Concurrency limit: Only allow N scans in parallel
+MAX_CONCURRENT_SCANS = 2
+SEM = asyncio.Semaphore(MAX_CONCURRENT_SCANS)
+
+async def run_scan_task(
+    scan_id: str,
+    repo_url: str,
+    file_types: List[str],
+    output_format: str,
+    progress_callback,
+    include_patterns: List[str],
+    exclude_patterns: List[str],
+    size_limit: Optional[int],
+    branch: Optional[str],
+):
     """
-    Background task that performs the scan. Updates SCANS dict with progress.
+    Background task that performs the scan with concurrency limit.
+    Updates SCANS dict with progress as scanning proceeds.
     """
-    SCANS[scan_id]["status"] = "running"
-    try:
-        # 1) Prepare the repository
-        repo_handler = RepositoryHandler(source=repo_url)
-        repo_path, subdir, is_remote = repo_handler.get_local_path()
+    # Acquire semaphore for concurrency limit
+    async with SEM:
+        SCANS[scan_id]["status"] = "running"
+        try:
+            # 1) Prepare the repository
+            repo_handler = RepositoryHandler(source=repo_url, branch=branch)
+            repo_path, subdir, is_remote = repo_handler.get_local_path()
 
-        scan_root = Path(repo_path)
-        if subdir:
-            scan_root = scan_root / subdir
+            if not repo_path:
+                raise ValueError("Repository path is invalid or does not exist.")
 
-        # 2) Build a custom scanning approach with partial progress
-        valid_files, tree_summary = await _scan_with_custom_progress(
-            scan_id, scan_root, file_types, progress_callback
-        )
+            scan_root = Path(repo_path)
+            if subdir:
+                scan_root = scan_root / subdir
 
-        # 3) If no valid files found
-        if not valid_files:
-            SCANS[scan_id]["status"] = "done"
-            SCANS[scan_id]["file_count"] = 0
-            SCANS[scan_id]["message"] = "No valid files found."
-            return
+            # 2) Build a custom scanning approach with partial progress
+            valid_files, tree_summary = await _scan_with_custom_progress(
+                scan_id, scan_root, file_types, progress_callback,
+                include_patterns, exclude_patterns, size_limit
+            )
 
-        # 4) Use OutputBuilder
-        output_dir = Path.cwd() / f"gittxt_scan_{scan_id}_outputs"
-        builder = OutputBuilder(
-            repo_name=f"scan_{scan_id}",
-            output_dir=output_dir,
-            output_format=output_format
-        )
-        builder.generate_output(valid_files, scan_root)
+            # 3) If no valid files found
+            if not valid_files:
+                SCANS[scan_id].update({
+                    "status": "done",
+                    "file_count": 0,
+                    "message": "No valid files found."
+                })
+                return
 
-        SCANS[scan_id].update({
-            "status": "done",
-            "message": "Scan complete",
-            "file_count": len(valid_files),
-            "tree_summary": tree_summary,
-            "output_dir": str(output_dir)
-        })
+            # 4) Use OutputBuilder
+            output_dir = Path.cwd() / f"gittxt_scan_{scan_id}_outputs"
+            builder = OutputBuilder(
+                repo_name=f"scan_{scan_id}",
+                output_dir=output_dir,
+                output_format=output_format
+            )
+            builder.generate_output(valid_files, scan_root)
 
-    except Exception as e:
-        SCANS[scan_id]["status"] = "error"
-        SCANS[scan_id]["error"] = str(e)
-    finally:
-        # Clean up remote clone if desired
-        if is_remote:
-            cleanup_temp_folder(Path(repo_path))
+            # 5) Mark success
+            SCANS[scan_id].update({
+                "status": "done",
+                "message": "Scan complete",
+                "file_count": len(valid_files),
+                "tree_summary": tree_summary,
+                "output_dir": str(output_dir)
+            })
+            logger.info(f"Scan {scan_id} completed successfully.")
 
-async def _scan_with_custom_progress(scan_id: str, scan_root: Path, file_types: str, progress_callback):
+        except Exception as e:
+            SCANS[scan_id]["status"] = "error"
+            SCANS[scan_id]["error"] = str(e)
+            logger.error(f"Scan {scan_id} failed with error: {e}")
+        finally:
+            # Clean up remote clone if desired
+            if is_remote:
+                cleanup_temp_folder(Path(repo_path))
+
+
+async def _scan_with_custom_progress(
+    scan_id: str,
+    scan_root: Path,
+    file_types: List[str],
+    progress_callback,
+    include_patterns: List[str],
+    exclude_patterns: List[str],
+    size_limit: Optional[int],
+):
     """
     Example custom scanning approach that calls progress_callback after each file.
     """
-    from gittxt.scanner import Scanner
-
     scanner = Scanner(
         root_path=scan_root,
-        include_patterns=[],
-        exclude_patterns=[".git", "node_modules"],
-        size_limit=None,
-        file_types=file_types.split(","),
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
+        size_limit=size_limit,
+        file_types=file_types,
         progress=False  # We'll do our own progress
     )
 
@@ -88,7 +124,7 @@ async def _scan_with_custom_progress(scan_id: str, scan_root: Path, file_types: 
     for path in all_paths:
         current_count += 1
         if not path.is_file():
-            progress_callback(scan_id, current_count, total_count, f"Skipping (not file) {path.name}")
+            progress_callback(scan_id, current_count, total_count, f"Skipping dir {path.name}")
             continue
 
         # filter checks
@@ -106,7 +142,7 @@ async def _scan_with_custom_progress(scan_id: str, scan_root: Path, file_types: 
         await asyncio.sleep(0)
 
     # after done
-    tree_summary = scanner._scan_directory_sync()[1]  # reuse the built-in tree or generate your own
+    tree_summary = scanner._scan_directory_sync()[1]  # or your own approach
     return valid_files, tree_summary
 
 
@@ -116,3 +152,27 @@ def update_scan_progress(scan_id: str, current: int, total: int, msg: str):
         progress = round((current / total) * 100, 2)
         SCANS[scan_id]["progress"] = progress
         SCANS[scan_id]["current_file"] = msg
+
+
+def build_directory_tree(base_path: Path) -> dict:
+    """
+    Recursively build a nested dict describing folders and files:
+    {
+      "name": "root_folder",
+      "type": "directory",
+      "children": [
+        {...}, ...
+      ]
+    }
+    """
+    if not base_path.is_dir():
+        return {"name": base_path.name, "type": "file"}
+
+    node = {"name": base_path.name, "type": "directory", "children": []}
+
+    for child in sorted(base_path.iterdir(), key=lambda c: c.name.lower()):
+        if child.is_dir():
+            node["children"].append(build_directory_tree(child))
+        else:
+            node["children"].append({"name": child.name, "type": "file"})
+    return node
