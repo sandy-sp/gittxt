@@ -7,8 +7,8 @@ from core.scanning_service import (
     run_scan_task,
     update_scan_progress,
     build_directory_tree,
-    gather_file_extensions,  # We'll define or reference this in scanning_service.py
-    remove_ephemeral_outputs,  # We'll define or reference a new helper for removing outputs
+    gather_file_extensions, 
+    remove_ephemeral_outputs,  
 )
 import uuid
 from typing import List, Optional

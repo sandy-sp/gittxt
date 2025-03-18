@@ -170,3 +170,34 @@ def build_directory_tree(base_path: Path) -> dict:
         else:
             node["children"].append({"name": child.name, "type": "file"})
     return node
+
+def gather_file_extensions(root: Path) -> dict:
+    """
+    Collects file extensions (suffixes) from all files under 'root'.
+
+    Returns a dict like:
+      {
+        ".py": 14,
+        ".md": 6,
+        ".json": 2,
+        ...
+      }
+    representing how many times each extension appears.
+    """
+    ext_map = {}
+    for f in root.rglob("*"):
+        if f.is_file():
+            suffix = f.suffix.lower()
+            ext_map[suffix] = ext_map.get(suffix, 0) + 1
+    return ext_map
+
+def remove_ephemeral_outputs(path_obj: Path):
+    """
+    Removes ephemeral artifacts from 'path_obj' using the existing 
+    cleanup_temp_folder from gittxt.utils.cleanup_utils.
+    This is typically called in /scans/{scan_id}/close to free up disk space.
+    """
+    # Only remove if it exists
+    if path_obj.exists():
+        from gittxt.utils.cleanup_utils import cleanup_temp_folder
+        cleanup_temp_folder(path_obj)
