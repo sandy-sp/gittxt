@@ -16,7 +16,6 @@ dist/
 
 # Poetry / Pip artifacts
 .poetry/
-.poetry.lock
 
 # Caches
 .mypy_cache/
@@ -38,3 +37,6 @@ src/gittxt-logs/
 
 # Gittxt configuration
 gittxt-config.json
+
+# Frontend UI node modules
+node_modules
