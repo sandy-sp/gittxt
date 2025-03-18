@@ -38,6 +38,3 @@ src/gittxt-logs/
 
 # Gittxt configuration
 gittxt-config.json
-
-# Frontend Development
-src/gittxt-ui/frontend/
