@@ -1,10 +1,10 @@
 # src/gittxt-ui/backend/app.py
 
 from fastapi import FastAPI
-from .api.config_endpoints import router as config_router
-from .api.scans_endpoints import router as scans_router
-from .api.artifacts_endpoints import router as artifacts_router
-from .api.ws_progress_endpoints import router as ws_router
+from api.config_endpoints import router as config_router
+from api.scans_endpoints import router as scans_router
+from api.artifacts_endpoints import router as artifacts_router
+from api.ws_progress_endpoints import router as ws_router
 
 def create_app() -> FastAPI:
     app = FastAPI(
