@@ -16,8 +16,8 @@ logger = Logger.get_logger(__name__)
 # Store scanning tasks in memory
 SCANS: Dict[str, dict] = {}
 
-# Concurrency limit: Only allow N scans in parallel
-MAX_CONCURRENT_SCANS = 2
+# Concurrency limit: only one scan at a time
+MAX_CONCURRENT_SCANS = 1
 SEM = asyncio.Semaphore(MAX_CONCURRENT_SCANS)
 
 async def run_scan_task(
@@ -31,18 +31,12 @@ async def run_scan_task(
     size_limit: Optional[int],
     branch: Optional[str],
 ):
-    """
-    Background task that performs the scan with concurrency limit.
-    Updates SCANS dict with progress as scanning proceeds.
-    """
-    # Acquire semaphore for concurrency limit
     async with SEM:
         SCANS[scan_id]["status"] = "running"
         try:
-            # 1) Prepare the repository
+            # (1) Prepare repo
             repo_handler = RepositoryHandler(source=repo_url, branch=branch)
             repo_path, subdir, is_remote = repo_handler.get_local_path()
-
             if not repo_path:
                 raise ValueError("Repository path is invalid or does not exist.")
 
@@ -50,13 +44,13 @@ async def run_scan_task(
             if subdir:
                 scan_root = scan_root / subdir
 
-            # 2) Build a custom scanning approach with partial progress
+            # (2) Perform scanning with partial progress
             valid_files, tree_summary = await _scan_with_custom_progress(
                 scan_id, scan_root, file_types, progress_callback,
                 include_patterns, exclude_patterns, size_limit
             )
 
-            # 3) If no valid files found
+            # (3) If no valid files
             if not valid_files:
                 SCANS[scan_id].update({
                     "status": "done",
@@ -65,7 +59,7 @@ async def run_scan_task(
                 })
                 return
 
-            # 4) Use OutputBuilder
+            # (4) OutputBuilder
             output_dir = Path.cwd() / f"gittxt_scan_{scan_id}_outputs"
             builder = OutputBuilder(
                 repo_name=f"scan_{scan_id}",
@@ -74,7 +68,6 @@ async def run_scan_task(
             )
             builder.generate_output(valid_files, scan_root)
 
-            # 5) Mark success
             SCANS[scan_id].update({
                 "status": "done",
                 "message": "Scan complete",
@@ -88,11 +81,12 @@ async def run_scan_task(
             SCANS[scan_id]["status"] = "error"
             SCANS[scan_id]["error"] = str(e)
             logger.error(f"Scan {scan_id} failed with error: {e}")
+
         finally:
-            # Clean up remote clone if desired
+            # (5) If remote, remove the cloned repo
+            # We DO NOT remove the 'output_dir' so the user can download artifacts.
             if is_remote:
                 cleanup_temp_folder(Path(repo_path))
-
 
 async def _scan_with_custom_progress(
     scan_id: str,
