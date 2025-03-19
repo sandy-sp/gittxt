@@ -6,21 +6,36 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import FileTypeSelector from "./FileTypeSelector";
 import RepoTree from "./RepoTree";
+import { useScanContext } from "@/context/ScanContext";
+import { useToast } from "@/components/ToastProvider";
 
 export default function RepoForm() {
-  const [repoUrl, setRepoUrl] = useState("");
-  const [branch, setBranch] = useState("");
-  const [fileTypes, setFileTypes] = useState<string[]>([]);
-  const [formats, setFormats] = useState<string[]>(["txt", "json"]);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const { setRepoUrl, setScanId, setFileTypes, setOutputFormat } = useScanContext();
+
+  const [repoUrlInput, setRepoUrlInput] = useState("");
+  const [branch, setBranch] = useState("");
+  const [fileTypesInput, setFileTypesInput] = useState<string[]>([]);
+  const [formats, setFormats] = useState<string[]>(["txt", "json"]);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!repoUrlInput || !repoUrlInput.startsWith("https://github.com/")) {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid GitHub URL.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const payload = {
-      repo_url: repoUrl,
+      repo_url: repoUrlInput,
       branch: branch || null,
-      file_types: fileTypes.join(","),
+      file_types: fileTypesInput.join(",") || "code,docs",
       output_format: formats.join(","),
       include_patterns: [],
       exclude_patterns: [".git", "node_modules"],
@@ -28,10 +43,24 @@ export default function RepoForm() {
     };
 
     try {
+      setLoading(true);
+
+      // Sync context before API call
+      setRepoUrl(repoUrlInput);
+      setFileTypes(fileTypesInput);
+      setOutputFormat(formats);
+
       const res = await axios.post("http://localhost:8000/scans", payload);
+      setScanId(res.data.scan_id);
       navigate(`/progress/${res.data.scan_id}`);
-    } catch (err) {
-      alert("Scan request failed. Check backend logs.");
+    } catch (err: any) {
+      toast({
+        title: "Scan Failed",
+        description: "Check backend logs or connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,9 +70,10 @@ export default function RepoForm() {
         <label className="block text-sm font-medium">Repository URL</label>
         <Input
           required
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
+          value={repoUrlInput}
+          onChange={(e) => setRepoUrlInput(e.target.value)}
           placeholder="https://github.com/user/repo.git"
+          disabled={loading}
         />
       </div>
       <div>
@@ -52,14 +82,18 @@ export default function RepoForm() {
           value={branch}
           onChange={(e) => setBranch(e.target.value)}
           placeholder="e.g., main"
+          disabled={loading}
         />
       </div>
 
-      {/* Dynamic file type fetcher */}
-      {repoUrl && (
+      {repoUrlInput && (
         <>
-          <FileTypeSelector repoUrl={repoUrl} selected={fileTypes} setSelected={setFileTypes} />
-          <RepoTree repoUrl={repoUrl} />
+          <FileTypeSelector
+            repoUrl={repoUrlInput}
+            selected={fileTypesInput}
+            setSelected={setFileTypesInput}
+          />
+          <RepoTree repoUrl={repoUrlInput} />
         </>
       )}
 
@@ -76,6 +110,7 @@ export default function RepoForm() {
                     ? setFormats(formats.filter((f) => f !== fmt))
                     : setFormats([...formats, fmt])
                 }
+                disabled={loading}
               />
               <span>{fmt.toUpperCase()}</span>
             </label>
@@ -83,7 +118,9 @@ export default function RepoForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full">Start Scan</Button>
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Starting Scan..." : "Start Scan"}
+      </Button>
     </form>
   );
 }
