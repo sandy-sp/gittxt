@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import axios from "axios";
 import { useToast } from "@/components/ToastProvider";
+import { closeScan } from "@/services/api";
 
 export default function Progress() {
   const { scanId } = useParams();

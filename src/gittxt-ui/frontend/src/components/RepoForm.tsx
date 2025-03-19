@@ -8,6 +8,7 @@ import FileTypeSelector from "./FileTypeSelector";
 import RepoTree from "./RepoTree";
 import { useScanContext } from "@/context/ScanContext";
 import { useToast } from "@/components/ToastProvider";
+import { getRepoTree, startScan } from "@/services/api";
 
 export default function RepoForm() {
   const navigate = useNavigate();
