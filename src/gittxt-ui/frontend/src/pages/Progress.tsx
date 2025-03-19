@@ -4,21 +4,32 @@ import { useWebSocketProgress } from "../hooks/useWebSocket";
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
+import { useToast } from "@/components/ToastProvider";
 
 export default function Progress() {
   const { scanId } = useParams();
   const { status, progress, currentFile, done } = useWebSocketProgress(scanId!);
   const [startTime] = useState(Date.now());
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const cancelScan = async () => {
     try {
       await axios.delete(`http://localhost:8000/scans/${scanId}/close`);
+      toast({
+        title: "Scan canceled",
+        description: "The scan was successfully canceled.",
+        variant: "default",
+      });
       navigate("/scan");
     } catch {
-      alert("Failed to cancel scan.");
+      toast({
+        title: "Cancel failed",
+        description: "Unable to cancel scan, check backend logs.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -42,13 +53,9 @@ export default function Progress() {
           <p className="text-sm text-gray-600 truncate">
             Current file: {currentFile || "Waiting..."}
           </p>
-
-          {/* ETA Section */}
           {progress > 0 && progress < 100 && (
             <p className="text-xs text-gray-500">ETA: {estimateETA()}</p>
           )}
-
-          {/* Cancel or View Artifacts Buttons */}
           <div className="space-y-2">
             {status === "running" && (
               <Button
