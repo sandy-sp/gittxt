@@ -12,7 +12,7 @@ load_dotenv()
 
 
 class ConfigManager:
-    """Handles configuration loading and environment overrides."""
+    """Handles main Gittxt configuration and environment overrides."""
 
     SRC_DIR = Path(__file__).parent.resolve()
     CONFIG_FILE = SRC_DIR / "gittxt-config.json"
@@ -84,4 +84,49 @@ class ConfigManager:
             logger.error(f"❌ Failed to update configuration file: {e}")
 
 
+class FiletypeConfigManager:
+    """Handles loading and saving filetype_config.json (whitelist/blacklist)"""
+
+    FILETYPE_CONFIG_PATH = Path("filetype_config.json")
+
+    DEFAULT_FILETYPE_CONFIG = {
+        "whitelist": [],
+        "blacklist": [".zip", ".exe", ".bin", ".docx", ".xls", ".pdf"]
+    }
+
+    @classmethod
+    def load_filetype_config(cls) -> dict:
+        if cls.FILETYPE_CONFIG_PATH.exists():
+            try:
+                with cls.FILETYPE_CONFIG_PATH.open("r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning(f"⚠️ Could not load filetype config: {e}. Using defaults.")
+        return cls.DEFAULT_FILETYPE_CONFIG.copy()
+
+    @classmethod
+    def save_filetype_config(cls, config: dict):
+        try:
+            with cls.FILETYPE_CONFIG_PATH.open("w", encoding="utf-8") as f:
+                json.dump(config, f, indent=4)
+            logger.info(f"✅ Updated filetype config: {cls.FILETYPE_CONFIG_PATH}")
+        except Exception as e:
+            logger.error(f"❌ Failed to update filetype config: {e}")
+
+    @classmethod
+    def add_to_whitelist(cls, ext: str):
+        config = cls.load_filetype_config()
+        if ext not in config["whitelist"]:
+            config["whitelist"].append(ext)
+            cls.save_filetype_config(config)
+
+    @classmethod
+    def add_to_blacklist(cls, ext: str):
+        config = cls.load_filetype_config()
+        if ext not in config["blacklist"]:
+            config["blacklist"].append(ext)
+            cls.save_filetype_config(config)
+
+
 ConfigManager.save_default_config()
+FiletypeConfigManager.save_filetype_config(FiletypeConfigManager.load_filetype_config())
