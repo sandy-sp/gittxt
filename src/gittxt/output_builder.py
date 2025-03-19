@@ -16,15 +16,17 @@ class OutputBuilder:
 
     def __init__(self, repo_name, output_dir=None, output_format="txt"):
         self.repo_name = repo_name
-        self.output_dir = (
-            Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
-        )
-        self.text_dir = self.output_dir / "text"
-        self.json_dir = self.output_dir / "json"
-        self.md_dir = self.output_dir / "md"
-        self.zip_dir = self.output_dir / "zips"
+        self.output_dir = Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
+
+        self.directories = {
+            "txt": self.output_dir / "text",
+            "json": self.output_dir / "json",
+            "md": self.output_dir / "md",
+            "zip": self.output_dir / "zips",
+        }
+
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
-        for folder in [self.text_dir, self.json_dir, self.md_dir, self.zip_dir]:
+        for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
 
     def read_file_content(self, file_path: Path):
@@ -48,19 +50,20 @@ class OutputBuilder:
             elif file_type in {"image", "media"}:
                 asset_files.append(file)
 
+        # Generate main output formats
         for fmt in self.output_formats:
             if fmt == "json":
                 out = self._generate_json(text_files, tree_summary, repo_path)
             elif fmt == "md":
-                out = self._generate_markdown(text_files, tree_summary, repo_path)
+                out = self._generate_markdown(text_files, tree_summary, repo_path, asset_files)
             else:
                 out = self._generate_text(text_files, tree_summary, repo_path)
             logger.info(f"📄 {fmt.upper()} output ready at: {out}")
             output_files.append(out)
 
-        # Collect all output files + assets into ZIP
+        # Bundle outputs + assets
         if output_files or asset_files:
-            zip_path = self.zip_dir / f"{self.repo_name}_bundle.zip"
+            zip_path = self.directories["zip"] / f"{self.repo_name}_bundle.zip"
             files_to_zip = output_files + asset_files
             zip_files(files_to_zip, zip_path)
             logger.info(f"📦 Zipped bundle created: {zip_path}")
@@ -68,19 +71,13 @@ class OutputBuilder:
         return text_files
 
     def _generate_text(self, files, tree_summary, repo_path):
-        output_file = self.text_dir / f"{self.repo_name}.txt"
+        output_file = self.directories["txt"] / f"{self.repo_name}.txt"
         with output_file.open("w", encoding="utf-8") as out:
-            # Repo tree
             out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
-
-            # Summary FIRST
             summary = generate_summary(files)
-            summary_str = "\n".join([f"{k}: {v}" for k, v in summary.items()])
             out.write("\n📊 Summary Report:\n")
-            out.write(summary_str)
+            out.write("\n".join([f"{k}: {v}" for k, v in summary.items()]))
             out.write("\n\n")
-
-            # Files section LAST
             for file in files:
                 rel = Path(file).relative_to(repo_path)
                 content = self.read_file_content(file)
@@ -89,7 +86,7 @@ class OutputBuilder:
         return output_file
 
     def _generate_json(self, files, tree_summary, repo_path):
-        output_file = self.json_dir / f"{self.repo_name}.json"
+        output_file = self.directories["json"] / f"{self.repo_name}.json"
         data = {
             "repository_structure": tree_summary,
             "summary": generate_summary(files),
@@ -104,18 +101,16 @@ class OutputBuilder:
             json.dump(data, json_file, indent=4)
         return output_file
 
-    def _generate_markdown(self, files, tree_summary, repo_path):
-        output_file = self.md_dir / f"{self.repo_name}.md"
+    def _generate_markdown(self, files, tree_summary, repo_path, asset_files):
+        output_file = self.directories["md"] / f"{self.repo_name}.md"
         with output_file.open("w", encoding="utf-8") as out:
             out.write(f"# 📂 Repository Overview: `{self.repo_name}`\n\n")
             out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n")
 
-            # Summary second
             summary = generate_summary(files)
             summary_md = "\n".join([f"- **{k}**: {v}" for k, v in summary.items()])
             out.write(f"\n## 📊 Summary Report\n\n{summary_md}\n")
 
-            # Files section last
             out.write("\n## 📄 Extracted Files\n")
             for file in files:
                 rel = Path(file).relative_to(repo_path)
@@ -123,10 +118,16 @@ class OutputBuilder:
                 if content:
                     lang = self._detect_code_language(rel.suffix)
                     out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
+
+            # OPTIONAL: Markdown footer for asset awareness
+            if asset_files:
+                out.write("\n## 📦 Asset Files Included in ZIP\n")
+                for asset in asset_files:
+                    rel = Path(asset).relative_to(repo_path)
+                    out.write(f"- `{rel}`\n")
         return output_file
 
     def _detect_code_language(self, suffix: str) -> str:
-        # Basic language hint for markdown fenced blocks
         mapping = {
             ".py": "python",
             ".js": "javascript",
