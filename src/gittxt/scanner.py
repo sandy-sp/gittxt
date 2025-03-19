@@ -15,7 +15,7 @@ logger = Logger.get_logger(__name__)
 
 
 class Scanner:
-    """Scans directories, filters files by type, and returns valid files."""
+    """Scans directories, filters files by type, and returns valid files with async batching."""
 
     def __init__(
         self,
@@ -25,6 +25,7 @@ class Scanner:
         size_limit: Optional[int],
         file_types: List[str],
         progress: bool = False,
+        batch_size: int = 50,
     ):
         self.root_path = Path(root_path).resolve()
         self.include_patterns = pattern_utils.normalize_patterns(include_patterns)
@@ -32,45 +33,47 @@ class Scanner:
         self.size_limit = size_limit
         self.file_types = set(file_types)
         self.progress = progress
+        self.batch_size = batch_size
 
     def scan_directory(self) -> Tuple[List[Path], str]:
         """Run scan with async or sync fallback. Returns valid files and directory tree."""
         try:
             valid_files = asyncio.run(self._scan_directory_async())
-            logger.info(f"✅ Scanned {len(valid_files)} valid files (async).")
+            logger.info(f"✅ Scanned {len(valid_files)} valid files (async batch).")
         except RuntimeError as exc:
             logger.warning(f"⚠️ Async scan failed due to: {exc}. Falling back to sync mode.")
             valid_files = self._scan_directory_sync()
             logger.info(f"✅ Scanned {len(valid_files)} valid files (sync).")
 
-        # Generate tree once after filtering
         tree_summary = generate_tree(self.root_path)
         return valid_files, tree_summary
 
     async def _scan_directory_async(self) -> List[Path]:
-        """Asynchronous scanning using to_thread for I/O bound operations."""
+        """Batch async scanning using asyncio.gather + to_thread."""
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"Found {len(all_paths)} total items under {self.root_path}")
 
-        bar = self._init_progress_bar(len(all_paths), "Scanning files (async)")
+        bar = self._init_progress_bar(len(all_paths), "Scanning files (async batch)")
 
         valid_files = []
-        tasks = []
-        for path in all_paths:
-            tasks.append(self._process_path_async(path, bar))
 
-        results = await asyncio.gather(*tasks)
-        valid_files = [file for file in results if file is not None]
+        # Process in batches
+        for i in range(0, len(all_paths), self.batch_size):
+            batch = all_paths[i : i + self.batch_size]
+            batch_results = await asyncio.gather(*[self._process_batch_file(path, bar) for path in batch])
+            valid_files.extend([res for res in batch_results if res is not None])
 
         if bar:
             bar.close()
 
         return valid_files
 
-    async def _process_path_async(self, file_path: Path, bar) -> Optional[Path]:
+    async def _process_batch_file(self, file_path: Path, bar) -> Optional[Path]:
+        """Batch-aware async file processor."""
         if not file_path.is_file():
             self._progress_update(bar)
             return None
+
         result = await asyncio.to_thread(self._check_file_filters, file_path)
         self._progress_update(bar)
         return result
