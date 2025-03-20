@@ -11,6 +11,7 @@ from gittxt.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder, cleanup_old_outputs
 from gittxt.utils.filetype_utils import classify_file, update_whitelist, update_blacklist
 from gittxt.utils.tree_utils import generate_tree
+from gittxt.utils.summary_utils import generate_summary
 
 logger = Logger.get_logger(__name__)
 config = ConfigManager.load_config()
@@ -171,10 +172,15 @@ def _process_repo(
     asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=create_zip))
 
     if summary:
+        summary_data = generate_summary(text_files + asset_files)
         logger.info("📊 Summary Report:")
-        logger.info(f" - Text-convertible files: {len(text_files)}")
-        logger.info(f" - Non-text assets: {len(asset_files)}")
+        logger.info(f" - Total files: {summary_data.get('total_files')}")
+        logger.info(f" - Text files: {summary_data.get('text_files')}")
+        logger.info(f" - Asset files: {summary_data.get('asset_files')}")
+        logger.info(f" - Total size (bytes): {summary_data.get('total_size')}")
+        logger.info(f" - Estimated tokens: {summary_data.get('estimated_tokens')}")
         logger.info(f" - Output formats: {output_format}")
+
 
     if is_remote:
         cleanup_temp_folder(Path(repo_path))
