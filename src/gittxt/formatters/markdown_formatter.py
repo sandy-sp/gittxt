@@ -21,7 +21,7 @@ class MarkdownFormatter:
             out.write(f"# 📂 Repository Overview: `{self.repo_name}`\n\n")
             out.write(f"## 📜 Folder Structure\n```\n{self.tree_summary}\n```\n")
 
-            summary = generate_summary(text_files)
+            summary = generate_summary(text_files + asset_files)
             summary_md = "\n".join([f"- **{k}**: {v}" for k, v in summary.items()])
             out.write(f"\n## 📊 Summary Report\n\n{summary_md}\n")
 
@@ -37,10 +37,11 @@ class MarkdownFormatter:
                 out.write("\n## 📦 Asset Files\n")
                 for asset in asset_files:
                     rel = Path(asset).relative_to(self.repo_path)
-                    if rel.suffix.lower() in [".png", ".jpg", ".jpeg", ".gif", ".svg"]:
+                    ext = rel.suffix.lower()
+                    if ext in [".png", ".jpg", ".jpeg", ".gif", ".svg"]:
                         out.write(f"![{rel}]({rel})\n")
                     else:
-                        out.write(f"- `{rel}`\n")
+                        out.write(f"- [{rel}]({rel})\n")
         return output_file
 
     def _detect_code_language(self, suffix: str) -> str:

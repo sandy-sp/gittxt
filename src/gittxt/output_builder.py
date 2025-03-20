@@ -2,15 +2,12 @@ from pathlib import Path
 import asyncio
 from gittxt.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
-from gittxt.utils.cleanup_utils import zip_files
 from gittxt.utils.filetype_utils import classify_file
-
 from gittxt.formatters.text_formatter import TextFormatter
 from gittxt.formatters.json_formatter import JSONFormatter
 from gittxt.formatters.markdown_formatter import MarkdownFormatter
 
 logger = Logger.get_logger(__name__)
-
 
 class OutputBuilder:
     """Handles output generation for scanned repositories via formatter strategies."""
