@@ -2,7 +2,7 @@ from pathlib import Path
 import click
 import sys
 import logging
-
+import asyncio
 from gittxt.config import ConfigManager
 from gittxt.logger import Logger
 from gittxt.repository import RepositoryHandler
@@ -102,7 +102,6 @@ def scan(
             final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth
         )
 
-
 def _process_repo(
     repo_source, branch, include_patterns, exclude_patterns, size_limit,
     final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth
@@ -121,14 +120,11 @@ def _process_repo(
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         size_limit=size_limit,
-        file_types=["all"],  # Dynamically classified
+        file_types=["all"],
         progress=progress,
     )
 
     all_files, tree_output = scanner.scan_directory()
-
-    # Apply user-defined max depth to CLI output tree
-    tree_output = generate_tree(scan_root, max_depth=tree_depth)
 
     if not all_files:
         logger.warning("⚠️ No valid files found. Skipping...")
@@ -180,7 +176,6 @@ def _process_repo(
         logger.info(f" - Total size (bytes): {summary_data.get('total_size')}")
         logger.info(f" - Estimated tokens: {summary_data.get('estimated_tokens')}")
         logger.info(f" - Output formats: {output_format}")
-
 
     if is_remote:
         cleanup_temp_folder(Path(repo_path))
