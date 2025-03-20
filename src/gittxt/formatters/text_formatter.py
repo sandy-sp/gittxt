@@ -1,4 +1,5 @@
 from pathlib import Path
+import aiofiles
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
 
