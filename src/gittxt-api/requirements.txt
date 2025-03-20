@@ -1,0 +1,6 @@
+# gittxt-api/requirements.txt
+fastapi>=0.100.0
+uvicorn>=0.23.0
+requests
+python-dotenv
+gittxt @ file://../gittxt  # Local CLI package import
