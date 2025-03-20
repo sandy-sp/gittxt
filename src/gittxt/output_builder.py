@@ -58,7 +58,7 @@ class OutputBuilder:
                     repo_path=repo_path,
                     tree_summary=tree_summary,
                 )
-                tasks.append(asyncio.to_thread(formatter.generate, text_files, asset_files))
+                tasks.append(formatter.generate, text_files, asset_files)
 
         generated_outputs = await asyncio.gather(*tasks)
         for out in generated_outputs:
