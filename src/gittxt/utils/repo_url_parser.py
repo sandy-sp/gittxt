@@ -4,30 +4,29 @@ import re
 
 def parse_github_url(url: str) -> dict:
     """
-    Parse a GitHub URL to extract owner, repository name, branch, and optional subdirectory.
-
+    Parse GitHub/GHE URLs:
     Supports:
-    - repo URL: https://github.com/user/repo.git
-    - branch URL: https://github.com/user/repo/tree/branch
-    - subdir URL: https://github.com/user/repo/tree/branch/subdir
-    - SSH URL: git@github.com:user/repo.git
+    - https://github.com/user/repo.git
+    - https://github.com/user/repo/tree/branch/subdir
+    - git@github.com:user/repo.git
+    - git@github.mycompany.com:user/repo.git
     """
 
     data = {"owner": None, "repo": None, "branch": None, "subdir": None}
 
-    # Handle SSH URL: git@github.com:user/repo.git
+    # SSH-style (including GHE)
     ssh_pattern = re.compile(
-        r"git@github\.com:(?P<owner>[^/]+)/(?P<repo>[^.]+)(\.git)?"
+        r"git@(?P<host>[^:]+):(?P<owner>[^/]+)/(?P<repo>[^.]+)(\.git)?"
     )
     ssh_match = ssh_pattern.match(url)
     if ssh_match:
         data.update(ssh_match.groupdict())
         return data
 
-    # Parse HTTPS URLs
+    # HTTPS URLs (GitHub.com or GHE)
     parsed = urlparse(url)
-    if "github.com" not in parsed.netloc:
-        raise ValueError("URL is not a valid GitHub link")
+    if "github" not in parsed.netloc:
+        raise ValueError("URL is not a valid GitHub/GHE link")
 
     path_parts = parsed.path.strip("/").split("/")
 
@@ -42,19 +41,17 @@ def parse_github_url(url: str) -> dict:
         if len(path_parts) > 4:
             data["subdir"] = "/".join(path_parts[4:])
     else:
-        data["branch"] = "main"  # Default fallback
+        data["branch"] = "main"  # Default fallback for ambiguous URLs
 
     return data
 
 
-# Example usage:
 if __name__ == "__main__":
     test_urls = [
         "https://github.com/sandy-sp/gittxt.git",
-        "https://github.com/sandy-sp/gittxt",
-        "https://github.com/sandy-sp/gittxt/tree/UI-Dev",
-        "https://github.com/sandy-sp/gittxt/tree/ui-dev-2/src/gittxt_ui",
+        "https://github.com/sandy-sp/gittxt/tree/dev/docs",
         "git@github.com:sandy-sp/gittxt.git",
+        "git@github.mycompany.com:user/repo.git"
     ]
     for url in test_urls:
         print(parse_github_url(url))
