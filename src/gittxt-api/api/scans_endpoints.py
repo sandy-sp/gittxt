@@ -1,5 +1,3 @@
-# gittxt-api/api/scans_endpoints.py
-
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from schemas.scan_schemas import ScanRequest, TreeRequest
 from core.scanning_service import (
@@ -16,7 +14,6 @@ from pathlib import Path
 import uuid
 
 router = APIRouter()
-
 
 @router.post("/tree")
 async def get_repo_tree(req: TreeRequest):
@@ -55,11 +52,14 @@ async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
     Launch a Gittxt scan asynchronously.
     """
     scan_id = str(uuid.uuid4())
+    repo_name = Path(req.repo_url).stem
+
     SCANS[scan_id] = {
         "status": "queued",
         "progress": 0,
         "current_file": "",
         "error": None,
+        "repo_name": repo_name,  # NEW: store repo_name consistently
     }
 
     background_tasks.add_task(
@@ -73,6 +73,8 @@ async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
         req.exclude_patterns,
         req.size_limit,
         req.branch,
+        req.tree_depth,
+        req.create_zip
     )
 
     return {"scan_id": scan_id, "status": "queued", "message": "Scan scheduled."}
