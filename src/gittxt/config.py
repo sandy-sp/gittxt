@@ -31,6 +31,7 @@ class ConfigManager:
         "size_limit": None,
         "include_patterns": [],
         "exclude_patterns": [".git", "node_modules", "__pycache__", ".log"],
+        "custom_exclude_patterns": [],
         "output_format": "txt",
         "file_types": "code,docs",
         "logging_level": "INFO",
@@ -40,31 +41,33 @@ class ConfigManager:
     def load_config(cls):
         config = cls.DEFAULT_CONFIG.copy()
 
+        # Step 1: Load from gittxt-config.json if present
         if cls.CONFIG_FILE.exists():
             try:
                 with cls.CONFIG_FILE.open("r", encoding="utf-8") as f:
                     user_config = json.load(f)
                 config.update(user_config)
+                logger.info(f"✅ Loaded gittxt-config.json")
             except (json.JSONDecodeError, IOError) as e:
-                logger.error(f"❌ Error loading config file: {e}. Using defaults.")
+                logger.warning(f"⚠️ Could not load config file: {e}. Using defaults.")
 
-        # .env overrides
+        # Step 2: .env overrides
         config["output_dir"] = os.getenv("GITTXT_OUTPUT_DIR", config["output_dir"])
-        config["output_format"] = os.getenv(
-            "GITTXT_OUTPUT_FORMAT", config["output_format"]
-        )
+        config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
         config["file_types"] = os.getenv("GITTXT_FILE_TYPES", config["file_types"])
-        config["logging_level"] = os.getenv(
-            "GITTXT_LOGGING_LEVEL", config["logging_level"]
-        )
+        config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
         config["size_limit"] = (
             int(os.getenv("GITTXT_SIZE_LIMIT", config["size_limit"] or 0)) or None
         )
 
-        # Path normalization
+        # Step 3: Path normalization
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
 
-        logger.info("✅ Loaded configuration (with .env overrides if any)")
+        # Step 4: Merge default excludes + custom excludes
+        merged_excludes = set(config["exclude_patterns"]) | set(config.get("custom_exclude_patterns", []))
+        config["exclude_patterns"] = sorted(merged_excludes)
+
+        logger.info("✅ Final config loaded (env + json + defaults merged)")
         return config
 
     @classmethod
