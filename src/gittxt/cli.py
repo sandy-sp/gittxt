@@ -176,7 +176,7 @@ def _process_repo(
     if not non_interactive:
         create_zip = click.confirm("📦 Do you want to generate a ZIP bundle with outputs + assets?", default=False)
 
-    asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=create_zip or zip_flag, tree_depth=tree_depth))
+    asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=create_zip, tree_depth=tree_depth))
 
     if summary:
         summary_data = generate_summary(text_files + asset_files)
