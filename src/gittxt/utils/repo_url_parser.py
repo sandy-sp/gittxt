@@ -1,7 +1,6 @@
 from urllib.parse import urlparse
 import re
 
-
 def parse_github_url(url: str) -> dict:
     """
     Parse GitHub/GHE URLs:
@@ -11,12 +10,11 @@ def parse_github_url(url: str) -> dict:
     - git@github.com:user/repo.git
     - git@github.mycompany.com:user/repo.git
     """
-
     data = {"owner": None, "repo": None, "branch": None, "subdir": None}
 
     # SSH-style (including GHE)
     ssh_pattern = re.compile(
-        r"git@(?P<host>[^:]+):(?P<owner>[^/]+)/(?P<repo>[^.]+)(\.git)?"
+        r"git@(?P<host>[^:]+):(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git)?$"
     )
     ssh_match = ssh_pattern.match(url)
     if ssh_match:
@@ -44,14 +42,3 @@ def parse_github_url(url: str) -> dict:
         data["branch"] = "main"  # Default fallback for ambiguous URLs
 
     return data
-
-
-if __name__ == "__main__":
-    test_urls = [
-        "https://github.com/sandy-sp/gittxt.git",
-        "https://github.com/sandy-sp/gittxt/tree/dev/docs",
-        "git@github.com:sandy-sp/gittxt.git",
-        "git@github.mycompany.com:user/repo.git"
-    ]
-    for url in test_urls:
-        print(parse_github_url(url))

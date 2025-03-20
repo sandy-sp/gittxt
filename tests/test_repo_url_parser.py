@@ -33,6 +33,21 @@ def test_ssh_url():
     assert result["branch"] is None
     assert result["subdir"] is None
 
+def test_ssh_url_with_dot_repo():
+    url = "git@github.com:sandy-sp/gittxt.cli.git"
+    result = parse_github_url(url)
+    assert result["owner"] == "sandy-sp"
+    assert result["repo"] == "gittxt.cli"
+    assert result["branch"] is None
+    assert result["subdir"] is None
+
+
+def test_https_url_with_dot_repo():
+    url = "https://github.com/sandy-sp/gittxt.cli.git"
+    result = parse_github_url(url)
+    assert result["owner"] == "sandy-sp"
+    assert result["repo"] == "gittxt.cli"
+    assert result["branch"] == "main"
 
 def test_invalid_url():
     with pytest.raises(ValueError):
