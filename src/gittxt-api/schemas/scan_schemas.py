@@ -14,12 +14,5 @@ class ScanRequest(BaseModel):
     exclude_patterns: List[str] = [".git", "node_modules"]
     size_limit: Optional[int] = None
     branch: Optional[str] = None
-
-
-# gittxt-api/schemas/config_schemas.py
-from pydantic import BaseModel
-from typing import Optional
-
-class UpdateConfigRequest(BaseModel):
-    output_dir: Optional[str] = None
-    logging_level: Optional[str] = None
+    tree_depth: Optional[int] = None 
+    create_zip: Optional[bool] = False 
