@@ -58,7 +58,7 @@ class OutputBuilder:
                     repo_path=repo_path,
                     tree_summary=tree_summary,
                 )
-                tasks.append(formatter.generate, text_files, asset_files)
+                tasks.append(formatter.generate(text_files, asset_files))
 
         generated_outputs = await asyncio.gather(*tasks)
         for out in generated_outputs:
@@ -68,7 +68,7 @@ class OutputBuilder:
         if create_zip:
             zip_path = self.directories["zip"] / f"{self.repo_name}_bundle.zip"
             files_to_zip = [(file, repo_path) for file in output_files + asset_files]
-            self._zip_with_relative_paths(files_to_zip, zip_path)
+            await asyncio.to_thread(self._zip_with_relative_paths, files_to_zip, zip_path)
             logger.info(f"📦 Zipped bundle created: {zip_path}")
 
         return text_files
