@@ -20,9 +20,10 @@ def cli():
     """Gittxt CLI: Scan and extract text/code from GitHub repositories."""
     pass
 
-@cli.command()
+@click.command()
 @click.argument("repo", type=str)
-def tree(repo):
+@click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
+def tree(repo, tree_depth):
     """Show folder structure for a repo (local or remote)."""
     repo_handler = RepositoryHandler(repo)
     repo_path, subdir, _ = repo_handler.get_local_path()
@@ -31,7 +32,7 @@ def tree(repo):
         sys.exit(1)
 
     scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
-    tree_output = generate_tree(scan_root)
+    tree_output = generate_tree(scan_root, max_depth=tree_depth)
     click.echo(tree_output)
 
     cleanup_temp_folder(Path(repo_path)) if repo_handler.is_remote else None
@@ -64,6 +65,7 @@ def clean(output_dir):
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.option("--progress", is_flag=True, help="Show scan progress bar")
 @click.option("--non-interactive", is_flag=True, help="Skip prompts (CI/CD friendly)")
+@click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
 def scan(
     repos,
     include,
@@ -76,6 +78,7 @@ def scan(
     debug,
     progress,
     non_interactive,
+    tree_depth
 ):
     """Scan one or more repositories (local or remote)"""
     if debug:
@@ -95,12 +98,13 @@ def scan(
     for repo_source in repos:
         _process_repo(
             repo_source, branch, include_patterns, exclude_patterns, size_limit,
-            final_output_dir, output_format, summary, debug, progress, non_interactive
+            final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth
         )
+
 
 def _process_repo(
     repo_source, branch, include_patterns, exclude_patterns, size_limit,
-    final_output_dir, output_format, summary, debug, progress, non_interactive
+    final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth
 ):
     logger.info(f"🚀 Processing repository: {repo_source}")
     repo_handler = RepositoryHandler(repo_source, branch=branch)
@@ -120,7 +124,11 @@ def _process_repo(
         progress=progress,
     )
 
-    all_files, _ = scanner.scan_directory()
+    all_files, tree_output = scanner.scan_directory()
+
+    # Apply user-defined max depth to CLI output tree
+    tree_output = generate_tree(scan_root, max_depth=tree_depth)
+
     if not all_files:
         logger.warning("⚠️ No valid files found. Skipping...")
         if is_remote:
