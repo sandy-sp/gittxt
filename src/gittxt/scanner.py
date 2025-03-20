@@ -15,7 +15,7 @@ logger = Logger.get_logger(__name__)
 
 
 class Scanner:
-    """Scans directories, filters files by type, and returns valid files with async batching."""
+    """Scans directories, applies filters, and returns valid files with async batching."""
 
     def __init__(
         self,
@@ -27,7 +27,7 @@ class Scanner:
         progress: bool = False,
         batch_size: int = 50,
     ):
-        self.root_path = Path(root_path).resolve()
+        self.root_path = root_path.resolve()
         self.include_patterns = pattern_utils.normalize_patterns(include_patterns)
         self.exclude_patterns = pattern_utils.normalize_patterns(exclude_patterns)
         self.size_limit = size_limit
@@ -39,11 +39,11 @@ class Scanner:
         """Run scan with async or sync fallback. Returns valid files and directory tree."""
         try:
             valid_files = asyncio.run(self._scan_directory_async())
-            logger.info(f"✅ Scanned {len(valid_files)} valid files (async batch).")
+            logger.info(f"✅ Async scan complete: {len(valid_files)} valid files found.")
         except RuntimeError as exc:
             logger.warning(f"⚠️ Async scan failed due to: {exc}. Falling back to sync mode.")
             valid_files = self._scan_directory_sync()
-            logger.info(f"✅ Scanned {len(valid_files)} valid files (sync).")
+            logger.info(f"✅ Sync scan complete: {len(valid_files)} valid files found.")
 
         tree_summary = generate_tree(self.root_path)
         return valid_files, tree_summary
@@ -51,15 +51,16 @@ class Scanner:
     async def _scan_directory_async(self) -> List[Path]:
         """Batch async scanning using asyncio.gather + to_thread."""
         all_paths = list(self.root_path.rglob("*"))
-        logger.debug(f"Found {len(all_paths)} total items under {self.root_path}")
+        logger.debug(f"📂 Found {len(all_paths)} total items under {self.root_path}")
+
+        # Adjust batch size based on repo size
+        dynamic_batch_size = min(self.batch_size, max(10, len(all_paths) // 20))
 
         bar = self._init_progress_bar(len(all_paths), "Scanning files (async batch)")
 
         valid_files = []
-
-        # Process in batches
-        for i in range(0, len(all_paths), self.batch_size):
-            batch = all_paths[i : i + self.batch_size]
+        for i in range(0, len(all_paths), dynamic_batch_size):
+            batch = all_paths[i: i + dynamic_batch_size]
             batch_results = await asyncio.gather(*[self._process_batch_file(path, bar) for path in batch])
             valid_files.extend([res for res in batch_results if res is not None])
 
@@ -107,18 +108,21 @@ class Scanner:
 
     def _passes_filters(self, file_path: Path) -> bool:
         if pattern_utils.match_exclude(file_path, self.exclude_patterns):
+            logger.debug(f"🛑 Excluded by pattern: {file_path}")
             return False
         if self.include_patterns and not pattern_utils.match_include(file_path, self.include_patterns):
             return False
         if self.size_limit and file_path.stat().st_size > self.size_limit:
+            logger.debug(f"🛑 Excluded by size limit: {file_path}")
             return False
         return True
 
     def _passes_filetype_filter(self, file_path: Path) -> bool:
+        # Classification will be dynamically enhanced later
         return True if self.file_types == {"all"} else filetype_utils.classify_file(file_path) in self.file_types
 
     def _init_progress_bar(self, total, desc):
-        if self.progress and tqdm:
+        if self.progress and tqdm and total > 5:
             return tqdm(total=total, desc=desc, unit="file", dynamic_ncols=True)
         return None
 
