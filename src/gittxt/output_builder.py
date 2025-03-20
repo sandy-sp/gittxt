@@ -34,8 +34,8 @@ class OutputBuilder:
         for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
 
-    async def generate_output(self, files, repo_path, create_zip=False):
-        tree_summary = generate_tree(Path(repo_path))
+    async def generate_output(self, files, repo_path, create_zip=False, tree_depth=None):
+        tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
         text_files = []
         asset_files = []

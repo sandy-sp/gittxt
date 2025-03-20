@@ -20,6 +20,7 @@ config = ConfigManager.load_config()
 def cli():
     """Gittxt CLI: Scan and extract text/code from GitHub repositories."""
     pass
+
 @cli.command()
 def install():
     """Run interactive config setup"""
@@ -72,6 +73,7 @@ def clean(output_dir):
 @click.option("--progress", is_flag=True, help="Show scan progress bar")
 @click.option("--non-interactive", is_flag=True, help="Skip prompts (CI/CD friendly)")
 @click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
+@click.option("--zip", "create_zip", is_flag=True, help="Generate ZIP bundle with outputs + assets (CI-friendly)")
 def scan(
     repos,
     include,
@@ -125,7 +127,7 @@ def _process_repo(
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         size_limit=size_limit,
-        file_types=["all"],
+        file_types=["all"], 
         progress=progress,
     )
 
@@ -137,8 +139,9 @@ def _process_repo(
             cleanup_temp_folder(Path(repo_path))
         return
 
-    text_files, asset_files = [], []
-
+    text_files = []
+    asset_files = []
+    
     for file in all_files:
         ext = Path(file).suffix.lower()
         classification = classify_file(Path(file))
@@ -158,6 +161,8 @@ def _process_repo(
                 elif click.confirm("➖ Add to blacklist (always skip)?", default=False):
                     update_blacklist(ext)
                     logger.info(f"[✔️] Extension `{ext}` added to blacklist.")
+                else:
+                    logger.info(f"[SKIPPED] Interactive whitelist/blacklist prompts in non-interactive mode.")
 
     repo_name = Path(repo_path).name
     builder = OutputBuilder(
@@ -170,7 +175,7 @@ def _process_repo(
     if not non_interactive:
         create_zip = click.confirm("📦 Do you want to generate a ZIP bundle with outputs + assets?", default=False)
 
-    asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=create_zip))
+    asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=create_zip or zip_flag, tree_depth=tree_depth))
 
     if summary:
         summary_data = generate_summary(text_files + asset_files)
