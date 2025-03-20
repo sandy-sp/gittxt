@@ -20,6 +20,11 @@ config = ConfigManager.load_config()
 def cli():
     """Gittxt CLI: Scan and extract text/code from GitHub repositories."""
     pass
+@cli.command()
+def install():
+    """Run interactive config setup"""
+    from gittxt.utils.install_utils import run_interactive_install
+    run_interactive_install()
 
 @click.command()
 @click.argument("repo", type=str)

@@ -40,3 +40,4 @@ gittxt-config.json
 
 # Frontend UI node modules
 node_modules
+src/gittxt-ui/
