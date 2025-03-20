@@ -37,7 +37,7 @@ class OutputBuilder:
         for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
 
-    async def generate_output(self, files, repo_path):
+    async def generate_output(self, files, repo_path, create_zip=False):
         tree_summary = generate_tree(Path(repo_path))
 
         text_files = []
@@ -68,8 +68,7 @@ class OutputBuilder:
             logger.info(f"📄 Output ready at: {out}")
             output_files.append(out)
 
-        # ZIP bundle
-        if output_files or asset_files:
+        if create_zip:
             zip_path = self.directories["zip"] / f"{self.repo_name}_bundle.zip"
             files_to_zip = [(file, repo_path) for file in output_files + asset_files]
             self._zip_with_relative_paths(files_to_zip, zip_path)
