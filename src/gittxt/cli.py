@@ -15,14 +15,10 @@ from gittxt.utils.tree_utils import generate_tree
 logger = Logger.get_logger(__name__)
 config = ConfigManager.load_config()
 
-
 @click.group()
 def cli():
     """Gittxt CLI: Scan and extract text/code from GitHub repositories."""
     pass
-
-
-### ------------------- NEW COMMANDS -------------------- ###
 
 @cli.command()
 @click.argument("repo", type=str)
@@ -40,7 +36,6 @@ def tree(repo):
 
     cleanup_temp_folder(Path(repo_path)) if repo_handler.is_remote else None
 
-
 @cli.command()
 @click.argument("file", type=click.Path(exists=True))
 def classify(file):
@@ -49,7 +44,6 @@ def classify(file):
     result = classify_file(fpath)
     click.echo(f"📄 `{fpath}` classified as: {result}")
 
-
 @cli.command()
 @click.option("--output-dir", type=click.Path(), default=None)
 def clean(output_dir):
@@ -57,9 +51,6 @@ def clean(output_dir):
     target_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     cleanup_old_outputs(target_dir)
     click.echo(f"🗑️ Cleaned output directory: {target_dir}")
-
-
-### ------------------- SCAN COMMAND -------------------- ###
 
 @cli.command()
 @click.argument("repos", nargs=-1)
@@ -106,7 +97,6 @@ def scan(
             repo_source, branch, include_patterns, exclude_patterns, size_limit,
             final_output_dir, output_format, summary, debug, progress, non_interactive
         )
-
 
 def _process_repo(
     repo_source, branch, include_patterns, exclude_patterns, size_limit,
@@ -166,7 +156,11 @@ def _process_repo(
         output_format=output_format,
     )
 
-    asyncio.run(builder.generate_output(text_files + asset_files, repo_path))
+    create_zip = False
+    if not non_interactive:
+        create_zip = click.confirm("📦 Do you want to generate a ZIP bundle with outputs + assets?", default=False)
+
+    asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=create_zip))
 
     if summary:
         logger.info("📊 Summary Report:")
@@ -179,10 +173,8 @@ def _process_repo(
 
     logger.info("✅ Gittxt scan completed.\n")
 
-
 def main():
     cli()
-
 
 if __name__ == "__main__":
     main()
