@@ -86,7 +86,8 @@ def scan(
     debug,
     progress,
     non_interactive,
-    tree_depth
+    tree_depth,
+    create_zip
 ):
     """Scan one or more repositories (local or remote)"""
     if debug:
