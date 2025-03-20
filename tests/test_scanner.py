@@ -2,65 +2,72 @@ import pytest
 from pathlib import Path
 from gittxt.scanner import Scanner
 
-
 @pytest.fixture
-def mock_repo(tmp_path):
-    repo_path = tmp_path / "test-repo"
-    repo_path.mkdir()
-    (repo_path / "app.py").write_text("print('Test')")
-    (repo_path / "README.md").write_text("# Sample Doc")
-    (repo_path / "assets").mkdir()
-    (repo_path / "assets/data.csv").write_text("id,value\n1,100")
-    (repo_path / "assets/logo.png").write_bytes(b"\x89PNG\r\n")
-    (repo_path / "big.txt").write_text("A" * 1_000_000)  # Large file
-    return repo_path
+def dummy_repo(tmp_path):
+    # Setup a dummy repo with mixed files
+    repo = tmp_path / "dummy-repo"
+    repo.mkdir()
 
+    (repo / "app.py").write_text("print('hello')")  # code
+    (repo / "README.md").write_text("# Docs")      # docs
+    (repo / "data.csv").write_text("id,value\n1,100")  # csv
+    (repo / "logo.png").write_bytes(b"\x89PNG\r\n")    # binary
+    (repo / "large.bin").write_bytes(b"A" * 2_000_000) # large file
+    (repo / "notes.txt").write_text("Some text")   # text
+    (repo / "nested").mkdir()
+    (repo / "nested" / "deepfile.py").write_text("# deep code file")
 
-def test_includes_code_only(mock_repo):
+    return repo
+
+def test_include_pattern_py(dummy_repo):
     scanner = Scanner(
-        root_path=mock_repo,
+        root_path=dummy_repo,
         include_patterns=[".py"],
         exclude_patterns=[],
-        size_limit=None,
-        file_types=["code"],
-    )
-    files, _ = scanner.scan_directory()
-    assert any("app.py" in str(f) for f in files)
-    assert all(str(f).endswith(".py") for f in files)
-
-
-def test_excludes_assets_folder(mock_repo):
-    scanner = Scanner(
-        root_path=mock_repo,
-        include_patterns=[],
-        exclude_patterns=["assets"],
         size_limit=None,
         file_types=["all"],
     )
     files, _ = scanner.scan_directory()
-    assert not any("data.csv" in f or "logo.png" in f for f in files)
+    assert all(str(f).endswith(".py") for f in files)
+    assert any("app.py" in str(f) for f in files)
 
-
-def test_filetype_docs_only(mock_repo):
+def test_exclude_nested_folder(dummy_repo):
     scanner = Scanner(
-        root_path=mock_repo,
+        root_path=dummy_repo,
+        include_patterns=[],
+        exclude_patterns=["nested"],
+        size_limit=None,
+        file_types=["all"],
+    )
+    files, _ = scanner.scan_directory()
+    assert not any("nested" in str(f) for f in files)
+
+def test_filetype_docs_only(dummy_repo):
+    scanner = Scanner(
+        root_path=dummy_repo,
         include_patterns=[],
         exclude_patterns=[],
         size_limit=None,
         file_types=["docs"],
     )
     files, _ = scanner.scan_directory()
+    assert any("README.md" in str(f) for f in files)
+    assert all(f.suffix in [".md", ".rst", ".txt"] for f in files)
 
-    assert any("README" in Path(f).name for f in files)
-
-    # Accept common doc extensions
-    allowed = [".md", ".rst", ".txt"]
-    assert all(Path(f).suffix in allowed or "README" in Path(f).name for f in files)
-
-
-def test_filetype_csv(mock_repo):
+def test_size_limit_excludes_large_file(dummy_repo):
     scanner = Scanner(
-        root_path=mock_repo,
+        root_path=dummy_repo,
+        include_patterns=[],
+        exclude_patterns=[],
+        size_limit=500_000,  # 500 KB
+        file_types=["all"],
+    )
+    files, _ = scanner.scan_directory()
+    assert not any("large.bin" in str(f) for f in files)
+
+def test_filetype_csv(dummy_repo):
+    scanner = Scanner(
+        root_path=dummy_repo,
         include_patterns=[],
         exclude_patterns=[],
         size_limit=None,
@@ -69,26 +76,14 @@ def test_filetype_csv(mock_repo):
     files, _ = scanner.scan_directory()
     assert any("data.csv" in str(f) for f in files)
 
-
-def test_image_files_filtered(mock_repo):
+def test_all_files_included(dummy_repo):
     scanner = Scanner(
-        root_path=mock_repo,
+        root_path=dummy_repo,
         include_patterns=[],
         exclude_patterns=[],
         size_limit=None,
-        file_types=["image"],
-    )
-    files, _ = scanner.scan_directory()
-    assert any("logo.png" in str(f) for f in files)
-
-
-def test_size_limit(mock_repo):
-    scanner = Scanner(
-        root_path=mock_repo,
-        include_patterns=[],
-        exclude_patterns=[],
-        size_limit=1000,  # 1 KB
         file_types=["all"],
     )
     files, _ = scanner.scan_directory()
-    assert not any("big.txt" in str(f) for f in files)
+    assert len(files) >= 6  # Expecting at least all dummy files to be counted
+

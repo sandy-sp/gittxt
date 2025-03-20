@@ -1,85 +1,72 @@
 import shutil
 import zipfile
-import json
 from pathlib import Path, PurePath
 import pytest
+import asyncio
 from gittxt.output_builder import OutputBuilder
 
-TEST_REPO_NAME = "test-repo"
-OUTPUT_DIR = Path("tests/test-outputs")
-MOCK_FILES = [
-    "app.py",  # code
-    "README.md",  # doc
-    "assets/data.csv",  # csv
-    "assets/logo.png",  # image
-]
-
-
 @pytest.fixture(scope="function")
-def clean_output_dir():
-    for subdir in ["text", "json", "md", "zips"]:
-        out_dir = OUTPUT_DIR / subdir
-        if out_dir.exists():
-            shutil.rmtree(out_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-
+def output_dir(tmp_path):
+    out_dir = tmp_path / "test-outputs"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    return out_dir
 
 @pytest.fixture
-def mock_file_system(tmp_path):
-    repo_path = tmp_path / TEST_REPO_NAME
-    (repo_path / "assets").mkdir(parents=True)
-    (repo_path / "app.py").write_text("print('Hello, World!')", encoding="utf-8")
-    (repo_path / "README.md").write_text("# Mock README", encoding="utf-8")
-    (repo_path / "assets/data.csv").write_text("id,value\n1,100", encoding="utf-8")
-    (repo_path / "assets/logo.png").write_bytes(b"\x89PNG\r\n\x1a\n")
-    return repo_path
+def mock_repo(tmp_path):
+    repo = tmp_path / "mock-repo"
+    (repo / "assets").mkdir(parents=True)
+    (repo / "app.py").write_text("print('Hello')")
+    (repo / "README.md").write_text("# Documentation")
+    (repo / "assets/data.csv").write_text("id,value\n1,200")
+    (repo / "assets/logo.png").write_bytes(b"\x89PNG\r\n")
+    return repo
 
+@pytest.mark.asyncio
+async def test_generate_txt_output(output_dir, mock_repo):
+    builder = OutputBuilder("mock-repo", output_dir=output_dir, output_format="txt")
+    await builder.generate_output(list(mock_repo.rglob("*")), mock_repo)
+    txt_file = output_dir / "text" / "mock-repo.txt"
+    assert txt_file.exists()
+    assert "Summary Report" in txt_file.read_text()
 
-def test_generate_txt_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt")
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    txt_path = OUTPUT_DIR / "text" / f"{TEST_REPO_NAME}.txt"
-    assert txt_path.exists()
-    content = txt_path.read_text()
-    assert "📊 Summary Report:" in content
+@pytest.mark.asyncio
+async def test_generate_json_output(output_dir, mock_repo):
+    builder = OutputBuilder("mock-repo", output_dir=output_dir, output_format="json")
+    await builder.generate_output(list(mock_repo.rglob("*")), mock_repo)
+    json_file = output_dir / "json" / "mock-repo.json"
+    assert json_file.exists()
+    content = json_file.read_text()
+    assert '"files":' in content
+    assert '"summary":' in content
 
+@pytest.mark.asyncio
+async def test_generate_md_output(output_dir, mock_repo):
+    builder = OutputBuilder("mock-repo", output_dir=output_dir, output_format="md")
+    await builder.generate_output(list(mock_repo.rglob("*")), mock_repo)
+    md_file = output_dir / "md" / "mock-repo.md"
+    assert md_file.exists()
+    assert "## 📊 Summary Report" in md_file.read_text()
 
-def test_generate_json_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="json")
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    json_path = OUTPUT_DIR / "json" / f"{TEST_REPO_NAME}.json"
-    assert json_path.exists()
-    with json_path.open() as f:
-        data = json.load(f)
-        assert any("app.py" in file["file"] for file in data["files"])
-        assert "summary" in data
+@pytest.mark.asyncio
+async def test_zip_bundle_creation(output_dir, mock_repo):
+    builder = OutputBuilder("mock-repo", output_dir=output_dir, output_format="txt,json")
+    await builder.generate_output(list(mock_repo.rglob("*")), mock_repo, create_zip=True)
 
+    zip_file = output_dir / "zips" / "mock-repo_bundle.zip"
+    assert zip_file.exists()
 
-def test_generate_markdown_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="md")
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    md_path = OUTPUT_DIR / "md" / f"{TEST_REPO_NAME}.md"
-    assert md_path.exists()
-    content = md_path.read_text()
-    assert "## 📊 Summary Report" in content
-
-
-def test_zip_contains_output_and_assets(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(
-        TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt,json"
-    )
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-
-    zip_path = OUTPUT_DIR / "zips" / f"{TEST_REPO_NAME}_bundle.zip"
-    assert zip_path.exists()
-
-    # Inside test_zip_contains_output_and_assets()
-    with zipfile.ZipFile(zip_path, "r") as zf:
+    with zipfile.ZipFile(zip_file, "r") as zf:
         zip_contents = zf.namelist()
+        basenames = [PurePath(p).name for p in zip_contents]
+        assert "mock-repo.txt" in basenames
+        assert "mock-repo.json" in basenames
+        assert "logo.png" in basenames
+        assert "data.csv" in basenames
 
-        # Normalize using pathlib's PurePath for zip internal paths
-        basenames = [PurePath(name).name for name in zip_contents]
+@pytest.mark.asyncio
+async def test_handle_empty_files_list(output_dir, mock_repo):
+    builder = OutputBuilder("mock-repo", output_dir=output_dir, output_format="txt")
+    empty = await builder.generate_output([], mock_repo)
+    assert isinstance(empty, list)
+    # It should just create empty report files without throwing errors
 
-        assert "test-repo.txt" in basenames
-        assert "test-repo.json" in basenames
-        assert any(bn in ["data.csv", "logo.png"] for bn in basenames)

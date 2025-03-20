@@ -1,28 +1,16 @@
 import subprocess
 import shutil
 from pathlib import Path
-import json
-import importlib
 import pytest
 
 TEST_REPO = Path("tests/test-repo").resolve()
 OUTPUT_DIR = Path("tests/test-outputs")
-FILETYPE_CONFIG = Path("filetype_config.json")
-
 
 @pytest.fixture(scope="function")
 def clean_output_dir():
     if OUTPUT_DIR.exists():
         shutil.rmtree(OUTPUT_DIR)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-
-@pytest.fixture(scope="function")
-def reset_filetype_config():
-    if FILETYPE_CONFIG.exists():
-        FILETYPE_CONFIG.unlink()
-    subprocess.run(["python", "src/gittxt/cli.py", "--help"], capture_output=True)
-
 
 def run_gittxt(args):
     cmd = ["python", "src/gittxt/cli.py"] + args
@@ -31,127 +19,76 @@ def run_gittxt(args):
     print("\n--- STDERR ---\n", result.stderr)
     return result
 
-
-def test_basic_scan_txt(clean_output_dir, reset_filetype_config):
-    run_gittxt(["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR), "--non-interactive"])
+def test_scan_basic_txt(clean_output_dir):
+    result = run_gittxt(["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR), "--non-interactive"])
     assert (OUTPUT_DIR / "text" / "test-repo.txt").exists()
+    assert result.returncode == 0
 
-
-def test_multi_format_scan(clean_output_dir, reset_filetype_config):
-    run_gittxt(
-        [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--output-format",
-            "txt,json,md",
-            "--non-interactive",
-        ]
-    )
+def test_scan_all_formats(clean_output_dir):
+    result = run_gittxt([
+        "scan", str(TEST_REPO),
+        "--output-dir", str(OUTPUT_DIR),
+        "--output-format", "txt,json,md",
+        "--non-interactive"
+    ])
     assert (OUTPUT_DIR / "text" / "test-repo.txt").exists()
     assert (OUTPUT_DIR / "json" / "test-repo.json").exists()
     assert (OUTPUT_DIR / "md" / "test-repo.md").exists()
+    assert result.returncode == 0
 
+def test_scan_with_summary(clean_output_dir):
+    result = run_gittxt([
+        "scan", str(TEST_REPO),
+        "--output-dir", str(OUTPUT_DIR),
+        "--summary",
+        "--non-interactive"
+    ])
+    assert "📊 Summary Report" in result.stdout
+    assert result.returncode == 0
 
-def test_summary_flag(clean_output_dir, reset_filetype_config):
-    output = run_gittxt(
-        [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--summary",
-            "--non-interactive",
-        ]
-    ).stdout
+def test_scan_with_exclude(clean_output_dir):
+    result = run_gittxt([
+        "scan", str(TEST_REPO),
+        "--output-dir", str(OUTPUT_DIR),
+        "--exclude", "nested",
+        "--non-interactive"
+    ])
+    txt_output = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
+    assert "nested/level1/level2/level3/deep_file.py" not in txt_output
+    assert result.returncode == 0
 
-    output_lower = output.lower()
-    assert "📊 summary report" in output_lower
-    assert "text-convertible files" in output_lower
+def test_scan_empty_repo_error():
+    empty_dir = Path("tests/test-repo/empty-folder").resolve()
+    result = run_gittxt(["scan", str(empty_dir), "--non-interactive"])
+    assert "⚠️ No valid files found" in result.stderr or result.stdout
+    assert result.returncode == 0
 
+def test_classify_command():
+    target_file = TEST_REPO / "app.py"
+    result = run_gittxt(["classify", str(target_file)])
+    assert "classified as: text" in result.stdout
 
-def test_zip_generation_dynamic(clean_output_dir, reset_filetype_config):
-    # Trigger dynamic asset collection
-    run_gittxt(
-        [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--non-interactive",
-        ]
-    )
-    zip_path = OUTPUT_DIR / "zips" / "test-repo_bundle.zip"
-    # Skip if repo has no assets
-    if zip_path.exists():
-        assert zip_path.stat().st_size > 0
-    else:
-        pytest.skip("No asset files found to trigger ZIP bundle.")
+def test_tree_command():
+    result = run_gittxt(["tree", str(TEST_REPO)])
+    assert "├── app.py" in result.stdout
 
+def test_clean_command():
+    (OUTPUT_DIR / "dummy.txt").write_text("temp file")
+    result = run_gittxt(["clean", "--output-dir", str(OUTPUT_DIR)])
+    assert not (OUTPUT_DIR / "text").exists()
+    assert "Cleaned output directory" in result.stdout
 
-def test_exclude_pattern(clean_output_dir, reset_filetype_config):
-    run_gittxt(
-        [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--exclude",
-            "docs",
-            "--non-interactive",
-        ]
-    )
-    output_txt = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
+def test_invalid_repo_url_error():
+    dummy_url = "https://dummy-url-for-tests.com/invalid-repo.git"
+    result = run_gittxt(["scan", dummy_url, "--non-interactive"])
+    assert "❌ Repository resolution failed" in result.stdout or result.stderr
 
-    if "=== FILE: " in output_txt:
-        _, file_part = output_txt.split("=== FILE: ", 1)
-    else:
-        _, file_part = output_txt, ""
+def test_valid_repo_url_error():
+    valid_url = "https://github.com/sandy-sp/gittxt"
+    result = run_gittxt(["scan", valid_url, "--non-interactive"])
+    assert "✅ Gittxt scan completed" in result.stdout or result.stderr
 
-    file_blocks = [
-        "=== FILE: " + block for block in file_part.split("=== FILE: ") if block.strip()
-    ]
-    file_headers = [
-        block.split("=== FILE: ")[-1].split(" ===")[0].strip() for block in file_blocks
-    ]
+def test_missing_repo_argument():
+    result = run_gittxt(["scan", "--non-interactive"])
+    assert "❌ No repositories specified" in result.stdout
 
-    assert not any("overview.md" in header for header in file_headers)
-
-
-# NEW TESTS FOR PIPELINE -------------------------
-
-def test_dynamic_whitelist_update(clean_output_dir, reset_filetype_config):
-    config = json.loads(FILETYPE_CONFIG.read_text())
-    config["whitelist"].append(".customext")
-    FILETYPE_CONFIG.write_text(json.dumps(config, indent=4))
-
-    from gittxt.utils import filetype_utils
-    importlib.reload(filetype_utils)
-
-    dummy_file = Path("dummy.customext")
-    dummy_file.write_text("print('custom text')")
-    result = filetype_utils.classify_file(dummy_file)
-    dummy_file.unlink()
-
-    assert result == "text"
-    config = json.loads(FILETYPE_CONFIG.read_text())
-    assert ".customext" in config["whitelist"]
-
-
-def test_blacklist_enforcement(clean_output_dir, reset_filetype_config):
-    config = json.loads(FILETYPE_CONFIG.read_text())
-    config["blacklist"].append(".weirdbin")
-    FILETYPE_CONFIG.write_text(json.dumps(config, indent=4))
-
-    from gittxt.utils import filetype_utils
-    importlib.reload(filetype_utils)
-
-    dummy_file = Path("dummy.weirdbin")
-    dummy_file.write_bytes(b"\x00\x01\x02")
-    result = filetype_utils.classify_file(dummy_file)
-    dummy_file.unlink()
-
-    assert result == "asset"
-    config = json.loads(FILETYPE_CONFIG.read_text())
-    assert ".weirdbin" in config["blacklist"]

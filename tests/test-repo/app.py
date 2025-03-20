@@ -1,2 +1,1 @@
-# tests/test-repo/app.py
-print("Hello, Gittxt!")
+print('Hello World')
