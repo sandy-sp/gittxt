@@ -1,5 +1,4 @@
-# gittxt-api/app.py
-
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,16 +14,16 @@ def create_app() -> FastAPI:
         description="A FastAPI backend to power Gittxt API for AI-ready repo scanning.",
     )
 
-    # Optional: Open CORS policy for frontend (adjust as needed)
+    # 🔵 CORS is left open for now, for local + dev usage
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["*"],  # Keep '*' for development; restrict later in prod
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # Mount all routers
+    # Register API routes
     app.include_router(config_router, prefix="/config", tags=["Config"])
     app.include_router(scans_router, prefix="/scans", tags=["Scans"])
     app.include_router(artifacts_router, prefix="/artifacts", tags=["Artifacts"])
