@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import aiofiles
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.filetype_utils import classify_file
 from gittxt.utils.file_utils import async_read_text
