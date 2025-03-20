@@ -1,5 +1,3 @@
-# gittxt-api/api/config_endpoints.py
-
 from fastapi import APIRouter, HTTPException
 from schemas.config_schemas import UpdateConfigRequest
 from gittxt.config import ConfigManager

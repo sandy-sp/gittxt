@@ -1,5 +1,3 @@
-# gittxt-api/api/ws_progress_endpoints.py
-
 from fastapi import APIRouter, WebSocket, HTTPException
 from core.scanning_service import SCANS
 import asyncio
