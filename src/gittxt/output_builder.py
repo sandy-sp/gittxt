@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import asyncio
 from gittxt.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
 from gittxt.utils.cleanup_utils import zip_files
@@ -36,7 +37,7 @@ class OutputBuilder:
         except Exception:
             return None
 
-    def generate_output(self, files, repo_path):
+    async def generate_output(self, files, repo_path):
         tree_summary = generate_tree(Path(repo_path))
 
         text_files = []
@@ -50,22 +51,26 @@ class OutputBuilder:
             elif file_type in {"image", "media"}:
                 asset_files.append(file)
 
-        # Generate main output formats
+        # Generate output formats asynchronously
+        tasks = []
         for fmt in self.output_formats:
             if fmt == "json":
-                out = self._generate_json(text_files, tree_summary, repo_path)
+                tasks.append(asyncio.to_thread(self._generate_json, text_files, tree_summary, repo_path))
             elif fmt == "md":
-                out = self._generate_markdown(text_files, tree_summary, repo_path, asset_files)
+                tasks.append(asyncio.to_thread(self._generate_markdown, text_files, tree_summary, repo_path, asset_files))
             else:
-                out = self._generate_text(text_files, tree_summary, repo_path)
-            logger.info(f"📄 {fmt.upper()} output ready at: {out}")
+                tasks.append(asyncio.to_thread(self._generate_text, text_files, tree_summary, repo_path))
+
+        generated_outputs = await asyncio.gather(*tasks)
+        for out in generated_outputs:
+            logger.info(f"📄 Output ready at: {out}")
             output_files.append(out)
 
-        # Bundle outputs + assets
+        # Bundle outputs + assets (fix ZIP arcname)
         if output_files or asset_files:
             zip_path = self.directories["zip"] / f"{self.repo_name}_bundle.zip"
-            files_to_zip = output_files + asset_files
-            zip_files(files_to_zip, zip_path)
+            files_to_zip = [(file, repo_path) for file in output_files + asset_files]
+            self._zip_with_relative_paths(files_to_zip, zip_path)
             logger.info(f"📦 Zipped bundle created: {zip_path}")
 
         return text_files
@@ -96,7 +101,11 @@ class OutputBuilder:
             rel = Path(file).relative_to(repo_path)
             content = self.read_file_content(file)
             if content:
-                data["files"].append({"file": str(rel), "content": content.strip()})
+                data["files"].append({
+                    "file": str(rel),
+                    "content": content.strip(),
+                    "file_type": classify_file(file)
+                })
         with output_file.open("w", encoding="utf-8") as json_file:
             json.dump(data, json_file, indent=4)
         return output_file
@@ -117,15 +126,31 @@ class OutputBuilder:
                 content = self.read_file_content(file)
                 if content:
                     lang = self._detect_code_language(rel.suffix)
-                    out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
+                    if rel.suffix == ".md":
+                        # Link .md files instead of embedding
+                        out.write(f"\n### [`{rel}`](./{rel})\n")
+                    else:
+                        out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
 
-            # OPTIONAL: Markdown footer for asset awareness
+            # Auto-embed images if assets present
             if asset_files:
-                out.write("\n## 📦 Asset Files Included in ZIP\n")
+                out.write("\n## 📦 Asset Files (images)\n")
                 for asset in asset_files:
                     rel = Path(asset).relative_to(repo_path)
-                    out.write(f"- `{rel}`\n")
+                    if rel.suffix.lower() in [".png", ".jpg", ".jpeg", ".gif", ".svg"]:
+                        out.write(f"![{rel}]({rel})\n")
+                    else:
+                        out.write(f"- `{rel}`\n")
         return output_file
+
+    def _zip_with_relative_paths(self, file_repo_pairs, zip_dest: Path):
+        from zipfile import ZipFile
+
+        zip_dest.parent.mkdir(parents=True, exist_ok=True)
+        with ZipFile(zip_dest, "w") as zipf:
+            for file, base in file_repo_pairs:
+                arcname = file.relative_to(base)
+                zipf.write(file, arcname=arcname)
 
     def _detect_code_language(self, suffix: str) -> str:
         mapping = {
@@ -138,5 +163,6 @@ class OutputBuilder:
             ".yml": "yaml",
             ".yaml": "yaml",
             ".txt": "plaintext",
+            ".ipynb": "json",
         }
         return mapping.get(suffix.lower(), "plaintext")
