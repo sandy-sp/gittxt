@@ -13,7 +13,6 @@ except ImportError:
 
 logger = Logger.get_logger(__name__)
 
-
 class Scanner:
     """Scans directories, applies filters, and returns valid files with async batching."""
 
@@ -26,6 +25,7 @@ class Scanner:
         file_types: List[str],
         progress: bool = False,
         batch_size: int = 50,
+        tree_depth: Optional[int] = None,
     ):
         self.root_path = root_path.resolve()
         self.include_patterns = pattern_utils.normalize_patterns(include_patterns)
@@ -34,6 +34,7 @@ class Scanner:
         self.file_types = set(file_types)
         self.progress = progress
         self.batch_size = batch_size
+        self.tree_depth = tree_depth 
 
     def scan_directory(self) -> Tuple[List[Path], str]:
         """Run scan with async or sync fallback. Returns valid files and directory tree."""
@@ -45,7 +46,8 @@ class Scanner:
             valid_files = self._scan_directory_sync()
             logger.info(f"✅ Sync scan complete: {len(valid_files)} valid files found.")
 
-        tree_summary = generate_tree(self.root_path)
+        # <-- Pass tree_depth to generate_tree()
+        tree_summary = generate_tree(self.root_path, max_depth=self.tree_depth)
         return valid_files, tree_summary
 
     async def _scan_directory_async(self) -> List[Path]:
