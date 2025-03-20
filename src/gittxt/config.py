@@ -90,7 +90,8 @@ class ConfigManager:
 class FiletypeConfigManager:
     """Handles loading and saving filetype_config.json (whitelist/blacklist)"""
 
-    FILETYPE_CONFIG_PATH = Path("filetype_config.json")
+    SRC_DIR = Path(__file__).parent.resolve()
+    FILETYPE_CONFIG_PATH = SRC_DIR / "filetype_config.json"
 
     DEFAULT_FILETYPE_CONFIG = {
         "whitelist": [],
