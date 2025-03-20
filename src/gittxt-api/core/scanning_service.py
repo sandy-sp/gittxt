@@ -1,5 +1,3 @@
-# gittxt-api/core/scanning_service.py
-
 import asyncio
 from pathlib import Path
 from typing import List, Optional
@@ -26,6 +24,8 @@ async def run_scan_task(
     exclude_patterns: List[str],
     size_limit: Optional[int],
     branch: Optional[str],
+    tree_depth: Optional[int],
+    create_zip: Optional[bool]
 ):
     async with SEM:
         SCANS[scan_id]["status"] = "running"
@@ -41,33 +41,23 @@ async def run_scan_task(
 
             repo_dir_name = Path(repo_path).name
 
-            valid_files = []
-            all_paths = list(scan_root.rglob("*"))
-            total_count = len(all_paths)
-
             scanner = Scanner(
                 root_path=scan_root,
                 include_patterns=include_patterns,
                 exclude_patterns=exclude_patterns,
                 size_limit=size_limit,
                 file_types=file_types,
-                progress=False
+                progress=False,
+                tree_depth=tree_depth
             )
 
-            for idx, path in enumerate(all_paths):
-                if not path.is_file():
-                    _emit(scan_id, idx, total_count, f"Skipping {path.name}", progress_callback)
-                    continue
-                if not scanner._passes_filters(path):
-                    _emit(scan_id, idx, total_count, f"Excluded {path.name}", progress_callback)
-                    continue
-                if not scanner._passes_filetype_filter(path):
-                    _emit(scan_id, idx, total_count, f"Filtered {path.name}", progress_callback)
-                    continue
+            # ✅ Use scanner API directly (avoid redundant filtering)
+            valid_files, _ = scanner.scan_directory()
+            total_count = len(valid_files)
 
-                valid_files.append(path.resolve())
+            for idx, path in enumerate(valid_files):
                 _emit(scan_id, idx, total_count, f"Accepted {path.name}", progress_callback)
-                await asyncio.sleep(0)  # Yield control to event loop
+                await asyncio.sleep(0)
 
             if not valid_files:
                 SCANS[scan_id].update({
@@ -83,7 +73,9 @@ async def run_scan_task(
                 output_dir=output_dir,
                 output_format=output_format
             )
-            await builder.generate_output(valid_files, scan_root)
+
+            _emit(scan_id, total_count, total_count, "Generating outputs...", progress_callback)
+            await builder.generate_output(valid_files, scan_root, create_zip=create_zip, tree_depth=tree_depth)
 
             SCANS[scan_id].update({
                 "status": "done",
@@ -102,9 +94,10 @@ async def run_scan_task(
             if is_remote:
                 cleanup_temp_folder(Path(repo_path))
 
+
 def _emit(scan_id, current, total, msg, cb):
     if scan_id in SCANS:
-        progress = round((current / total) * 100, 2)
+        progress = round((current / total) * 100, 2) if total else 0
         SCANS[scan_id]["progress"] = progress
         SCANS[scan_id]["current_file"] = msg
         cb(scan_id, current, total, msg)
