@@ -78,5 +78,10 @@ class OutputBuilder:
         zip_dest.parent.mkdir(parents=True, exist_ok=True)
         with ZipFile(zip_dest, "w") as zipf:
             for file, base in file_repo_pairs:
-                arcname = file.relative_to(base)
+                try:
+                    # Ensure arcname always relative to repo root
+                    arcname = file.relative_to(base)
+                except ValueError:
+                    # If relative fails (e.g., for outputs outside repo_path), fallback
+                    arcname = file.name
                 zipf.write(file, arcname=arcname)
