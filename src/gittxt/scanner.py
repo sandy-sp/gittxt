@@ -34,7 +34,7 @@ class Scanner:
         self.file_types = set(file_types)
         self.progress = progress
         self.batch_size = batch_size
-        self.tree_depth = tree_depth 
+        self.tree_depth = tree_depth
 
     def scan_directory(self) -> Tuple[List[Path], str]:
         """Run scan with async or sync fallback. Returns valid files and directory tree."""
@@ -46,7 +46,6 @@ class Scanner:
             valid_files = self._scan_directory_sync()
             logger.info(f"✅ Sync scan complete: {len(valid_files)} valid files found.")
 
-        # <-- Pass tree_depth to generate_tree()
         tree_summary = generate_tree(self.root_path, max_depth=self.tree_depth)
         return valid_files, tree_summary
 
@@ -55,7 +54,6 @@ class Scanner:
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"📂 Found {len(all_paths)} total items under {self.root_path}")
 
-        # Adjust batch size based on repo size
         dynamic_batch_size = min(self.batch_size, max(10, len(all_paths) // 20))
 
         bar = self._init_progress_bar(len(all_paths), "Scanning files (async batch)")
@@ -120,8 +118,11 @@ class Scanner:
         return True
 
     def _passes_filetype_filter(self, file_path: Path) -> bool:
-        # Classification will be dynamically enhanced later
-        return True if self.file_types == {"all"} else filetype_utils.classify_file(file_path) in self.file_types
+        # If "all" mode, accept everything.
+        if self.file_types == {"all"}:
+            return True
+        classification = filetype_utils.classify_file(file_path)
+        return classification in self.file_types
 
     def _init_progress_bar(self, total, desc):
         if self.progress and tqdm and total > 5:
