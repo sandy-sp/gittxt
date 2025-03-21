@@ -26,6 +26,7 @@ class ConfigManager:
         else:
             return (home_dir / "Gittxt").resolve()
 
+    # 🟢 DEFAULT CONFIG with new keys added
     DEFAULT_CONFIG = {
         "output_dir": str(_determine_default_output_dir.__func__()),
         "size_limit": None,
@@ -35,6 +36,8 @@ class ConfigManager:
         "output_format": "txt",
         "file_types": "code,docs",
         "logging_level": "INFO",
+        "log_format": "plain",        # ✅ ADDED
+        "auto_zip": False             # ✅ ADDED
     }
 
     @classmethod
@@ -56,9 +59,11 @@ class ConfigManager:
         config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
         config["file_types"] = os.getenv("GITTXT_FILE_TYPES", config["file_types"])
         config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
+        config["log_format"] = os.getenv("GITTXT_LOG_FORMAT", config["log_format"])
         config["size_limit"] = (
             int(os.getenv("GITTXT_SIZE_LIMIT", config["size_limit"] or 0)) or None
         )
+        config["auto_zip"] = os.getenv("GITTXT_AUTO_ZIP", str(config["auto_zip"])).lower() == "true"
 
         # Step 3: Path normalization
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
@@ -132,5 +137,6 @@ class FiletypeConfigManager:
             cls.save_filetype_config(config)
 
 
+# Initial bootstrapping
 ConfigManager.save_default_config()
 FiletypeConfigManager.save_filetype_config(FiletypeConfigManager.load_filetype_config())
