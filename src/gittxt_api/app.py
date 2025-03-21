@@ -2,10 +2,10 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.config_endpoints import router as config_router
-from api.scans_endpoints import router as scans_router
-from api.artifacts_endpoints import router as artifacts_router
-from api.ws_progress_endpoints import router as ws_router
+from gittxt_api.api.config_endpoints import router as config_router
+from gittxt_api.api.scans_endpoints import router as scans_router
+from gittxt_api.api.artifacts_endpoints import router as artifacts_router
+from gittxt_api.api.ws_progress_endpoints import router as ws_router
 
 def create_app() -> FastAPI:
     app = FastAPI(

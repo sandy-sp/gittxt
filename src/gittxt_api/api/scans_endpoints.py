@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from schemas.scan_schemas import ScanRequest, TreeRequest
-from core.scanning_service import (
+from gittxt_api.schemas.scan_schemas import ScanRequest, TreeRequest
+from gittxt_api.core.scanning_service import (
     SCANS,
     run_scan_task,
     update_scan_progress,

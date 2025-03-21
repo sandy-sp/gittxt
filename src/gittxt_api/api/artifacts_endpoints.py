@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
-from core.scanning_service import SCANS
+from gittxt_api.core.scanning_service import SCANS
 from pathlib import Path
 import json
-from services.artifact_service import resolve_artifact_paths, available_artifacts
+from gittxt_api.services.artifact_service import resolve_artifact_paths, available_artifacts
 
 router = APIRouter()
 

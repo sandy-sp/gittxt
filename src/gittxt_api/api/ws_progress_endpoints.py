@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, HTTPException
-from core.scanning_service import SCANS
-from services.artifact_service import available_artifacts
+from gittxt_api.core.scanning_service import SCANS
+from gittxt_api.services.artifact_service import available_artifacts
 import asyncio
 from pathlib import Path
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from schemas.config_schemas import UpdateConfigRequest
+from gittxt_api.schemas.config_schemas import UpdateConfigRequest
 from gittxt.config import ConfigManager
 
 router = APIRouter()

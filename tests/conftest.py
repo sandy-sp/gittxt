@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from gittxt.cli import cli
 from app import app
 from pathlib import Path
-
+from gittxt_api.app import app
 
 @pytest.fixture(scope="session")
 def cli_runner():
