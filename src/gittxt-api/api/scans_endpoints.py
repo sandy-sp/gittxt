@@ -22,7 +22,7 @@ async def get_repo_tree(req: TreeRequest):
     """
     try:
         repo_handler = RepositoryHandler(source=req.repo_url, branch=req.branch)
-        repo_path, subdir, is_remote = repo_handler.get_local_path()
+        repo_path, subdir, is_remote, _ = repo_handler.get_local_path()
 
         if not repo_path:
             raise HTTPException(status_code=400, detail="Invalid repository path.")
@@ -52,14 +52,12 @@ async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
     Launch a Gittxt scan asynchronously.
     """
     scan_id = str(uuid.uuid4())
-    repo_name = Path(req.repo_url).stem
 
     SCANS[scan_id] = {
         "status": "queued",
         "progress": 0,
         "current_file": "",
         "error": None,
-        "repo_name": repo_name,  # NEW: store repo_name consistently
     }
 
     background_tasks.add_task(
@@ -86,7 +84,18 @@ def get_scan_info(scan_id: str):
     info = SCANS.get(scan_id)
     if not info:
         raise HTTPException(status_code=404, detail="Scan not found")
-    return info
+
+    response = info.copy()
+
+    if info.get("status") == "done":
+        response["artifacts"] = {
+            "txt": f"/artifacts/{scan_id}/txt",
+            "json": f"/artifacts/{scan_id}/json",
+            "md": f"/artifacts/{scan_id}/md",
+            "zip": f"/artifacts/{scan_id}/zip"
+        }
+
+    return response
 
 
 @router.delete("/{scan_id}/close")
