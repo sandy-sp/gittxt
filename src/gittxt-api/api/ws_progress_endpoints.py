@@ -1,6 +1,8 @@
 from fastapi import APIRouter, WebSocket, HTTPException
 from core.scanning_service import SCANS
+from services.artifact_service import available_artifacts
 import asyncio
+from pathlib import Path
 
 router = APIRouter()
 
@@ -22,7 +24,6 @@ async def websocket_progress(websocket: WebSocket, scan_id: str):
         status = scan_data["status"]
         current_progress = scan_data.get("progress", 0)
 
-        # Send progress updates only on change
         if current_progress != last_progress:
             await websocket.send_json({"event": "progress", "data": scan_data})
             last_progress = current_progress
@@ -31,12 +32,9 @@ async def websocket_progress(websocket: WebSocket, scan_id: str):
             payload = {"event": status, "data": scan_data}
 
             if status == "done":
-                payload["artifacts"] = {
-                    "txt": f"/artifacts/{scan_id}/txt",
-                    "json": f"/artifacts/{scan_id}/json",
-                    "md": f"/artifacts/{scan_id}/md",
-                    "zip": f"/artifacts/{scan_id}/zip",
-                }
+                repo_name = scan_data.get("repo_name")
+                output_dir = Path(scan_data.get("output_dir"))
+                payload["artifacts"] = available_artifacts(scan_id, output_dir, repo_name)
 
             await websocket.send_json(payload)
             break
