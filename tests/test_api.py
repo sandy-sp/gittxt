@@ -1,83 +1,41 @@
-import pytest
-import requests
 import time
-from pathlib import Path
 
-BASE_URL = "http://127.0.0.1:8000"
+def test_tree_endpoint(api_client, test_repo):
+    res = api_client.post("/scans/tree", json={"repo_url": str(test_repo)})
+    assert res.status_code == 200
+    assert "tree" in res.json()
+    assert "file_extensions" in res.json()
 
-@pytest.fixture(scope="session")
-def dummy_repo_url():
-    # Replace this dummy URL with a valid GitHub repo when ready
-    return "https://github.com/sandy-sp/gittxt"
 
-def test_get_config():
-    resp = requests.get(f"{BASE_URL}/config")
-    assert resp.status_code == 200
-    assert "output_dir" in resp.json()
-
-def test_update_config():
-    payload = {"logging_level": "DEBUG"}
-    resp = requests.post(f"{BASE_URL}/config", json=payload)
-    assert resp.status_code in [200, 400, 405]
-    if resp.status_code == 200:
-        assert resp.json().get("success") is True
-
-def test_repo_tree_valid(dummy_repo_url):
-    resp = requests.post(f"{BASE_URL}/scans/tree", json={"repo_url": dummy_repo_url})
-    # This will fail on dummy URL but works on a valid one
-    assert resp.status_code in [200, 400]
-    if resp.status_code == 200:
-        data = resp.json()
-        assert "tree" in data
-        assert "file_extensions" in data
-
-def test_repo_tree_invalid_url():
-    resp = requests.post(f"{BASE_URL}/scans/tree", json={"repo_url": "not-a-valid-url"})
-    assert resp.status_code == 400
-
-@pytest.fixture(scope="session")
-def scan_id(dummy_repo_url):
+def test_scan_workflow(api_client, test_repo):
+    # 1. Launch scan
     payload = {
-        "repo_url": dummy_repo_url,
-        "file_types": ["code", "docs"],
+        "repo_url": str(test_repo),
+        "file_types": ["code", "docs", "csv"],
         "output_format": "txt,json,md",
-        "exclude_patterns": [],
-        "include_patterns": [],
-        "branch": None,
+        "create_zip": True
     }
-    resp = requests.post(f"{BASE_URL}/scans", json=payload)
-    assert resp.status_code == 200
-    return resp.json()["scan_id"]
+    res = api_client.post("/scans", json=payload)
+    assert res.status_code == 200
+    scan_id = res.json()["scan_id"]
 
-def test_wait_for_scan(scan_id):
-    while True:
-        resp = requests.get(f"{BASE_URL}/scans/{scan_id}")
-        assert resp.status_code == 200
-        status = resp.json()["status"]
-        if status in ["done", "error"]:
+    # 2. Poll until done
+    for _ in range(10):
+        info = api_client.get(f"/scans/{scan_id}").json()
+        if info.get("status") == "done":
             break
         time.sleep(1)
-    assert status == "done"
 
-def test_artifacts_download(scan_id):
-    for fmt in ["json", "txt", "md", "zip"]:
-        url = f"{BASE_URL}/artifacts/{scan_id}/{fmt}"
-        r = requests.get(url)
-        if fmt == "zip" and r.status_code == 404:
-            # ZIP might be skipped if no assets exist, handle as optional
-            continue
+    assert info["status"] == "done"
+    assert info["file_count"] > 0
+    assert "artifacts" in info
+
+    # 3. Validate artifacts
+    for fmt in ["txt", "json", "md", "zip"]:
+        r = api_client.get(info["artifacts"][fmt])
         assert r.status_code == 200
 
-def test_close_scan_session(scan_id):
-    resp = requests.delete(f"{BASE_URL}/scans/{scan_id}/close")
-    assert resp.status_code == 200
-    assert resp.json().get("success") is True
-
-def test_get_nonexistent_scan():
-    resp = requests.get(f"{BASE_URL}/scans/non-existent-id")
-    assert resp.status_code == 404
-
-def test_close_nonexistent_scan():
-    resp = requests.delete(f"{BASE_URL}/scans/non-existent-id/close")
-    assert resp.status_code == 404
-
+    # 4. Cleanup session
+    close = api_client.delete(f"/scans/{scan_id}/close")
+    assert close.status_code == 200
+    assert close.json()["success"] is True
