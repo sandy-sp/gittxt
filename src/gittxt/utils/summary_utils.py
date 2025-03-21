@@ -48,6 +48,11 @@ def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Di
             "asset": 0
         },
         "estimated_tokens": 0,
+        "tokens_by_type": {
+            "code": 0,
+            "docs": 0,
+            "csv": 0
+        }
     }
 
     for file in file_paths:
@@ -63,7 +68,9 @@ def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Di
                 summary["file_type_breakdown"]["asset"] += 1  # fallback bucket
 
             if classification in {"code", "docs", "csv"} and estimate_tokens:
-                summary["estimated_tokens"] += estimate_tokens_from_file(file)
+                tokens = estimate_tokens_from_file(file)
+                summary["estimated_tokens"] += tokens
+                summary["tokens_by_type"][classification] += tokens
 
         except Exception as e:
             print(f"Error processing {file}: {e}")

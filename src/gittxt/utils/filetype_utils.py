@@ -106,6 +106,18 @@ def pipeline_classify(file: Path) -> str:
         return "media"
 
     # MIME fallback
+    MIME_TYPE_MAP = {
+        "application/javascript": "code",
+        "application/json": "docs",
+        "application/xml": "docs",
+        "text/x-python": "code",
+        "text/html": "docs",
+        "text/markdown": "docs",
+        "text/csv": "csv",
+    }
+
+    if mime_type in MIME_TYPE_MAP:
+        return MIME_TYPE_MAP[mime_type]
     if mime_type.startswith("text/") or mime_type in {"application/json", "application/xml"}:
         return classify_text_type(file)
     if mime_type.startswith("image/"):

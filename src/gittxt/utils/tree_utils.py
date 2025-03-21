@@ -1,5 +1,7 @@
 from pathlib import Path
+from gittxt.config import ConfigManager
 
+config = ConfigManager.load_config()
 
 def generate_tree(
     path: Path,
@@ -19,7 +21,7 @@ def generate_tree(
     :return: Tree string.
     """
     if exclude_dirs is None:
-        exclude_dirs = [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]
+        exclude_dirs = config.get("tree_exclude_dirs", [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"])
 
     if max_depth is not None and current_depth > max_depth:
         return ""
