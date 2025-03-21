@@ -72,7 +72,7 @@ class RepositoryHandler:
             # Accept non-git folders for local testing
             if not path.is_dir():
                 logger.error(f"❌ Provided path is not a directory: {self.source}")
-                return None, ""
+                return str(path), "", self.is_remote, repo_name
 
             # OPTIONAL: only apply strict .git check if you want to force "real repos"
             if not (path / ".git").exists():

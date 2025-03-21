@@ -1,3 +1,4 @@
+import os
 import subprocess
 import shutil
 from pathlib import Path
@@ -5,6 +6,7 @@ import pytest
 
 TEST_REPO = Path("tests/test-repo").resolve()
 OUTPUT_DIR = Path("tests/test-outputs")
+os.environ["GITTXT_OUTPUT_DIR"] = str(OUTPUT_DIR)
 
 @pytest.fixture(scope="function")
 def clean_output_dir():
@@ -66,7 +68,7 @@ def test_scan_empty_repo_error():
 def test_classify_command():
     target_file = TEST_REPO / "app.py"
     result = run_gittxt(["classify", str(target_file)])
-    assert "classified as: text" in result.stdout
+    assert "classified as: code" in result.stdout
 
 def test_tree_command():
     result = run_gittxt(["tree", str(TEST_REPO)])
@@ -92,3 +94,29 @@ def test_missing_repo_argument():
     result = run_gittxt(["scan", "--non-interactive"])
     assert "❌ No repositories specified" in result.stdout
 
+# 🔴 NEW TEST: CLI --file-types filtering
+def test_scan_with_file_types_code_only(clean_output_dir):
+    result = run_gittxt([
+        "scan", str(TEST_REPO),
+        "--output-dir", str(OUTPUT_DIR),
+        "--file-types", "code",
+        "--output-format", "txt",
+        "--non-interactive"
+    ])
+    txt_output = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
+    assert "README.md" not in txt_output  # should filter out docs
+    assert "app.py" in txt_output
+    assert result.returncode == 0
+
+def test_scan_with_file_types_docs_only(clean_output_dir):
+    result = run_gittxt([
+        "scan", str(TEST_REPO),
+        "--output-dir", str(OUTPUT_DIR),
+        "--file-types", "docs",
+        "--output-format", "txt",
+        "--non-interactive"
+    ])
+    txt_output = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
+    assert "README.md" in txt_output
+    assert "app.py" not in txt_output
+    assert result.returncode == 0
