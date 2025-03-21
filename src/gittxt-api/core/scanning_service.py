@@ -1,18 +1,18 @@
 import asyncio
 from pathlib import Path
 from typing import List, Optional
+import uuid
 from gittxt.repository import RepositoryHandler
 from gittxt.scanner import Scanner
 from gittxt.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.logger import Logger
-from services.tree_service import build_directory_tree, gather_file_extensions
-
-logger = Logger.get_logger(__name__)
 
 SCANS = {}
 MAX_CONCURRENT_SCANS = 1
 SEM = asyncio.Semaphore(MAX_CONCURRENT_SCANS)
+
+logger = Logger.get_logger(__name__)
 
 async def run_scan_task(
     scan_id: str,
@@ -31,15 +31,13 @@ async def run_scan_task(
         SCANS[scan_id]["status"] = "running"
         try:
             repo_handler = RepositoryHandler(source=repo_url, branch=branch)
-            repo_path, subdir, is_remote = repo_handler.get_local_path()
+            repo_path, subdir, is_remote, repo_name = repo_handler.get_local_path()
             if not repo_path:
                 raise ValueError("Invalid repo or local path")
 
             scan_root = Path(repo_path)
             if subdir:
                 scan_root = scan_root / subdir
-
-            repo_dir_name = Path(repo_path).name
 
             scanner = Scanner(
                 root_path=scan_root,
@@ -51,7 +49,6 @@ async def run_scan_task(
                 tree_depth=tree_depth
             )
 
-            # ✅ Use scanner API directly (avoid redundant filtering)
             valid_files, _ = scanner.scan_directory()
             total_count = len(valid_files)
 
@@ -67,21 +64,35 @@ async def run_scan_task(
                 })
                 return
 
-            output_dir = Path.cwd() / f"{repo_dir_name}_scan_{scan_id}_outputs"
+            output_dir = Path.cwd() / f"scan_{scan_id}_outputs"
             builder = OutputBuilder(
-                repo_name=repo_dir_name,
+                repo_name=repo_name,
                 output_dir=output_dir,
                 output_format=output_format
             )
 
             _emit(scan_id, total_count, total_count, "Generating outputs...", progress_callback)
-            await builder.generate_output(valid_files, scan_root, create_zip=create_zip, tree_depth=tree_depth)
+
+            # Separate text files vs assets here before output_builder call
+            text_files = []
+            asset_files = []
+            from gittxt.utils.filetype_utils import classify_file
+
+            for f in valid_files:
+                classification = classify_file(Path(f))
+                if classification in {"code", "docs", "csv"}:
+                    text_files.append(f)
+                else:
+                    asset_files.append(f)
+
+            await builder.generate_output(text_files, asset_files, repo_path, create_zip=create_zip, tree_depth=tree_depth)
 
             SCANS[scan_id].update({
                 "status": "done",
                 "message": "Scan complete",
                 "file_count": len(valid_files),
                 "output_dir": str(output_dir),
+                "repo_name": repo_name
             })
             logger.info(f"Scan {scan_id} completed -> {output_dir}")
 
@@ -94,16 +105,12 @@ async def run_scan_task(
             if is_remote:
                 cleanup_temp_folder(Path(repo_path))
 
-
 def _emit(scan_id, current, total, msg, cb):
     if scan_id in SCANS:
         progress = round((current / total) * 100, 2) if total else 0
         SCANS[scan_id]["progress"] = progress
         SCANS[scan_id]["current_file"] = msg
         cb(scan_id, current, total, msg)
-
-# Utility re-exports
-from services.tree_service import build_directory_tree, gather_file_extensions, remove_ephemeral_outputs
 
 def update_scan_progress(scan_id: str, current: int, total: int, msg: str):
     logger.debug(f"[{scan_id}] Progress: {msg} ({current}/{total})")
