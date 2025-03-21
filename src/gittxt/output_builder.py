@@ -43,9 +43,9 @@ class OutputBuilder:
 
         for file in files:
             file_type = classify_file(file)
-            if file_type in {"code", "docs", "csv", "text"}:
+            if file_type in {"code", "docs", "csv"}:
                 text_files.append(file)
-            elif file_type in {"image", "media"}:
+            elif file_type in {"image", "media", "asset"}:
                 asset_files.append(file)
 
         tasks = []
@@ -79,9 +79,7 @@ class OutputBuilder:
         with ZipFile(zip_dest, "w") as zipf:
             for file, base in file_repo_pairs:
                 try:
-                    # Ensure arcname always relative to repo root
                     arcname = file.relative_to(base)
                 except ValueError:
-                    # If relative fails (e.g., for outputs outside repo_path), fallback
                     arcname = file.name
                 zipf.write(file, arcname=arcname)
