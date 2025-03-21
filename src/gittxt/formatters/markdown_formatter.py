@@ -1,10 +1,10 @@
 from pathlib import Path
 import aiofiles
-from datetime import datetime
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.filetype_utils import classify_file
 from gittxt.utils.hash_utils import get_file_hash
+from datetime import datetime, timezone
 
 class MarkdownFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str):
@@ -20,7 +20,7 @@ class MarkdownFormatter:
         async with aiofiles.open(output_file, "w", encoding="utf-8") as md_file:
             # Metadata Header
             await md_file.write(f"# 📦 Gittxt Report for `{self.repo_name}`\n")
-            await md_file.write(f"- Generated: `{datetime.utcnow().isoformat()} UTC`\n")
+            await md_file.write(f"- Generated: `{datetime.now(timezone.utc).isoformat()} UTC`\n")
             await md_file.write(f"- Format: `markdown`\n\n")
 
             # Directory Tree

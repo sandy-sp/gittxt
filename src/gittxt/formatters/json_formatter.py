@@ -1,11 +1,11 @@
 from pathlib import Path
 import json
 import aiofiles
-from datetime import datetime
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.filetype_utils import classify_file
 from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.hash_utils import get_file_hash
+from datetime import datetime, timezone
 
 class JSONFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str):
@@ -21,7 +21,7 @@ class JSONFormatter:
         data = {
             "metadata": {
                 "repo_name": self.repo_name,
-                "generated_at": datetime.utcnow().isoformat() + "Z",
+                "generated_at": datetime.now(timezone.utc).isoformat() + "Z",
                 "format": "json",
             },
             "repository_structure": self.tree_summary,

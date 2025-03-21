@@ -1,10 +1,10 @@
 from pathlib import Path
 import aiofiles
-from datetime import datetime
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.filetype_utils import classify_file
 from gittxt.utils.hash_utils import get_file_hash
+from datetime import datetime, timezone
 
 class TextFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str):
@@ -21,7 +21,7 @@ class TextFormatter:
             # Metadata Header
             await txt_file.write(f"=== Gittxt Report ===\n")
             await txt_file.write(f"Repo: {self.repo_name}\n")
-            await txt_file.write(f"Generated: {datetime.utcnow().isoformat()} UTC\n\n")
+            await txt_file.write(f"Generated: {datetime.now(timezone.utc).isoformat()} UTC\n\n")
 
             # Directory Tree
             await txt_file.write("=== Directory Tree ===\n")
