@@ -26,6 +26,7 @@ class Scanner:
         progress: bool = False,
         batch_size: int = 50,
         tree_depth: Optional[int] = None,
+        verbose: bool = False,  # NEW toggle
     ):
         self.root_path = root_path.resolve()
         self.include_patterns = pattern_utils.normalize_patterns(include_patterns)
@@ -34,7 +35,8 @@ class Scanner:
         self.file_types = set(file_types)
         self.progress = progress
         self.batch_size = batch_size
-        self.tree_depth = tree_depth # or config.get("tree_depth", None)
+        self.tree_depth = tree_depth
+        self.verbose = verbose
 
     def scan_directory(self) -> Tuple[List[Path], str]:
         """Run scan with async or sync fallback. Returns valid files and directory tree."""
@@ -50,11 +52,10 @@ class Scanner:
         return valid_files, tree_summary
 
     async def _scan_directory_async(self) -> List[Path]:
-        """Batch async scanning using asyncio.gather + to_thread."""
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"📂 Found {len(all_paths)} total items under {self.root_path}")
 
-        dynamic_batch_size = min(self.batch_size, max(10, len(all_paths) // 20))
+        dynamic_batch_size = min(self.batch_size, max(50, len(all_paths) // 10))
 
         bar = self._init_progress_bar(len(all_paths), "Scanning files (async batch)")
 
@@ -84,7 +85,6 @@ class Scanner:
         return result
 
     def _scan_directory_sync(self) -> List[Path]:
-        """Synchronous fallback scanner."""
         valid_files = []
         files = list(self.root_path.rglob("*"))
         bar = self._init_progress_bar(len(files), "Scanning files (sync)")
@@ -103,7 +103,6 @@ class Scanner:
         return valid_files
 
     def _check_file_filters(self, file_path: Path) -> Optional[Path]:
-        """Core filter checks."""
         if not self._passes_filters(file_path):
             return None
         if not self._passes_filetype_filter(file_path):
@@ -112,24 +111,25 @@ class Scanner:
 
     def _passes_filters(self, file_path: Path) -> bool:
         if pattern_utils.match_exclude(file_path, self.exclude_patterns):
-            logger.debug(f"🛑 Excluded by pattern: {file_path}")
+            if self.verbose:
+                logger.debug(f"🛑 Excluded by pattern: {file_path}")
             return False
         if self.include_patterns and not pattern_utils.match_include(file_path, self.include_patterns):
             return False
         if self.size_limit and file_path.stat().st_size > self.size_limit:
-            logger.debug(f"🛑 Excluded by size limit: {file_path}")
+            if self.verbose:
+                logger.debug(f"🛑 Excluded by size limit: {file_path}")
             return False
         return True
 
     def _passes_filetype_filter(self, file_path: Path) -> bool:
-        # If "all" mode, accept everything.
         if self.file_types == {"all"}:
             return True
         classification = filetype_utils.classify_file(file_path)
         return classification in self.file_types
 
     def _init_progress_bar(self, total, desc):
-        if self.progress and tqdm and total > 5:
+        if self.progress and tqdm and total >= 1:
             return tqdm(total=total, desc=desc, unit="file", dynamic_ncols=True)
         return None
 
