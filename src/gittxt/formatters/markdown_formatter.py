@@ -3,7 +3,6 @@ import aiofiles
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.filetype_utils import classify_file
-from gittxt.utils.hash_utils import get_file_hash
 from datetime import datetime, timezone
 
 class MarkdownFormatter:
@@ -16,7 +15,7 @@ class MarkdownFormatter:
     async def generate(self, text_files, asset_files):
         output_file = self.output_dir / f"{self.repo_name}.md"
         summary = generate_summary(text_files + asset_files)
-        
+
         async with aiofiles.open(output_file, "w", encoding="utf-8") as md_file:
             # Metadata Header
             await md_file.write(f"# 📦 Gittxt Report for `{self.repo_name}`\n")
@@ -44,11 +43,10 @@ class MarkdownFormatter:
             for file in text_files:
                 rel = Path(file).relative_to(self.repo_path)
                 file_type = classify_file(file)
-                sha256 = get_file_hash(file) or "N/A"
                 content = await async_read_text(file)
                 if content:
                     lang = self._detect_code_language(file.suffix)
-                    await md_file.write(f"### 📄 `{rel}` ({file_type}) | `SHA256: {sha256}`\n\n")
+                    await md_file.write(f"### 📄 `{rel}` ({file_type})\n\n")
                     await md_file.write(f"```{lang}\n{content.strip()}\n```\n\n")
 
         return output_file
@@ -63,7 +61,8 @@ class MarkdownFormatter:
             ".md": "markdown",
             ".yml": "yaml",
             ".yaml": "yaml",
-            ".txt": "",
+            ".html": "html",
             ".ipynb": "json",
+            ".csv": "csv"
         }
         return mapping.get(suffix.lower(), "")
