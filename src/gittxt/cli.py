@@ -27,7 +27,7 @@ def install():
     from gittxt.utils.install_utils import run_interactive_install
     run_interactive_install()
 
-@click.command()
+@cli.command()
 @click.argument("repo", type=str)
 @click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
 def tree(repo, tree_depth):
@@ -47,7 +47,7 @@ def tree(repo, tree_depth):
 @cli.command()
 @click.argument("file", type=click.Path(exists=True))
 def classify(file):
-    """Classify a single file (text/code/asset)."""
+    """Classify a single file (text/code/asset/image/media)."""
     fpath = Path(file)
     result = classify_file(fpath)
     click.echo(f"📄 `{fpath}` classified as: {result}")
@@ -107,12 +107,12 @@ def scan(
     for repo_source in repos:
         _process_repo(
             repo_source, branch, include_patterns, exclude_patterns, size_limit,
-            final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth
+            final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip
         )
 
 def _process_repo(
     repo_source, branch, include_patterns, exclude_patterns, size_limit,
-    final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth
+    final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip
 ):
     logger.info(f"🚀 Processing repository: {repo_source}")
     repo_handler = RepositoryHandler(repo_source, branch=branch)
@@ -142,15 +142,15 @@ def _process_repo(
 
     text_files = []
     asset_files = []
-    
+
     for file in all_files:
         ext = Path(file).suffix.lower()
         classification = classify_file(Path(file))
 
-        if classification == "text":
+        if classification in {"code", "docs", "csv"}:
             logger.info(f"[AUTO-INCLUDED] as TEXT: {file}")
             text_files.append(file)
-        else:
+        elif classification in {"image", "media", "asset"}:
             logger.info(f"[AUTO-EXCLUDED] as ASSET: {file}")
             asset_files.append(file)
 
@@ -172,20 +172,21 @@ def _process_repo(
         output_format=output_format,
     )
 
-    create_zip = False
+    # Fix: Handle CLI-provided --zip flag + interactive fallback
     if not non_interactive:
-        create_zip = click.confirm("📦 Do you want to generate a ZIP bundle with outputs + assets?", default=False)
+        final_zip = click.confirm("📦 Do you want to generate a ZIP bundle with outputs + assets?", default=create_zip)
+    else:
+        final_zip = create_zip
 
-    asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=create_zip, tree_depth=tree_depth))
+    asyncio.run(builder.generate_output(text_files + asset_files, repo_path, create_zip=final_zip, tree_depth=tree_depth))
 
     if summary:
         summary_data = generate_summary(text_files + asset_files)
         logger.info("📊 Summary Report:")
         logger.info(f" - Total files: {summary_data.get('total_files')}")
-        logger.info(f" - Text files: {summary_data.get('text_files')}")
-        logger.info(f" - Asset files: {summary_data.get('asset_files')}")
         logger.info(f" - Total size (bytes): {summary_data.get('total_size')}")
         logger.info(f" - Estimated tokens: {summary_data.get('estimated_tokens')}")
+        logger.info(f" - File type breakdown: {summary_data.get('file_type_breakdown')}")
         logger.info(f" - Output formats: {output_format}")
 
     if is_remote:
