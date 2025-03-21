@@ -28,7 +28,17 @@ async def websocket_progress(websocket: WebSocket, scan_id: str):
             last_progress = current_progress
 
         if status in ["done", "error"]:
-            await websocket.send_json({"event": status, "data": scan_data})
+            payload = {"event": status, "data": scan_data}
+
+            if status == "done":
+                payload["artifacts"] = {
+                    "txt": f"/artifacts/{scan_id}/txt",
+                    "json": f"/artifacts/{scan_id}/json",
+                    "md": f"/artifacts/{scan_id}/md",
+                    "zip": f"/artifacts/{scan_id}/zip",
+                }
+
+            await websocket.send_json(payload)
             break
 
         await asyncio.sleep(1)
