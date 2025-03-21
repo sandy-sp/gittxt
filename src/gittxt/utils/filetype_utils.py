@@ -46,7 +46,6 @@ def looks_like_text_content(file: Path) -> bool:
             sample = f.read(2048)
         decoded = sample.decode("utf-8", errors="ignore")
 
-        # Density & keyword checks
         alpha_ratio = sum(c.isalpha() for c in decoded) / (len(decoded) + 1)
         keyword_hits = sum(
             1 for kw in ["function", "class", "def", "import", "module", "{", "}", "<", ">"]
@@ -79,34 +78,62 @@ def pipeline_classify(file: Path) -> str:
     5) Content sampling fallback
     """
     suffix = file.suffix.lower()
+    mime_type = get_mime_type(file)
 
     # Whitelist override
     if is_whitelisted(file):
-        return "text"
+        return classify_text_type(file)
 
     # Blacklist override
     if is_blacklisted(file):
         return "asset"
 
-    # Static rules (expanded)
+    # Static extension heuristic
     static_text_exts = {
         ".py", ".js", ".ts", ".tsx", ".jsx", ".java", ".cpp", ".c", ".cs", ".go", ".rb",
         ".php", ".sh", ".md", ".rst", ".txt", ".csv", ".json", ".yaml", ".yml", ".xml",
         ".html", ".toml", ".ini", ".env", ".cfg", ".dockerfile", ".ipynb"
     }
-    if suffix in static_text_exts:
-        return "text"
 
-    # MIME fallback (e.g., text/plain, text/html)
-    mime_type = get_mime_type(file)
+    static_image_exts = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp"}
+    static_media_exts = {".mp4", ".mp3", ".wav", ".avi", ".mov", ".flac", ".mkv"}
+
+    if suffix in static_text_exts:
+        return classify_text_type(file)
+    elif suffix in static_image_exts:
+        return "image"
+    elif suffix in static_media_exts:
+        return "media"
+
+    # MIME fallback
     if mime_type.startswith("text/") or mime_type in {"application/json", "application/xml"}:
-        return "text"
+        return classify_text_type(file)
+    if mime_type.startswith("image/"):
+        return "image"
+    if mime_type.startswith("audio/") or mime_type.startswith("video/"):
+        return "media"
 
     # Content sampling fallback
     if is_text_file(file) and looks_like_text_content(file):
-        return "text"
+        return classify_text_type(file)
 
     return "asset"
+
+
+def classify_text_type(file: Path) -> str:
+    """Secondary classification for text-like files."""
+    ext = file.suffix.lower()
+    if ext in {".py", ".js", ".ts", ".cpp", ".c", ".go", ".rb", ".php", ".sh"}:
+        return "code"
+    if ext in {".md", ".rst", ".txt", ".html"}:
+        return "docs"
+    if ext in {".csv"}:
+        return "csv"
+    if ext in {".json", ".yaml", ".yml", ".xml", ".toml", ".ini"}:
+        return "docs"
+    if ext in {".ipynb"}:
+        return "code"
+    return "docs"  # fallback
 
 
 def classify_file(file: Path) -> str:
