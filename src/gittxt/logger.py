@@ -7,7 +7,7 @@ from logging.handlers import RotatingFileHandler
 try:
     from gittxt.config import ConfigManager
 except ImportError:
-    ConfigManager = None  # fallback
+    ConfigManager = None  # fallback for isolated runs
 
 try:
     import colorama
@@ -65,7 +65,7 @@ class Logger:
         console_handler.setFormatter(Logger._get_formatter(mode=log_format_style))
         logging.root.addHandler(console_handler)
 
-        # File Handler (always plain file logs)
+        # File Handler (always plain format for logs on disk)
         rotating_file_handler = RotatingFileHandler(
             Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
         )
@@ -100,14 +100,18 @@ class Logger:
         return logging.getLogger(name)
 
 
+# Bootstrapping logger
 Logger.setup_logger()
 
+# Optional: Easter Egg
 if "-sp" in sys.argv:
     print(
         """
         🔥 **You've unlocked the Gittxt Easter Egg!** 🚀  
         🔗 Connect with me on LinkedIn: **[Sandeep Paidipati](https://www.linkedin.com/in/sandeep-paidipati/)**  
-        📩 Add me & let's chat about anything!                                                                                                      
+        📩 Add me & let's chat about anything!
+
+                                                                                                     
                                              888888                                                 
                                           888888888888                                              
                                         888888888888888                                             
@@ -137,6 +141,6 @@ if "-sp" in sys.argv:
                                    6666666                                                          
                                   666669                                                            
                                   66                                                                                                                                       
-    """
-    )
+        """
+        )
     sys.exit(0)
