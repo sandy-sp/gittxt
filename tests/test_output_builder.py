@@ -18,7 +18,7 @@ def mock_repo(tmp_path):
     (repo / "assets").mkdir(parents=True)
     (repo / "app.py").write_text("print('Hello')")
     (repo / "README.md").write_text("# Documentation")
-    (repo / "assets/data.csv").write_text("id,value\n1,200")
+    (repo / "assets/data.csv").write_text("id,value\n1,200")  # ✅ Ensure csv is present
     (repo / "assets/logo.png").write_bytes(b"\x89PNG\r\n")
     return repo
 
@@ -74,7 +74,7 @@ async def test_zip_bundle_includes_outputs(output_dir, mock_repo):
         assert "mock-repo.json" in basenames
         assert "mock-repo.md" in basenames
         assert "logo.png" in basenames
-        assert any(p.endswith("data.csv") for p in zip_contents)
+        assert "assets/data.csv" in zip_contents
 
 @pytest.mark.asyncio
 async def test_handle_empty_files_list(output_dir, mock_repo):
