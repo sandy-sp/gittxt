@@ -4,7 +4,6 @@ import aiofiles
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.filetype_utils import classify_file
 from gittxt.utils.file_utils import async_read_text
-from gittxt.utils.hash_utils import get_file_hash
 from datetime import datetime, timezone
 
 class JSONFormatter:
@@ -22,23 +21,21 @@ class JSONFormatter:
             "metadata": {
                 "repo_name": self.repo_name,
                 "generated_at": datetime.now(timezone.utc).isoformat() + "Z",
-                "format": "json",
+                "format": "json"
             },
             "repository_structure": self.tree_summary,
             "summary": summary,
-            "files": [],
+            "files": []
         }
 
         for file in text_files:
             rel = Path(file).relative_to(self.repo_path)
             file_type = classify_file(file)
-            sha256 = get_file_hash(file) or "N/A"
             content = await async_read_text(file)
             if content:
                 data["files"].append({
                     "file": str(rel),
                     "file_type": file_type,
-                    "sha256": sha256,
                     "content": content.strip()
                 })
 
