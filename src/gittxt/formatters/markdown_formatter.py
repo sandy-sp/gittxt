@@ -1,7 +1,10 @@
 from pathlib import Path
 import aiofiles
+from datetime import datetime
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
+from gittxt.utils.filetype_utils import classify_file
+from gittxt.utils.hash_utils import get_file_hash
 
 class MarkdownFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str):
@@ -15,23 +18,39 @@ class MarkdownFormatter:
         summary = generate_summary(text_files + asset_files)
         
         async with aiofiles.open(output_file, "w", encoding="utf-8") as md_file:
-            await md_file.write(f"# 📦 Repository: `{self.repo_name}`\n\n")
-            await md_file.write("## 🗂 Directory Tree\n\n")
+            # Metadata Header
+            await md_file.write(f"# 📦 Gittxt Report for `{self.repo_name}`\n")
+            await md_file.write(f"- Generated: `{datetime.utcnow().isoformat()} UTC`\n")
+            await md_file.write(f"- Format: `markdown`\n\n")
+
+            # Directory Tree
+            await md_file.write("## 🗂 Directory Tree\n")
             await md_file.write(f"```\n{self.tree_summary}\n```\n\n")
-            await md_file.write("## 📊 Summary Report\n\n")
+
+            # Summary Section
+            await md_file.write("## 📊 Summary Report\n")
             await md_file.write(f"- Total Files: `{summary['total_files']}`\n")
             await md_file.write(f"- Total Size: `{summary['total_size']} bytes`\n")
-            await md_file.write(f"- Estimated Tokens: `{summary['estimated_tokens']}`\n")
-            await md_file.write("- **File Types:**\n")
+            await md_file.write(f"- Estimated Tokens: `{summary['estimated_tokens']}`\n\n")
+            await md_file.write("### Tokens by Type\n")
+            for k, v in summary["tokens_by_type"].items():
+                await md_file.write(f"- `{k}`: `{v}`\n")
+            await md_file.write("\n### File Types Breakdown\n")
             for k, v in summary["file_type_breakdown"].items():
-                await md_file.write(f"  - {k}: `{v}`\n")
-            await md_file.write("\n")
+                await md_file.write(f"- `{k}`: `{v}`\n")
+            await md_file.write("\n---\n\n")
 
+            # File Sections
             for file in text_files:
                 rel = Path(file).relative_to(self.repo_path)
+                file_type = classify_file(file)
+                sha256 = get_file_hash(file) or "N/A"
                 content = await async_read_text(file)
                 if content:
-                    await md_file.write(f"### 📄 `{rel}`\n\n```\n{content.strip()}\n```\n\n")
+                    lang = self._detect_code_language(file.suffix)
+                    await md_file.write(f"### 📄 `{rel}` ({file_type}) | `SHA256: {sha256}`\n\n")
+                    await md_file.write(f"```{lang}\n{content.strip()}\n```\n\n")
+
         return output_file
 
     def _detect_code_language(self, suffix: str) -> str:
@@ -44,7 +63,7 @@ class MarkdownFormatter:
             ".md": "markdown",
             ".yml": "yaml",
             ".yaml": "yaml",
-            ".txt": "plaintext",
+            ".txt": "",
             ".ipynb": "json",
         }
-        return mapping.get(suffix.lower(), "plaintext")
+        return mapping.get(suffix.lower(), "")
