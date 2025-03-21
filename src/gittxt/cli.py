@@ -33,7 +33,7 @@ def install():
 def tree(repo, tree_depth):
     """Show folder structure for a repo (local or remote)."""
     repo_handler = RepositoryHandler(repo)
-    repo_path, subdir, _ = repo_handler.get_local_path()
+    repo_path, subdir, is_remote, _ = repo_handler.get_local_path()
     if not repo_path:
         click.echo("❌ Could not resolve repository.")
         sys.exit(1)
@@ -106,6 +106,12 @@ def scan(
     exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
     file_types = [ft.strip() for ft in file_types.split(",")]
 
+    VALID_FILETYPES = {"code", "docs", "csv", "image", "media", "all"}
+    for ft in file_types:
+        if ft not in VALID_FILETYPES:
+            logger.error(f"❌ Invalid file type: {ft}. Valid options: {', '.join(VALID_FILETYPES)}")
+            sys.exit(1)
+
     logger.info(f"🧹 Applying exclude filters: {exclude_patterns or 'None'}")
 
     for repo_source in repos:
@@ -120,7 +126,7 @@ def _process_repo(
 ):
     logger.info(f"🚀 Processing repository: {repo_source}")
     repo_handler = RepositoryHandler(repo_source, branch=branch)
-    repo_path, subdir, is_remote = repo_handler.get_local_path()
+    repo_path, subdir, is_remote, repo_name = repo_handler.get_local_path()
     if not repo_path:
         logger.error("❌ Repository resolution failed.")
         sys.exit(1)
@@ -132,7 +138,7 @@ def _process_repo(
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         size_limit=size_limit,
-        file_types=["all"], 
+        file_types=file_types,
         progress=progress,
     )
 
@@ -158,7 +164,7 @@ def _process_repo(
             logger.info(f"[AUTO-EXCLUDED] as ASSET: {file}")
             asset_files.append(file)
 
-            if not non_interactive and ext not in config.get("blacklist", []) and ext not in config.get("whitelist", []):
+            if not non_interactive and classification == "asset" and ext not in config.get("blacklist", []) and ext not in config.get("whitelist", []):
                 click.echo(f"\n🤖 Detected unknown extension `{ext}` in {file}")
                 if click.confirm("➕ Add to whitelist (processable)?", default=False):
                     update_whitelist(ext)
@@ -166,17 +172,13 @@ def _process_repo(
                 elif click.confirm("➖ Add to blacklist (always skip)?", default=False):
                     update_blacklist(ext)
                     logger.info(f"[✔️] Extension `{ext}` added to blacklist.")
-                else:
-                    logger.info(f"[SKIPPED] Interactive whitelist/blacklist prompts in non-interactive mode.")
 
-    repo_name = Path(repo_path).name
     builder = OutputBuilder(
         repo_name=repo_name,
         output_dir=final_output_dir,
         output_format=output_format,
     )
 
-    # Fix: Handle CLI-provided --zip flag + interactive fallback
     if not non_interactive:
         final_zip = click.confirm("📦 Do you want to generate a ZIP bundle with outputs + assets?", default=create_zip)
     else:
