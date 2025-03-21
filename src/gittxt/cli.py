@@ -74,6 +74,7 @@ def clean(output_dir):
 @click.option("--non-interactive", is_flag=True, help="Skip prompts (CI/CD friendly)")
 @click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
 @click.option("--zip", "create_zip", is_flag=True, help="Generate ZIP bundle with outputs + assets (CI-friendly)")
+@click.option("--file-types", default="code,docs", help="Specify types: code, docs, csv, image, media, all")
 def scan(
     repos,
     include,
@@ -95,31 +96,33 @@ def scan(
         logger.debug("🔍 Debug mode enabled.")
 
     if not repos:
+        logger.error("❌ No repositories specified.")
         click.echo("❌ No repositories specified.")
         sys.exit(1)
 
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     include_patterns = list(include) if include else []
     exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
+    file_types = [ft.strip() for ft in file_types.split(",")]
 
     logger.info(f"🧹 Applying exclude filters: {exclude_patterns or 'None'}")
 
     for repo_source in repos:
         _process_repo(
             repo_source, branch, include_patterns, exclude_patterns, size_limit,
-            final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip
+            final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip, file_types
         )
 
 def _process_repo(
     repo_source, branch, include_patterns, exclude_patterns, size_limit,
-    final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip
+    final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip, file_types
 ):
     logger.info(f"🚀 Processing repository: {repo_source}")
     repo_handler = RepositoryHandler(repo_source, branch=branch)
     repo_path, subdir, is_remote = repo_handler.get_local_path()
     if not repo_path:
         logger.error("❌ Repository resolution failed.")
-        return
+        sys.exit(1)
 
     scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
 

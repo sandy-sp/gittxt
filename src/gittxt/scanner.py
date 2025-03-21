@@ -34,7 +34,7 @@ class Scanner:
         self.file_types = set(file_types)
         self.progress = progress
         self.batch_size = batch_size
-        self.tree_depth = tree_depth
+        self.tree_depth = tree_depth # or config.get("tree_depth", None)
 
     def scan_directory(self) -> Tuple[List[Path], str]:
         """Run scan with async or sync fallback. Returns valid files and directory tree."""
@@ -45,7 +45,7 @@ class Scanner:
             logger.warning(f"⚠️ Async scan failed due to: {exc}. Falling back to sync mode.")
             valid_files = self._scan_directory_sync()
             logger.info(f"✅ Sync scan complete: {len(valid_files)} valid files found.")
-
+        logger.info("🌳 Generating directory tree after scan...")
         tree_summary = generate_tree(self.root_path, max_depth=self.tree_depth)
         return valid_files, tree_summary
 
@@ -70,12 +70,16 @@ class Scanner:
         return valid_files
 
     async def _process_batch_file(self, file_path: Path, bar) -> Optional[Path]:
-        """Batch-aware async file processor."""
         if not file_path.is_file():
             self._progress_update(bar)
             return None
 
-        result = await asyncio.to_thread(self._check_file_filters, file_path)
+        try:
+            result = await asyncio.to_thread(self._check_file_filters, file_path)
+        except Exception as e:
+            logger.warning(f"❌ Skipped {file_path}: {e}")
+            result = None
+
         self._progress_update(bar)
         return result
 
