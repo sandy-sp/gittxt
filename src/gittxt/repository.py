@@ -34,7 +34,7 @@ class RepositoryHandler:
         temp_dir.mkdir(parents=True, exist_ok=True)
         return temp_dir
 
-    def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path):
+    def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path) -> bool:
         try:
             logger.info(f"🚀 Cloning repository into: {temp_dir}")
             clone_args = {"depth": 1}
@@ -42,16 +42,17 @@ class RepositoryHandler:
                 clone_args["branch"] = branch
             git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
             logger.info(f"✅ Clone successful: {temp_dir}")
+            return True
         except git.GitCommandError as e:
             logger.error(f"❌ Git clone failed for {git_url}: {e}")
-            return None  
+            return False
 
-    def get_local_path(self) -> tuple[str, str]:
+    def get_local_path(self) -> tuple[str, str, bool, str]:
         """
         Return repo folder path + subdirectory (if provided).
 
         Returns:
-            (repo_path, subdir)
+            (repo_path, subdir, is_remote, repo_name)
         """
         if self.is_remote_repo(self.source):
             parsed = parse_github_url(self.source)
@@ -61,20 +62,23 @@ class RepositoryHandler:
 
             repo_name = parsed["repo"].replace(".git", "")
             temp_dir = self._prepare_temp_dir(repo_name)
-            self._clone_remote_repo(git_url, branch, temp_dir)
+            success = self._clone_remote_repo(git_url, branch, temp_dir)
+            if not success:
+                return None, None, self.is_remote, repo_name
             return str(temp_dir), subdir, self.is_remote, repo_name
+
         else:
             path = Path(self.source).resolve()
+            repo_name = path.name
             if not path.exists():
                 logger.error(f"❌ Invalid local repo path: {self.source}")
-                return None, ""
+                return None, None, self.is_remote, repo_name
 
-            # Accept non-git folders for local testing
             if not path.is_dir():
                 logger.error(f"❌ Provided path is not a directory: {self.source}")
-                return str(path), "", self.is_remote, repo_name
+                return None, None, self.is_remote, repo_name
 
-            # OPTIONAL: only apply strict .git check if you want to force "real repos"
+            # Optional .git check
             if not (path / ".git").exists():
                 logger.warning(
                     f"⚠️ No .git directory found in: {self.source} (treated as non-Git repo)"
