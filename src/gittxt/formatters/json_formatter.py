@@ -14,9 +14,12 @@ class JSONFormatter:
 
     async def generate(self, text_files, _):
         output_file = self.output_dir / f"{self.repo_name}.json"
+        summary = generate_summary(text_files)
+
         data = {
             "repository_structure": self.tree_summary,
-            "summary": generate_summary(text_files),
+            "summary": summary,
+            "file_type_breakdown": summary["file_type_breakdown"],
             "files": [],
         }
         for file in text_files:

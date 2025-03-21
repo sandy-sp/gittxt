@@ -12,31 +12,26 @@ class MarkdownFormatter:
 
     async def generate(self, text_files, asset_files):
         output_file = self.output_dir / f"{self.repo_name}.md"
-        async with aiofiles.open(output_file, "w", encoding="utf-8") as out:
-            await out.write(f"# 📂 Repository Overview: `{self.repo_name}`\n\n")
-            await out.write(f"## 📜 Folder Structure\n```\n{self.tree_summary}\n```\n")
+        summary = generate_summary(text_files + asset_files)
+        
+        async with aiofiles.open(output_file, "w", encoding="utf-8") as md_file:
+            await md_file.write(f"# 📦 Repository: `{self.repo_name}`\n\n")
+            await md_file.write("## 🗂 Directory Tree\n\n")
+            await md_file.write(f"```\n{self.tree_summary}\n```\n\n")
+            await md_file.write("## 📊 Summary Report\n\n")
+            await md_file.write(f"- Total Files: `{summary['total_files']}`\n")
+            await md_file.write(f"- Total Size: `{summary['total_size']} bytes`\n")
+            await md_file.write(f"- Estimated Tokens: `{summary['estimated_tokens']}`\n")
+            await md_file.write("- **File Types:**\n")
+            for k, v in summary["file_type_breakdown"].items():
+                await md_file.write(f"  - {k}: `{v}`\n")
+            await md_file.write("\n")
 
-            summary = generate_summary(text_files + asset_files)
-            summary_md = "\n".join([f"- **{k}**: {v}" for k, v in summary.items()])
-            await out.write(f"\n## 📊 Summary Report\n\n{summary_md}\n")
-
-            await out.write("\n## 📄 Extracted Files\n")
             for file in text_files:
                 rel = Path(file).relative_to(self.repo_path)
                 content = await async_read_text(file)
                 if content:
-                    lang = self._detect_code_language(rel.suffix)
-                    await out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
-
-            if asset_files:
-                await out.write("\n## 📦 Asset Files\n")
-                for asset in asset_files:
-                    rel = Path(asset).relative_to(self.repo_path)
-                    ext = rel.suffix.lower()
-                    if ext in [".png", ".jpg", ".jpeg", ".gif", ".svg"]:
-                        await out.write(f"![{rel}]({rel})\n")
-                    else:
-                        await out.write(f"- [{rel}]({rel})\n")
+                    await md_file.write(f"### 📄 `{rel}`\n\n```\n{content.strip()}\n```\n\n")
         return output_file
 
     def _detect_code_language(self, suffix: str) -> str:
