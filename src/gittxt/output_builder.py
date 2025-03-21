@@ -2,7 +2,6 @@ from pathlib import Path
 import asyncio
 from gittxt.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
-from gittxt.utils.filetype_utils import classify_file
 from gittxt.formatters.text_formatter import TextFormatter
 from gittxt.formatters.json_formatter import JSONFormatter
 from gittxt.formatters.markdown_formatter import MarkdownFormatter
@@ -34,20 +33,10 @@ class OutputBuilder:
         for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
 
-    async def generate_output(self, files, repo_path, create_zip=False, tree_depth=None):
+    async def generate_output(self, text_files, asset_files, repo_path, create_zip=False, tree_depth=None):
         tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
-        text_files = []
-        asset_files = []
         output_files = []
-
-        for file in files:
-            file_type = classify_file(file)
-            if file_type in {"code", "docs", "csv"}:
-                text_files.append(file)
-            elif file_type in {"image", "media", "asset"}:
-                asset_files.append(file)
-
         tasks = []
         for fmt in self.output_formats:
             FormatterClass = self.FORMATTERS.get(fmt)
@@ -71,8 +60,9 @@ class OutputBuilder:
             files_to_zip = [(file, repo_path) for file in output_files + asset_files]
             await asyncio.to_thread(self._zip_with_relative_paths, files_to_zip, zip_path)
             logger.info(f"📦 Zipped bundle created: {zip_path}")
+            output_files.append(zip_path)
 
-        return text_files
+        return output_files
 
     def _zip_with_relative_paths(self, file_repo_pairs, zip_dest: Path):
         from zipfile import ZipFile
