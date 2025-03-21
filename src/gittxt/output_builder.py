@@ -66,6 +66,7 @@ class OutputBuilder:
             output_files.append(out)
 
         if create_zip:
+            logger.info(f"📦 Creating ZIP at: {self.directories['zip'] / f'{self.repo_name}_bundle.zip'}")
             zip_path = self.directories["zip"] / f"{self.repo_name}_bundle.zip"
             files_to_zip = [(file, repo_path) for file in output_files + asset_files]
             await asyncio.to_thread(self._zip_with_relative_paths, files_to_zip, zip_path)
@@ -83,3 +84,5 @@ class OutputBuilder:
                 except ValueError:
                     arcname = file.name
                 zipf.write(file, arcname=arcname)
+        if zip_dest.exists():
+            logger.warning(f"⚠️ ZIP file {zip_dest} already exists and will be overwritten.")

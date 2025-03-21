@@ -2,7 +2,9 @@ from pathlib import Path
 import git
 from gittxt.logger import Logger
 from gittxt.utils.repo_url_parser import parse_github_url
+from gittxt.config import ConfigManager
 
+config = ConfigManager.load_config()
 logger = Logger.get_logger(__name__)
 
 
@@ -33,12 +35,16 @@ class RepositoryHandler:
         return temp_dir
 
     def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path):
-        logger.info(f"🚀 Cloning repository into: {temp_dir}")
-        clone_args = {"depth": 1}
-        if branch:
-            clone_args["branch"] = branch
-        git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
-        logger.info(f"✅ Clone successful: {temp_dir}")
+        try:
+            logger.info(f"🚀 Cloning repository into: {temp_dir}")
+            clone_args = {"depth": 1}
+            if branch:
+                clone_args["branch"] = branch
+            git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
+            logger.info(f"✅ Clone successful: {temp_dir}")
+        except git.GitCommandError as e:
+            logger.error(f"❌ Git clone failed for {git_url}: {e}")
+            return None  
 
     def get_local_path(self) -> tuple[str, str]:
         """
@@ -53,10 +59,10 @@ class RepositoryHandler:
             branch = self.branch_override or parsed.get("branch", "main")
             subdir = parsed.get("subdir") or ""
 
-            repo_name = parsed["repo"]
+            repo_name = parsed["repo"].replace(".git", "")
             temp_dir = self._prepare_temp_dir(repo_name)
             self._clone_remote_repo(git_url, branch, temp_dir)
-            return str(temp_dir), subdir, self.is_remote
+            return str(temp_dir), subdir, self.is_remote, repo_name
         else:
             path = Path(self.source).resolve()
             if not path.exists():
@@ -75,4 +81,4 @@ class RepositoryHandler:
                 )
 
             logger.info(f"✅ Using local repository: {path}")
-            return str(path), "", self.is_remote
+            return str(path), "", self.is_remote, repo_name
