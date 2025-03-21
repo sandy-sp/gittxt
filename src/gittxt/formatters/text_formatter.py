@@ -3,7 +3,6 @@ import aiofiles
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.filetype_utils import classify_file
-from gittxt.utils.hash_utils import get_file_hash
 from datetime import datetime, timezone
 
 class TextFormatter:
@@ -41,13 +40,13 @@ class TextFormatter:
             await txt_file.write("\n")
 
             # File Contents
+            await txt_file.write("=== Extracted Files ===\n")
             for file in text_files:
                 rel = Path(file).relative_to(self.repo_path)
                 file_type = classify_file(file)
-                sha256 = get_file_hash(file) or "N/A"
                 content = await async_read_text(file)
                 if content:
-                    await txt_file.write(f"=== FILE: {rel} | Type: {file_type} | SHA256: {sha256} ===\n")
-                    await txt_file.write(f"{content.strip()}\n\n")
+                    await txt_file.write(f"\n---\nFILE: {rel} | Type: {file_type}\n---\n")
+                    await txt_file.write(f"{content.strip()}\n")
 
         return output_file
