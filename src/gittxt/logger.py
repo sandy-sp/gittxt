@@ -1,3 +1,4 @@
+import os 
 from pathlib import Path
 import logging
 import sys
@@ -42,9 +43,9 @@ class Logger:
     def setup_logger():
         Logger.LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-        config = ConfigManager.load_config() if ConfigManager else {}
-        log_level_str = config.get("logging_level", "INFO")
-        log_format_style = config.get("log_format", "plain").lower()  # plain | json
+        # Prefer env first, fallback to config or WARNING
+        log_level_str = os.getenv("GITTXT_LOGGING_LEVEL", "WARNING")
+        log_format_style = os.getenv("GITTXT_LOG_FORMAT", "plain").lower()
 
         level_map = {
             "DEBUG": logging.DEBUG,
@@ -53,19 +54,17 @@ class Logger:
             "ERROR": logging.ERROR,
             "CRITICAL": logging.CRITICAL,
         }
-        log_level = level_map.get(log_level_str.upper(), logging.INFO)
+        log_level = level_map.get(log_level_str.upper(), logging.WARNING)
 
         # Remove any existing handlers
         for handler in logging.root.handlers[:]:
             logging.root.removeHandler(handler)
 
-        # Console Handler
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(log_level)
         console_handler.setFormatter(Logger._get_formatter(mode=log_format_style))
         logging.root.addHandler(console_handler)
 
-        # File Handler (always plain format for logs on disk)
         rotating_file_handler = RotatingFileHandler(
             Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
         )

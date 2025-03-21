@@ -3,7 +3,7 @@ from gittxt.logger import Logger
 from gittxt.config import ConfigManager
 
 # Package Metadata
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 __author__ = "Sandeep Paidipati"
 __description__ = "Gittxt: Get text from Git repositories in AI-ready formats"
 

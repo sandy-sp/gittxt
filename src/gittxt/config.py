@@ -35,7 +35,7 @@ class ConfigManager:
         "custom_exclude_patterns": [],
         "output_format": "txt",
         "file_types": "code,docs",
-        "logging_level": "INFO",
+        "logging_level": "WARNING",
         "log_format": "plain",        # ✅ ADDED
         "auto_zip": False             # ✅ ADDED
     }
