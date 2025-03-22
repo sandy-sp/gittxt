@@ -1,46 +1,26 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
-from gittxt_api.core.scanning_service import SCANS
 from pathlib import Path
-import json
-from gittxt_api.services.artifact_service import resolve_artifact_paths, available_artifacts
+from typing import Dict
 
-router = APIRouter()
+def resolve_artifact_paths(scan_id: str, output_dir: Path, repo_name: str) -> Dict[str, Path]:
+    """
+    Centralizes artifact path resolution logic.
+    """
+    return {
+        "txt": output_dir / "text" / f"{repo_name}.txt",
+        "json": output_dir / "json" / f"{repo_name}.json",
+        "md": output_dir / "md" / f"{repo_name}.md",
+        "zip": output_dir / "zips" / f"{repo_name}_bundle.zip",
+    }
 
-@router.get("/{scan_id}/{artifact}")
-def download_artifact(scan_id: str, artifact: str):
-    info = SCANS.get(scan_id)
-    if not info or "output_dir" not in info:
-        raise HTTPException(404, "Scan not found or incomplete.")
+def available_artifacts(scan_id: str, output_dir: Path, repo_name: str) -> Dict[str, str]:
+    """
+    Returns a dictionary of available artifact URLs based on existing files.
+    """
+    available = {}
+    paths = resolve_artifact_paths(scan_id, output_dir, repo_name)
 
-    repo_name = info.get("repo_name")
-    output_dir = Path(info["output_dir"])
+    for fmt, path in paths.items():
+        if path.exists():
+            available[fmt] = f"/artifacts/{scan_id}/{fmt}"
 
-    artifact_paths = resolve_artifact_paths(scan_id, output_dir, repo_name)
-
-    if artifact not in artifact_paths:
-        raise HTTPException(400, f"Unsupported artifact: {artifact}")
-
-    file_path = artifact_paths[artifact]
-
-    if not file_path.exists():
-        raise HTTPException(404, f"{artifact.upper()} artifact not found.")
-
-    if artifact == "json":
-        data = json.loads(file_path.read_text(encoding="utf-8"))
-        return JSONResponse(content=data)
-
-    return FileResponse(path=file_path, filename=file_path.name)
-
-
-@router.get("/{scan_id}/list")
-def list_artifacts(scan_id: str):
-    info = SCANS.get(scan_id)
-    if not info or "output_dir" not in info:
-        raise HTTPException(404, "Scan not found.")
-
-    repo_name = info.get("repo_name")
-    output_dir = Path(info["output_dir"])
-
-    available = available_artifacts(scan_id, output_dir, repo_name)
-    return {"artifacts": available}
+    return available
