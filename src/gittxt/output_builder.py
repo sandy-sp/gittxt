@@ -20,8 +20,9 @@ class OutputBuilder:
         "md": MarkdownFormatter,
     }
 
-    def __init__(self, repo_name, output_dir=None, output_format="txt"):
+    def __init__(self, repo_name, output_dir=None, output_format="txt", repo_url=None):
         self.repo_name = repo_name
+        self.repo_url = repo_url
         self.output_dir = Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
 
@@ -37,7 +38,6 @@ class OutputBuilder:
     async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None):
         tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
-        # Separate TEXTUAL and NON-TEXTUAL buckets
         textual_files = [f for f in all_files if self._is_textual(f)]
         non_textual_files = [f for f in all_files if not self._is_textual(f)]
 
@@ -51,6 +51,7 @@ class OutputBuilder:
                     output_dir=self.directories[fmt],
                     repo_path=repo_path,
                     tree_summary=tree_summary,
+                    repo_url=self.repo_url
                 )
                 tasks.append(formatter.generate(textual_files, non_textual_files))
 
@@ -65,6 +66,7 @@ class OutputBuilder:
                 output_dir=self.directories["zip"],
                 output_files=output_files,
                 non_textual_files=non_textual_files,
+                repo_path=repo_path
             )
             zip_path = await zip_formatter.generate()
             logger.info(f"📦 Zipped bundle created: {zip_path}")
