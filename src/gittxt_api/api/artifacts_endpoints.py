@@ -17,6 +17,9 @@ def download_artifact(scan_id: str, artifact: Literal["txt", "json", "md", "zip"
     if not info or "output_dir" not in info:
         raise HTTPException(404, "Scan not found or incomplete.")
 
+    if info.get("status") != "done":
+        raise HTTPException(400, "Scan still in progress or failed. Artifacts not ready.")
+
     repo_name = info.get("repo_name")
     output_dir = Path(info["output_dir"])
 
@@ -27,7 +30,6 @@ def download_artifact(scan_id: str, artifact: Literal["txt", "json", "md", "zip"
         raise HTTPException(404, f"{artifact.upper()} artifact not found.")
 
     if artifact == "json":
-        # Inline JSON response
         data = json.loads(file_path.read_text(encoding="utf-8"))
         return JSONResponse(content=data)
 
