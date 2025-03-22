@@ -19,9 +19,6 @@ router = APIRouter()
 
 @router.post("/tree")
 async def get_repo_tree(req: TreeRequest):
-    """
-    Generates directory tree and extension map from a GitHub/local repo.
-    """
     try:
         repo_handler = RepositoryHandler(source=req.repo_url, branch=req.branch)
         repo_path, subdir, is_remote, _ = repo_handler.get_local_path()
@@ -50,11 +47,11 @@ async def get_repo_tree(req: TreeRequest):
 
 @router.post("/")
 async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
-    """
-    Launch a Gittxt scan asynchronously.
-    """
-    scan_id = str(uuid.uuid4())
+    VALID_TYPES = {"code", "docs", "csv", "image", "media", "all"}
+    if not req.file_types or any(ft not in VALID_TYPES for ft in req.file_types):
+        raise HTTPException(status_code=400, detail=f"Invalid file_types. Valid: {', '.join(VALID_TYPES)}")
 
+    scan_id = str(uuid.uuid4())
     SCANS[scan_id] = {
         "status": "queued",
         "progress": 0,
@@ -82,7 +79,6 @@ async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
 
 @router.get("/{scan_id}")
 def get_scan_info(scan_id: str):
-    """Fetch status & metadata of a running or completed scan."""
     info = SCANS.get(scan_id)
     if not info:
         raise HTTPException(status_code=404, detail="Scan not found")
@@ -102,7 +98,6 @@ def get_scan_info(scan_id: str):
 
 @router.delete("/{scan_id}/close")
 def close_scan_session(scan_id: str):
-    """Cleanup ephemeral artifacts and session state."""
     info = SCANS.get(scan_id)
     if not info:
         raise HTTPException(status_code=404, detail="Scan not found or already removed.")
