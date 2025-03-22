@@ -1,8 +1,6 @@
 from pathlib import Path
 from gittxt.utils.tree_utils import generate_tree
-from gittxt.utils.filetype_utils import classify_file
 import shutil
-
 
 def build_directory_tree(path: Path, max_depth: int = None) -> str:
     """
