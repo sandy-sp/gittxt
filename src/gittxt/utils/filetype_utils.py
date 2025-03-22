@@ -1,31 +1,39 @@
 from pathlib import Path
 import mimetypes
-import time
+import json
 from binaryornot.check import is_binary
-from gittxt.config import FiletypeConfigManager
 
-# Cache TTL in seconds (e.g., refresh every 60 seconds)
-CACHE_TTL = 60
+CONFIG_FILE = Path(__file__).parent / "subcategory_config.json"
 
-class ConfigCache:
-    """Simple TTL-based config cache."""
-    def __init__(self):
-        self.last_loaded = 0
-        self.config = {}
+# --- Dynamic Configurable Subcategory Map ---
 
-    def load(self):
-        now = time.time()
-        if now - self.last_loaded > CACHE_TTL:
-            self.config = FiletypeConfigManager.load_filetype_config()
-            self.last_loaded = now
-        return self.config
+DEFAULT_SUBCATEGORY_MAP = {
+    "TEXTUAL": {
+        "code": [".py", ".js", ".ts", ".cpp", ".c", ".go", ".java", ".rb", ".php", ".sh"],
+        "docs": [".md", ".txt", ".rst", ".html", ".htm", "readme", "license", "notice"],
+        "configs": [".yml", ".yaml", ".ini", ".toml", ".cfg", ".env", ".in", "dockerfile", "makefile"],
+        "data": [".csv", ".json"]
+    },
+    "NON-TEXTUAL": {
+        "image": [".png", ".jpg", ".jpeg", ".svg", ".webp"],
+        "media": [".mp4", ".mp3", ".wav", ".avi", ".mkv"],
+        "binary": [".zip", ".exe", ".dll", ".bin", ".so"]
+    }
+}
+
+# Load or create config
+if CONFIG_FILE.exists():
+    with CONFIG_FILE.open("r", encoding="utf-8") as f:
+        SUBCATEGORY_MAP = json.load(f)
+else:
+    SUBCATEGORY_MAP = DEFAULT_SUBCATEGORY_MAP.copy()
+    with CONFIG_FILE.open("w", encoding="utf-8") as f:
+        json.dump(SUBCATEGORY_MAP, f, indent=4)
 
 
-config_cache = ConfigCache()
-
+# --- Classifier Core ---
 
 def is_text_file(file: Path) -> bool:
-    """Check if file is not binary based on content."""
     try:
         if file.is_dir() or not file.exists() or not file.is_file():
             return False
@@ -34,129 +42,52 @@ def is_text_file(file: Path) -> bool:
         return False
 
 
-def get_mime_type(file: Path) -> str:
-    mime_type, _ = mimetypes.guess_type(str(file))
-    return mime_type or "application/octet-stream"
-
-
-def looks_like_text_content(file: Path) -> bool:
-    """Heuristic: open file and inspect first 2 KB"""
-    try:
-        with file.open("rb") as f:
-            sample = f.read(2048)
-        decoded = sample.decode("utf-8", errors="ignore")
-
-        alpha_ratio = sum(c.isalpha() for c in decoded) / (len(decoded) + 1)
-        keyword_hits = sum(
-            1 for kw in ["function", "class", "def", "import", "module", "{", "}", "<", ">"]
-            if kw in decoded.lower()
-        )
-        if alpha_ratio > 0.25 or keyword_hits >= 1:
-            return True
-    except Exception:
-        pass
-    return False
-
-
-def is_whitelisted(file: Path) -> bool:
-    config = config_cache.load()
-    return file.suffix.lower() in config.get("whitelist", [])
-
-
-def is_blacklisted(file: Path) -> bool:
-    config = config_cache.load()
-    return file.suffix.lower() in config.get("blacklist", [])
-
-
-def pipeline_classify(file: Path) -> str:
-    """
-    Multi-stage pipeline:
-    1) Whitelist always wins
-    2) Blacklist always rejects
-    3) Static extension rules
-    4) MIME fallback
-    5) Content sampling fallback
-    """
-    suffix = file.suffix.lower()
-    mime_type = get_mime_type(file)
-
-    # Whitelist override
-    if is_whitelisted(file):
-        return classify_text_type(file)
-
-    # Blacklist override
-    if is_blacklisted(file):
-        return "asset"
-
-    # Static extension heuristic
-    static_text_exts = {
-        ".py", ".js", ".ts", ".tsx", ".jsx", ".java", ".cpp", ".c", ".cs", ".go", ".rb",
-        ".php", ".sh", ".md", ".rst", ".txt", ".csv", ".json", ".yaml", ".yml", ".xml",
-        ".html", ".toml", ".ini", ".env", ".cfg", ".dockerfile", ".ipynb"
-    }
-
-    static_image_exts = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp"}
-    static_media_exts = {".mp4", ".mp3", ".wav", ".avi", ".mov", ".flac", ".mkv"}
-
-    if suffix in static_text_exts:
-        return classify_text_type(file)
-    elif suffix in static_image_exts:
-        return "image"
-    elif suffix in static_media_exts:
-        return "media"
-
-    # MIME fallback
-    MIME_TYPE_MAP = {
-        "application/javascript": "code",
-        "application/json": "docs",
-        "application/xml": "docs",
-        "text/x-python": "code",
-        "text/html": "docs",
-        "text/markdown": "docs",
-        "text/csv": "csv",
-    }
-
-    if mime_type in MIME_TYPE_MAP:
-        return MIME_TYPE_MAP[mime_type]
-    if mime_type.startswith("text/") or mime_type in {"application/json", "application/xml"}:
-        return classify_text_type(file)
-    if mime_type.startswith("image/"):
-        return "image"
-    if mime_type.startswith("audio/") or mime_type.startswith("video/"):
-        return "media"
-
-    # Content sampling fallback
-    if is_text_file(file) and looks_like_text_content(file):
-        return classify_text_type(file)
-
-    return "asset"
-
-
-def classify_text_type(file: Path) -> str:
-    """Secondary classification for text-like files."""
+def classify_simple(file: Path) -> tuple[str, str]:
     ext = file.suffix.lower()
-    if ext in {".py", ".js", ".ts", ".cpp", ".c", ".go", ".rb", ".php", ".sh"}:
-        return "code"
-    if ext in {".md", ".rst", ".txt", ".html"}:
-        return "docs"
-    if ext in {".csv"}:
-        return "csv"
-    if ext in {".json", ".yaml", ".yml", ".xml", ".toml", ".ini"}:
-        return "docs"
-    if ext in {".ipynb"}:
-        return "code"
-    return "docs"  # fallback
+    fname = file.name.lower()
+
+    if is_text_file(file):
+        for subcat, patterns in SUBCATEGORY_MAP["TEXTUAL"].items():
+            if ext in patterns or fname in patterns:
+                return "TEXTUAL", subcat
+        return "TEXTUAL", "docs"  # fallback
+
+    else:
+        for subcat, patterns in SUBCATEGORY_MAP["NON-TEXTUAL"].items():
+            if ext in patterns or fname in patterns:
+                return "NON-TEXTUAL", subcat
+        mime_type, _ = mimetypes.guess_type(str(file))
+        if mime_type and mime_type.startswith("image/"):
+            return "NON-TEXTUAL", "image"
+        if mime_type and (mime_type.startswith("audio/") or mime_type.startswith("video/")):
+            return "NON-TEXTUAL", "media"
+        return "NON-TEXTUAL", "binary"  # fallback
 
 
+# legacy aliases
 def classify_file(file: Path) -> str:
-    return pipeline_classify(file)
+    primary, sub = classify_simple(file)
+    return sub
 
 
-def update_whitelist(ext: str):
-    FiletypeConfigManager.add_to_whitelist(ext)
-    config_cache.last_loaded = 0  # Force reload next time
+# --- Utilities for Dynamic Updates ---
+def add_to_subcategory(category: str, subcategory: str, ext_or_name: str):
+    global SUBCATEGORY_MAP
+    if category not in SUBCATEGORY_MAP:
+        SUBCATEGORY_MAP[category] = {}
+    if subcategory not in SUBCATEGORY_MAP[category]:
+        SUBCATEGORY_MAP[category][subcategory] = []
+    SUBCATEGORY_MAP[category][subcategory].append(ext_or_name)
+    with CONFIG_FILE.open("w", encoding="utf-8") as f:
+        json.dump(SUBCATEGORY_MAP, f, indent=4)
 
 
-def update_blacklist(ext: str):
-    FiletypeConfigManager.add_to_blacklist(ext)
-    config_cache.last_loaded = 0  # Force reload next time
+def move_extension(ext_or_name: str, from_sub: tuple[str, str], to_sub: tuple[str, str]):
+    global SUBCATEGORY_MAP
+    # remove from old
+    SUBCATEGORY_MAP[from_sub[0]][from_sub[1]].remove(ext_or_name)
+    # add to new
+    add_to_subcategory(to_sub[0], to_sub[1], ext_or_name)
+
+
+# Example CLI/API hooks can call these two utility functions
