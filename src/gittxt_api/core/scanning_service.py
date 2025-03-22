@@ -39,24 +39,25 @@ async def run_scan_task(
             if subdir:
                 scan_root = scan_root / subdir
 
+            # New CLI-aligned scanner logic
             scanner = Scanner(
                 root_path=scan_root,
                 include_patterns=include_patterns,
                 exclude_patterns=exclude_patterns,
                 size_limit=size_limit,
                 file_types=file_types,
-                progress=False,
-                tree_depth=tree_depth
+                progress=False
             )
 
-            valid_files, _ = scanner.scan_directory()
-            total_count = len(valid_files)
+            all_files, _ = scanner.scan_directory()
+            total_count = len(all_files)
 
-            for idx, path in enumerate(valid_files):
+            # Progress callback
+            for idx, path in enumerate(all_files):
                 _emit(scan_id, idx, total_count, f"Accepted {path.name}", progress_callback)
                 await asyncio.sleep(0)
 
-            if not valid_files:
+            if not all_files:
                 SCANS[scan_id].update({
                     "status": "done",
                     "file_count": 0,
@@ -68,29 +69,19 @@ async def run_scan_task(
             builder = OutputBuilder(
                 repo_name=repo_name,
                 output_dir=output_dir,
-                output_format=output_format
+                output_format=output_format,
+                repo_url=repo_url if is_remote else None
             )
 
             _emit(scan_id, total_count, total_count, "Generating outputs...", progress_callback)
 
-            # Separate text files vs assets here before output_builder call
-            text_files = []
-            asset_files = []
-            from gittxt.utils.filetype_utils import classify_file
-
-            for f in valid_files:
-                classification = classify_file(Path(f))
-                if classification in {"code", "docs", "csv"}:
-                    text_files.append(f)
-                else:
-                    asset_files.append(f)
-
-            await builder.generate_output(text_files, asset_files, repo_path, create_zip=create_zip, tree_depth=tree_depth)
+            # Call new generate_output with unified file list
+            await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth)
 
             SCANS[scan_id].update({
                 "status": "done",
                 "message": "Scan complete",
-                "file_count": len(valid_files),
+                "file_count": len(all_files),
                 "output_dir": str(output_dir),
                 "repo_name": repo_name
             })
