@@ -4,7 +4,6 @@ from typing import List, Tuple, Optional
 
 from gittxt.logger import Logger
 from gittxt.utils import pattern_utils, filetype_utils
-from gittxt.utils.tree_utils import generate_tree
 
 try:
     from tqdm import tqdm
@@ -25,7 +24,6 @@ class Scanner:
         file_types: List[str],
         progress: bool = False,
         batch_size: int = 50,
-        tree_depth: Optional[int] = None,
         verbose: bool = False,
     ):
         self.root_path = root_path.resolve()
@@ -35,28 +33,25 @@ class Scanner:
         self.file_types = set(file_types)
         self.progress = progress
         self.batch_size = batch_size
-        self.tree_depth = tree_depth
         self.verbose = verbose
 
-        # Auto-correct "all" flag
+        # Normalize "all" flag
         if "all" in self.file_types:
             self.file_types = {"TEXTUAL", "NON-TEXTUAL"}
+        else:
+            self.file_types = {"TEXTUAL"} if any(ft in {"code", "docs", "configs", "data"} for ft in file_types) else {"NON-TEXTUAL"}
 
-        self.textual = []
-        self.non_textual = []
+        self.accepted_files = []
 
     def scan_directory(self) -> Tuple[List[Path], str]:
         try:
             asyncio.run(self._scan_directory_async())
-            logger.info(f"✅ Async scan complete: {len(self.textual) + len(self.non_textual)} files processed.")
+            logger.info(f"✅ Async scan complete: {len(self.accepted_files)} files processed.")
         except RuntimeError as exc:
             logger.warning(f"⚠️ Async scan failed: {exc}. Falling back to sync.")
             self._scan_directory_sync()
-            logger.info(f"✅ Sync scan complete: {len(self.textual) + len(self.non_textual)} files processed.")
-
-        logger.info("🌳 Generating directory tree...")
-        tree_summary = generate_tree(self.root_path, max_depth=self.tree_depth)
-        return self.textual + self.non_textual, tree_summary
+            logger.info(f"✅ Sync scan complete: {len(self.accepted_files)} files processed.")
+        return self.accepted_files, ""  # Tree is now handled solely in OutputBuilder
 
     async def _scan_directory_async(self):
         all_paths = list(self.root_path.rglob("*"))
@@ -98,24 +93,17 @@ class Scanner:
             return
 
         primary, _ = filetype_utils.classify_simple(file_path)
-
-        if primary == "TEXTUAL" and "TEXTUAL" in self.file_types:
-            self.textual.append(file_path.resolve())
-        elif primary == "NON-TEXTUAL" and "NON-TEXTUAL" in self.file_types:
-            self.non_textual.append(file_path.resolve())
+        if primary in self.file_types:
+            self.accepted_files.append(file_path.resolve())
 
     def _passes_filters(self, file_path: Path) -> bool:
-        if pattern_utils.match_exclude(file_path, self.exclude_patterns):
-            if self.verbose:
-                logger.debug(f"🛑 Excluded by pattern: {file_path}")
-            return False
-        if self.include_patterns and not pattern_utils.match_include(file_path, self.include_patterns):
-            return False
-        if self.size_limit and file_path.stat().st_size > self.size_limit:
-            if self.verbose:
-                logger.debug(f"🛑 Excluded by size limit: {file_path}")
-            return False
-        return True
+        return pattern_utils.passes_all_filters(
+            file_path,
+            self.include_patterns,
+            self.exclude_patterns,
+            self.size_limit,
+            self.verbose
+        )
 
     def _init_progress_bar(self, total, desc):
         if self.progress and tqdm and total >= 1:
