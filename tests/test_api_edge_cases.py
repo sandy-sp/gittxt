@@ -12,12 +12,12 @@ def test_invalid_scan_payload(api_client):
 def test_invalid_repo_url(api_client):
     payload = {"repo_url": "invalid-url", "file_types": ["code"]}
     res = api_client.post("/scans", json=payload)
-    assert res.status_code == 400 or res.status_code == 422
+    assert res.status_code in {400, 422}
 
 
 def test_ws_invalid_scan_id(api_client):
     with pytest.raises(WebSocketDisconnect):
-        with api_client.websocket_connect("/wsprogress/ws/invalid-scan-id") as ws:
+        with api_client.websocket_connect("/wsprogress/ws/nonexistent-id") as ws:
             ws.receive_json()
 
 
@@ -28,10 +28,10 @@ def test_artifact_404_before_scan_completion(api_client, test_repo):
     assert res.status_code == 200
     scan_id = res.json()["scan_id"]
 
-    # Immediately try artifact download before completion
+    # Immediately try artifact download before scan finishes
     artifact_url = f"/artifacts/{scan_id}/txt"
     r = api_client.get(artifact_url)
     assert r.status_code == 404
 
-    # Cleanup
+    # Cleanup session forcibly
     api_client.delete(f"/scans/{scan_id}/close")
