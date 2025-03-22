@@ -38,10 +38,26 @@ blacklist = filetype_config.get("blacklist", [])
 
 
 def is_text_file(file: Path) -> bool:
+    # Extension-based shortcut
+    ext = file.suffix.lower()
+    if ext in blacklist:
+        return False
+    if ext in whitelist:
+        return True
+
     try:
-        if file.is_dir() or not file.exists() or not file.is_file():
+        # Step 1: Use binaryornot
+        if is_binary(str(file)):
             return False
-        return not is_binary(str(file))
+
+        # Step 2: MIME fallback for image/media
+        mime_type, _ = mimetypes.guess_type(str(file))
+        if mime_type:
+            if mime_type.startswith(("image/", "audio/", "video/")):
+                return False
+
+        # Step 3: Treat other files as text
+        return True
     except Exception:
         return False
 
@@ -56,22 +72,23 @@ def classify_simple(file: Path) -> tuple[str, str]:
     if ext in whitelist:
         return "TEXTUAL", "custom"
 
+    # TEXTUAL flow
     if is_text_file(file):
         for subcat, patterns in SUBCATEGORY_MAP["TEXTUAL"].items():
             if ext in patterns or fname in patterns:
                 return "TEXTUAL", subcat
         return "TEXTUAL", "docs"  # fallback
 
-    else:
-        for subcat, patterns in SUBCATEGORY_MAP["NON-TEXTUAL"].items():
-            if ext in patterns or fname in patterns:
-                return "NON-TEXTUAL", subcat
-        mime_type, _ = mimetypes.guess_type(str(file))
-        if mime_type and mime_type.startswith("image/"):
-            return "NON-TEXTUAL", "image"
-        if mime_type and (mime_type.startswith("audio/") or mime_type.startswith("video/")):
-            return "NON-TEXTUAL", "media"
-        return "NON-TEXTUAL", "binary"  # fallback
+    # NON-TEXTUAL flow
+    for subcat, patterns in SUBCATEGORY_MAP["NON-TEXTUAL"].items():
+        if ext in patterns or fname in patterns:
+            return "NON-TEXTUAL", subcat
+    mime_type, _ = mimetypes.guess_type(str(file))
+    if mime_type and mime_type.startswith("image/"):
+        return "NON-TEXTUAL", "image"
+    if mime_type and (mime_type.startswith("audio/") or mime_type.startswith("video/")):
+        return "NON-TEXTUAL", "media"
+    return "NON-TEXTUAL", "binary"
 
 
 def classify_file(file: Path) -> str:
