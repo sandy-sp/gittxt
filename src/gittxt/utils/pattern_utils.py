@@ -1,14 +1,13 @@
 from pathlib import Path
 from typing import List
 import fnmatch
+from gittxt.logger import Logger
+
+logger = Logger.get_logger(__name__)
 
 def match_include(file_path: Path, include_patterns: List[str]) -> bool:
     """
     Check if the file matches any of the include patterns (e.g., ".py", ".md").
-
-    :param file_path: Path to file.
-    :param include_patterns: List of strings like [".py", ".md"].
-    :return: True if file matches includes, or if include_patterns is empty (default allow).
     """
     if not include_patterns:
         return True  # Default to include all if no patterns
@@ -18,10 +17,6 @@ def match_include(file_path: Path, include_patterns: List[str]) -> bool:
 def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
     """
     Check if the file should be excluded based on folder or extension.
-
-    :param file_path: Path to file.
-    :param exclude_patterns: List of patterns like ["node_modules", ".git"].
-    :return: True if file matches any exclusion pattern.
     """
     return any(fnmatch.fnmatch(str(file_path), pattern) for pattern in exclude_patterns)
 
@@ -29,8 +24,22 @@ def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
 def normalize_patterns(patterns: List[str]) -> List[str]:
     """
     Normalize patterns to lower-case and strip whitespace.
-
-    :param patterns: Raw pattern list.
-    :return: Clean list of patterns.
     """
     return [p.strip().lower() for p in patterns if p.strip()]
+
+
+def passes_all_filters(file_path: Path, include_patterns: List[str], exclude_patterns: List[str], size_limit: int, verbose: bool = False) -> bool:
+    """
+    Centralized filter checker used in Scanner.
+    """
+    if match_exclude(file_path, exclude_patterns):
+        if verbose:
+            logger.debug(f"🛑 Excluded by pattern: {file_path}")
+        return False
+    if include_patterns and not match_include(file_path, include_patterns):
+        return False
+    if size_limit and file_path.stat().st_size > size_limit:
+        if verbose:
+            logger.debug(f"🛑 Excluded by size limit: {file_path}")
+        return False
+    return True
