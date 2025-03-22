@@ -38,6 +38,7 @@ src/gittxt-logs/
 # Gittxt configuration
 gittxt-config.json
 filetype_config.json
+subcategory_config.json
 
 # Frontend UI node modules
 node_modules

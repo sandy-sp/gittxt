@@ -3,7 +3,7 @@ import mimetypes
 import json
 from binaryornot.check import is_binary
 
-CONFIG_FILE = Path(__file__).parent / "subcategory_config.json"
+CONFIG_FILE = Path(__file__).parent / "../subcategory_config.json"
 
 # --- Dynamic Configurable Subcategory Map ---
 
