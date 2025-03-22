@@ -184,6 +184,13 @@ def _process_repo(
         logger.info(f" - File type breakdown: {summary_data.get('file_type_breakdown')}")
         logger.info(f" - Output formats: {output_format}")
 
+        # NEW: always print summary to stdout as well
+        click.echo("=== Summary Report ===")
+        click.echo(f"Total Files: {summary_data.get('total_files')}")
+        click.echo(f"Total Size: {summary_data.get('total_size')} bytes")
+        click.echo(f"Estimated Tokens: {summary_data.get('estimated_tokens')}")
+        click.echo(f"Output Formats: {output_format}")
+
     if is_remote:
         cleanup_temp_folder(Path(repo_path))
 
