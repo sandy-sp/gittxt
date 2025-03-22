@@ -7,7 +7,6 @@ from gittxt.config import ConfigManager
 config = ConfigManager.load_config()
 logger = Logger.get_logger(__name__)
 
-
 class RepositoryHandler:
     """Handles GitHub repo cloning and local directory resolution."""
 
@@ -15,12 +14,6 @@ class RepositoryHandler:
     TEMP_DIR = BASE_OUTPUT_DIR / "temp"
 
     def __init__(self, source: str, branch: str = None):
-        """
-        Initialize repository handler.
-
-        :param source: Local path or remote GitHub URL.
-        :param branch: Override branch (optional).
-        """
         self.source = source
         self.branch_override = branch
         self.repo_meta = {}
@@ -44,8 +37,15 @@ class RepositoryHandler:
             logger.info(f"✅ Clone successful: {temp_dir}")
             return True
         except git.GitCommandError as e:
-            logger.error(f"❌ Git clone failed for {git_url}: {e}")
-            return False
+            logger.warning(f"⚠️ Git clone failed for {git_url} on branch {branch}: {e}")
+            # Retry without specifying branch if fallback needed
+            try:
+                logger.info(f"🔄 Retrying clone without branch (use repo default)")
+                git.Repo.clone_from(git_url, str(temp_dir), depth=1)
+                return True
+            except Exception as err:
+                logger.error(f"❌ Retry clone failed: {err}")
+                return False
 
     def get_local_path(self) -> tuple[str, str, bool, str]:
         """
@@ -56,10 +56,11 @@ class RepositoryHandler:
         """
         if self.is_remote_repo(self.source):
             parsed = parse_github_url(self.source)
-            git_url = f"https://github.com/{parsed['owner']}/{parsed['repo']}.git"
-            branch = self.branch_override or parsed.get("branch", "main")
-            subdir = parsed.get("subdir") or ""
+            repo_url_scheme = "git@" if self.source.startswith("git@") else "https://github.com/"
+            git_url = f"{repo_url_scheme}{parsed['owner']}/{parsed['repo']}.git"
+            branch = self.branch_override or parsed.get("branch")
 
+            subdir = parsed.get("subdir") or ""
             repo_name = parsed["repo"].replace(".git", "")
             temp_dir = self._prepare_temp_dir(repo_name)
             success = self._clone_remote_repo(git_url, branch, temp_dir)
@@ -78,11 +79,8 @@ class RepositoryHandler:
                 logger.error(f"❌ Provided path is not a directory: {self.source}")
                 return None, None, self.is_remote, repo_name
 
-            # Optional .git check
             if not (path / ".git").exists():
-                logger.warning(
-                    f"⚠️ No .git directory found in: {self.source} (treated as non-Git repo)"
-                )
+                logger.warning(f"⚠️ No .git directory found in: {self.source} (treated as non-Git repo)")
 
             logger.info(f"✅ Using local repository: {path}")
             return str(path), "", self.is_remote, repo_name
