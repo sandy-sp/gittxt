@@ -10,7 +10,6 @@ logger = Logger.get_logger(__name__)
 # Load .env file if present
 load_dotenv()
 
-
 class ConfigManager:
     """Handles main Gittxt configuration and environment overrides."""
 
@@ -26,7 +25,7 @@ class ConfigManager:
         else:
             return (home_dir / "Gittxt").resolve()
 
-    # 🟢 DEFAULT CONFIG with new keys added
+    # Updated DEFAULT CONFIG with tree_exclude_dirs
     DEFAULT_CONFIG = {
         "output_dir": str(_determine_default_output_dir.__func__()),
         "size_limit": None,
@@ -36,8 +35,9 @@ class ConfigManager:
         "output_format": "txt",
         "file_types": "code,docs",
         "logging_level": "WARNING",
-        "log_format": "plain",        # ✅ ADDED
-        "auto_zip": False             # ✅ ADDED
+        "log_format": "plain",
+        "auto_zip": False,
+        "tree_exclude_dirs": [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]  # ✅ ADDED
     }
 
     @classmethod
