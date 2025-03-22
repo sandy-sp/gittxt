@@ -1,4 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
+from src.gittxt.utils.repo_url_parser import parse_github_url
 from gittxt_api.schemas.scan_schemas import ScanRequest, TreeRequest
 from gittxt_api.core.scanning_service import (
     SCANS,
@@ -53,11 +54,17 @@ async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
     if not req.file_types or any(ft not in VALID_TYPES for ft in req.file_types):
         raise HTTPException(status_code=400, detail=f"Invalid file_types. Valid: {', '.join(VALID_TYPES)}")
 
-    # New: Validate comma-separated formats
     requested_formats = [f.strip() for f in req.output_format.split(",")]
     if any(fmt not in VALID_FORMATS for fmt in requested_formats):
         raise HTTPException(status_code=400, detail=f"Invalid output_format. Valid: {', '.join(VALID_FORMATS)}")
 
+    # ✅ Validate repo URL up front
+    try:
+        RepositoryHandler(source=req.repo_url, branch=req.branch).get_local_path()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid repository URL or path")
+
+    # Proceed if URL is valid
     scan_id = str(uuid.uuid4())
     SCANS[scan_id] = {
         "status": "queued",
