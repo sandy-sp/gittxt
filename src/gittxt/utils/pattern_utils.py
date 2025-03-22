@@ -5,22 +5,21 @@ from gittxt.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-def match_include(file_path: Path, include_patterns: List[str]) -> bool:
+def match_include(file_path: Path, include_patterns: List[str], root: Path = None) -> bool:
     """
     Check if the file matches any of the include patterns (e.g., ".py", ".md").
     """
     if not include_patterns:
         return True  # Default to include all if no patterns
-    rel_path = str(file_path.relative_to(file_path.anchor)).replace("\\", "/")
+    rel_path = str(file_path.relative_to(root or file_path.parent.parent)).replace("\\", "/")
     return any(fnmatch.fnmatch(rel_path, pattern) for pattern in include_patterns)
 
-def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
+def match_exclude(file_path: Path, exclude_patterns: List[str], root: Path = None) -> bool:
     """
     Check if the file should be excluded based on folder or extension.
     """
-    rel_path = str(file_path.relative_to(file_path.anchor)).replace("\\", "/")
+    rel_path = str(file_path.relative_to(root or file_path.parent.parent)).replace("\\", "/")
     return any(fnmatch.fnmatch(rel_path, pattern) for pattern in exclude_patterns)
-
 
 def normalize_patterns(patterns: List[str]) -> List[str]:
     """

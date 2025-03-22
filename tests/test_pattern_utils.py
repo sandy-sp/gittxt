@@ -1,15 +1,16 @@
 from gittxt.utils import pattern_utils
 
 def test_include_and_exclude_matching(tmp_path):
-    file = tmp_path / "src" / "main.py"
+    repo_root = tmp_path
+    file = repo_root / "src" / "main.py"
     file.parent.mkdir(parents=True)
     file.write_text("print('ok')")
 
     include_patterns = ["*.py"]
     exclude_patterns = ["src/*"]
 
-    assert pattern_utils.match_include(file, include_patterns) is True
-    assert pattern_utils.match_exclude(file, exclude_patterns) is True
+    assert pattern_utils.match_include(file, include_patterns, root=repo_root) is True
+    assert pattern_utils.match_exclude(file, exclude_patterns, root=repo_root) is True
 
 
 def test_normalize_patterns():
