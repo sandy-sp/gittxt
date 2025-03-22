@@ -48,8 +48,15 @@ async def get_repo_tree(req: TreeRequest):
 @router.post("/")
 async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
     VALID_TYPES = {"code", "docs", "csv", "image", "media", "all"}
+    VALID_FORMATS = {"txt", "json", "md"}
+
     if not req.file_types or any(ft not in VALID_TYPES for ft in req.file_types):
         raise HTTPException(status_code=400, detail=f"Invalid file_types. Valid: {', '.join(VALID_TYPES)}")
+
+    # New: Validate comma-separated formats
+    requested_formats = [f.strip() for f in req.output_format.split(",")]
+    if any(fmt not in VALID_FORMATS for fmt in requested_formats):
+        raise HTTPException(status_code=400, detail=f"Invalid output_format. Valid: {', '.join(VALID_FORMATS)}")
 
     scan_id = str(uuid.uuid4())
     SCANS[scan_id] = {
