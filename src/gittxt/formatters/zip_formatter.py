@@ -3,12 +3,13 @@ from zipfile import ZipFile
 import asyncio
 
 class ZipFormatter:
-    def __init__(self, repo_name: str, output_dir: Path, output_files: list, non_textual_files: list, repo_path: Path):
+    def __init__(self, repo_name: str, output_dir: Path, output_files: list, non_textual_files: list, repo_path: Path, repo_url: str = None):
         self.repo_name = repo_name
         self.output_dir = output_dir
         self.output_files = output_files  # txt, json, md outputs
         self.non_textual_files = non_textual_files
         self.repo_path = repo_path
+        self.repo_url = repo_url
 
     async def generate(self) -> Path:
         zip_path = self.output_dir / f"{self.repo_name}_bundle.zip"
@@ -38,10 +39,12 @@ class ZipFormatter:
             print(f"❌ Failed to create ZIP at {zip_dest}")
 
     def _get_zip_readme(self) -> str:
+        url_line = f"Repository URL: {self.repo_url}\n" if self.repo_url else ""
         return (
             f"Gittxt Export Bundle for {self.repo_name}\n"
             "===================================\n"
             "\n"
+            f"{url_line}"
             "Includes:\n"
             "- Extracted text files: .txt, .json, .md\n"
             "- Assets placed under /assets/ folder preserving structure\n"
