@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from gittxt_api.core.scanning_service import SCANS
 from gittxt_api.services.artifact_service import available_artifacts
 import asyncio
@@ -9,6 +9,8 @@ router = APIRouter()
 @router.websocket("/ws/{scan_id}")
 async def websocket_progress(websocket: WebSocket, scan_id: str):
     await websocket.accept()
+    
+    # ✅ Check for invalid scan ID immediately
     if scan_id not in SCANS:
         await websocket.send_json({"event": "error", "message": "Scan not found"})
         await websocket.close()
