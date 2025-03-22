@@ -6,6 +6,7 @@ from gittxt.formatters.text_formatter import TextFormatter
 from gittxt.formatters.json_formatter import JSONFormatter
 from gittxt.formatters.markdown_formatter import MarkdownFormatter
 from gittxt.formatters.zip_formatter import ZipFormatter
+from gittxt.utils.filetype_utils import classify_simple
 
 logger = Logger.get_logger(__name__)
 
@@ -38,11 +39,22 @@ class OutputBuilder:
     async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None):
         tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
-        textual_files = [f for f in all_files if self._is_textual(f)]
-        non_textual_files = [f for f in all_files if not self._is_textual(f)]
+        # Avoid running classify_simple() twice
+        file_groups = {
+            "textual": [],
+            "non_textual": []
+        }
+        for f in all_files:
+            primary, _ = classify_simple(f)
+            if primary == "TEXTUAL":
+                file_groups["textual"].append(f)
+            else:
+                file_groups["non_textual"].append(f)
 
         output_files = []
         tasks = []
+
+        # Formatter tasks
         for fmt in self.output_formats:
             FormatterClass = self.FORMATTERS.get(fmt)
             if FormatterClass:
@@ -53,28 +65,36 @@ class OutputBuilder:
                     tree_summary=tree_summary,
                     repo_url=self.repo_url
                 )
-                tasks.append(formatter.generate(textual_files, non_textual_files))
+                tasks.append(formatter.generate(file_groups["textual"], file_groups["non_textual"]))
 
+        # ZIP bundle task (runs concurrently)
+        if create_zip:
+            zip_formatter = ZipFormatter(
+                repo_name=self.repo_name,
+                output_dir=self.directories["zip"],
+                output_files=[],  # Placeholder, populated post-formatters
+                non_textual_files=file_groups["non_textual"],
+                repo_path=repo_path,
+                repo_url=self.repo_url
+            )
+            # Attach to the event loop after formatters
+            async def zip_task():
+                generated_outputs = await asyncio.gather(*tasks)
+                for out in generated_outputs:
+                    logger.info(f"📄 Output ready at: {out}")
+                    output_files.extend(generated_outputs)
+                zip_formatter.output_files = output_files.copy()
+                zip_path = await zip_formatter.generate()
+                logger.info(f"📦 Zipped bundle created: {zip_path}")
+                output_files.append(zip_path)
+                return output_files
+
+            return await zip_task()
+
+        # Normal non-zip workflow
         generated_outputs = await asyncio.gather(*tasks)
         for out in generated_outputs:
             logger.info(f"📄 Output ready at: {out}")
             output_files.append(out)
 
-        if create_zip:
-            zip_formatter = ZipFormatter(
-                repo_name=self.repo_name,
-                output_dir=self.directories["zip"],
-                output_files=output_files,
-                non_textual_files=non_textual_files,
-                repo_path=repo_path
-            )
-            zip_path = await zip_formatter.generate()
-            logger.info(f"📦 Zipped bundle created: {zip_path}")
-            output_files.append(zip_path)
-
         return output_files
-
-    def _is_textual(self, file: Path) -> bool:
-        from gittxt.utils.filetype_utils import classify_simple
-        primary, _ = classify_simple(file)
-        return primary == "TEXTUAL"
