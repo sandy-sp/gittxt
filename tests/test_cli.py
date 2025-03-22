@@ -1,148 +1,68 @@
-import subprocess
+import os
 import shutil
-from pathlib import Path
-import pytest
 
-TEST_REPO = Path("tests/test-repo").resolve()
-OUTPUT_DIR = Path("tests/test-outputs")
+def test_cli_tree(cli_runner, test_repo):
+    result = cli_runner.invoke("cli", ["tree", str(test_repo)])
+    assert result.exit_code == 0
+    assert "src" in result.output
+    assert "docs" in result.output
 
+def test_cli_classify(cli_runner, test_repo):
+    py_file = test_repo / "src" / "example.py"
+    result = cli_runner.invoke("cli", ["classify", str(py_file)])
+    assert result.exit_code == 0
+    assert "code" in result.output
 
-@pytest.fixture(scope="function")
-def clean_output_dir():
-    if OUTPUT_DIR.exists():
-        shutil.rmtree(OUTPUT_DIR)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+def test_cli_clean(cli_runner, tmp_path):
+    out_dir = tmp_path / "gittxt-out"
+    (out_dir / "text").mkdir(parents=True)
+    (out_dir / "text" / "dummy.txt").write_text("data")
+    result = cli_runner.invoke("cli", ["clean", "--output-dir", str(out_dir)])
+    assert result.exit_code == 0
+    assert not (out_dir / "text").exists()
 
-
-def run_gittxt(args):
-    cmd = ["python", "src/gittxt/cli.py"] + args
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    print("\n--- STDOUT ---\n", result.stdout)
-    print("\n--- STDERR ---\n", result.stderr)
-    return result
-
-
-def test_basic_scan_txt(clean_output_dir):
-    run_gittxt(
-        ["scan", str(TEST_REPO), "--output-dir", str(OUTPUT_DIR), "--non-interactive"]
-    )
-    assert (OUTPUT_DIR / "text" / "test-repo.txt").exists()
-
-
-def test_multi_format_scan(clean_output_dir):
-    run_gittxt(
+def test_cli_scan(tmp_path, cli_runner, test_repo):
+    out_dir = tmp_path / "gittxt-output"
+    result = cli_runner.invoke(
+        "cli",
         [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--output-format",
-            "txt,json,md",
+            "scan", str(test_repo),
+            "--output-dir", str(out_dir),
+            "--file-types", "code,docs,csv",
+            "--output-format", "txt,json,md",
             "--non-interactive",
+            "--zip",
+            "--summary"
         ]
     )
-    assert (OUTPUT_DIR / "text" / "test-repo.txt").exists()
-    assert (OUTPUT_DIR / "json" / "test-repo.json").exists()
-    assert (OUTPUT_DIR / "md" / "test-repo.md").exists()
+    assert result.exit_code == 0
+    assert "Summary Report" in result.output
+    assert (out_dir / "text").exists()
+    assert (out_dir / "json").exists()
+    assert (out_dir / "md").exists()
+    assert (out_dir / "zips").exists()
+
+def test_cli_tree_depth(cli_runner, test_repo):
+    # Ensure tree with depth limitation works
+    result = cli_runner.invoke("cli", ["tree", str(test_repo), "--tree-depth", "1"])
+    assert result.exit_code == 0
+    assert "src" in result.output
+    assert "level2" not in result.output  # deeper than level 1
 
 
-def test_summary_flag(clean_output_dir):
-    output = run_gittxt(
+def test_cli_scan_noninteractive_zip(cli_runner, tmp_path, test_repo):
+    out_dir = tmp_path / "cli-out"
+    result = cli_runner.invoke(
+        "cli",
         [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--summary",
+            "scan", str(test_repo),
+            "--output-dir", str(out_dir),
+            "--file-types", "code,docs",
+            "--output-format", "txt,json",
             "--non-interactive",
-        ]
-    ).stdout
-
-    # Normalize output once
-    output_lower = output.lower()
-
-    # Assert CLI summary structure
-    assert "📊 summary report" in output_lower
-    assert "total files processed" in output_lower
-    assert "output formats:" in output_lower
-    assert "file type breakdown" in output_lower
-
-
-def test_file_types_flag(clean_output_dir):
-    run_gittxt(
-        [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--file-types",
-            "code,docs",
-            "--non-interactive",
+            "--zip"
         ]
     )
-    output_txt = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
-
-    # Skip tree by splitting at first file block
-    if "=== FILE: " in output_txt:
-        _, file_part = output_txt.split("=== FILE: ", 1)
-    else:
-        _, file_part = output_txt, ""
-
-    # Scan headers in file blocks only
-    file_blocks = [
-        "=== FILE: " + block for block in file_part.split("=== FILE: ") if block.strip()
-    ]
-    file_headers = [
-        block.split("=== FILE: ")[-1].split(" ===")[0].strip() for block in file_blocks
-    ]
-
-    assert "app.py" in " ".join(file_headers)
-    assert "README.md" in " ".join(file_headers)
-    assert "data.csv" not in " ".join(file_headers)
-
-
-def test_zip_generation(clean_output_dir):
-    run_gittxt(
-        [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--file-types",
-            "all",
-            "--non-interactive",
-        ]
-    )
-    zip_path = OUTPUT_DIR / "zips" / "test-repo_bundle.zip"
-    assert zip_path.exists()
-
-
-def test_exclude_pattern(clean_output_dir):
-    run_gittxt(
-        [
-            "scan",
-            str(TEST_REPO),
-            "--output-dir",
-            str(OUTPUT_DIR),
-            "--exclude",
-            "docs",
-            "--non-interactive",
-        ]
-    )
-    output_txt = (OUTPUT_DIR / "text" / "test-repo.txt").read_text()
-
-    # Skip tree view, focus only on file content sections
-    if "=== FILE: " in output_txt:
-        _, file_part = output_txt.split("=== FILE: ", 1)
-    else:
-        _, file_part = output_txt, ""
-
-    file_blocks = [
-        "=== FILE: " + block for block in file_part.split("=== FILE: ") if block.strip()
-    ]
-    file_headers = [
-        block.split("=== FILE: ")[-1].split(" ===")[0].strip() for block in file_blocks
-    ]
-
-    # Ensure overview.md is not in processed content (docs/ was excluded)
-    assert not any("overview.md" in header for header in file_headers)
+    assert result.exit_code == 0
+    assert (out_dir / "zips").exists()
+    assert any(".zip" in str(p) for p in (out_dir / "zips").glob("*.zip"))

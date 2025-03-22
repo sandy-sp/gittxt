@@ -1,85 +1,73 @@
-import shutil
-import zipfile
-import json
-from pathlib import Path, PurePath
-import pytest
 from gittxt.output_builder import OutputBuilder
+from gittxt.utils.tree_utils import generate_tree
+from gittxt.utils.filetype_utils import classify_file
+import asyncio
 
-TEST_REPO_NAME = "test-repo"
-OUTPUT_DIR = Path("tests/test-outputs")
-MOCK_FILES = [
-    "app.py",  # code
-    "README.md",  # doc
-    "assets/data.csv",  # csv
-    "assets/logo.png",  # image
-]
+def test_output_builder_formats(tmp_path, test_repo):
+    repo_name = "test-repo"
+    repo_path = test_repo
 
+    # Classify manually
+    text_files = []
+    asset_files = []
+    for file in repo_path.rglob("*"):
+        if not file.is_file():
+            continue
+        classification = classify_file(file)
+        if classification in {"code", "docs", "csv"}:
+            text_files.append(file)
+        else:
+            asset_files.append(file)
 
-@pytest.fixture(scope="function")
-def clean_output_dir():
-    for subdir in ["text", "json", "md", "zips"]:
-        out_dir = OUTPUT_DIR / subdir
-        if out_dir.exists():
-            shutil.rmtree(out_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-
-@pytest.fixture
-def mock_file_system(tmp_path):
-    repo_path = tmp_path / TEST_REPO_NAME
-    (repo_path / "assets").mkdir(parents=True)
-    (repo_path / "app.py").write_text("print('Hello, World!')", encoding="utf-8")
-    (repo_path / "README.md").write_text("# Mock README", encoding="utf-8")
-    (repo_path / "assets/data.csv").write_text("id,value\n1,100", encoding="utf-8")
-    (repo_path / "assets/logo.png").write_bytes(b"\x89PNG\r\n\x1a\n")
-    return repo_path
-
-
-def test_generate_txt_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt")
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    txt_path = OUTPUT_DIR / "text" / f"{TEST_REPO_NAME}.txt"
-    assert txt_path.exists()
-    content = txt_path.read_text()
-    assert "📊 Summary Report:" in content
-
-
-def test_generate_json_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="json")
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    json_path = OUTPUT_DIR / "json" / f"{TEST_REPO_NAME}.json"
-    assert json_path.exists()
-    with json_path.open() as f:
-        data = json.load(f)
-        assert any("app.py" in file["file"] for file in data["files"])
-        assert "summary" in data
-
-
-def test_generate_markdown_output(clean_output_dir, mock_file_system):
-    builder = OutputBuilder(TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="md")
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
-    md_path = OUTPUT_DIR / "md" / f"{TEST_REPO_NAME}.md"
-    assert md_path.exists()
-    content = md_path.read_text()
-    assert "## 📊 Summary Report" in content
-
-
-def test_zip_contains_output_and_assets(clean_output_dir, mock_file_system):
     builder = OutputBuilder(
-        TEST_REPO_NAME, output_dir=OUTPUT_DIR, output_format="txt,json"
+        repo_name=repo_name,
+        output_dir=tmp_path,
+        output_format="txt,json,md"
     )
-    builder.generate_output(list(mock_file_system.rglob("*")), mock_file_system)
 
-    zip_path = OUTPUT_DIR / "zips" / f"{TEST_REPO_NAME}_bundle.zip"
-    assert zip_path.exists()
+    loop = asyncio.get_event_loop()
+    result_files = loop.run_until_complete(
+        builder.generate_output(text_files, asset_files, repo_path, create_zip=True, tree_depth=2)
+    )
 
-    # Inside test_zip_contains_output_and_assets()
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zip_contents = zf.namelist()
+    # Validate outputs
+    assert any(".txt" in str(f) for f in result_files)
+    assert any(".json" in str(f) for f in result_files)
+    assert any(".md" in str(f) for f in result_files)
+    assert any(".zip" in str(f) for f in result_files)
 
-        # Normalize using pathlib's PurePath for zip internal paths
-        basenames = [PurePath(name).name for name in zip_contents]
+    for fmt in ["text", "json", "md", "zips"]:
+        assert (tmp_path / fmt).exists()
 
-        assert "test-repo.txt" in basenames
-        assert "test-repo.json" in basenames
-        assert any(bn in ["data.csv", "logo.png"] for bn in basenames)
+def test_output_builder_zip_contents(tmp_path, test_repo):
+    repo_name = "test-repo"
+    repo_path = test_repo
+
+    text_files = []
+    asset_files = []
+    for file in repo_path.rglob("*"):
+        if not file.is_file():
+            continue
+        classification = classify_file(file)
+        if classification in {"code", "docs"}:
+            text_files.append(file)
+        else:
+            asset_files.append(file)
+
+    builder = OutputBuilder(
+        repo_name=repo_name,
+        output_dir=tmp_path,
+        output_format="txt,json,md"
+    )
+
+    loop = asyncio.get_event_loop()
+    result_files = loop.run_until_complete(
+        builder.generate_output(text_files, asset_files, repo_path, create_zip=True, tree_depth=1)
+    )
+
+    # Validate relative paths inside ZIP
+    zip_file = [f for f in result_files if str(f).endswith(".zip")][0]
+    import zipfile
+    with zipfile.ZipFile(zip_file, "r") as zipf:
+        namelist = zipf.namelist()
+        assert any("src/example.py" in name or "docs/README.md" in name for name in namelist)

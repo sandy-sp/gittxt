@@ -1,94 +1,72 @@
-import pytest
-from pathlib import Path
 from gittxt.scanner import Scanner
+from pathlib import Path
 
-
-@pytest.fixture
-def mock_repo(tmp_path):
-    repo_path = tmp_path / "test-repo"
-    repo_path.mkdir()
-    (repo_path / "app.py").write_text("print('Test')")
-    (repo_path / "README.md").write_text("# Sample Doc")
-    (repo_path / "assets").mkdir()
-    (repo_path / "assets/data.csv").write_text("id,value\n1,100")
-    (repo_path / "assets/logo.png").write_bytes(b"\x89PNG\r\n")
-    (repo_path / "big.txt").write_text("A" * 1_000_000)  # Large file
-    return repo_path
-
-
-def test_includes_code_only(mock_repo):
+def test_scanner_basic_scan(test_repo):
     scanner = Scanner(
-        root_path=mock_repo,
-        include_patterns=[".py"],
-        exclude_patterns=[],
-        size_limit=None,
-        file_types=["code"],
-    )
-    files, _ = scanner.scan_directory()
-    assert any("app.py" in str(f) for f in files)
-    assert all(str(f).endswith(".py") for f in files)
-
-
-def test_excludes_assets_folder(mock_repo):
-    scanner = Scanner(
-        root_path=mock_repo,
+        root_path=test_repo,
         include_patterns=[],
-        exclude_patterns=["assets"],
+        exclude_patterns=[],
         size_limit=None,
         file_types=["all"],
+        progress=False
     )
-    files, _ = scanner.scan_directory()
-    assert not any("data.csv" in f or "logo.png" in f for f in files)
+    files, tree = scanner.scan_directory()
+    assert len(files) >= 4  # src/example.py, docs/README.md, data/sample.csv, image.png
+    assert "src" in tree
 
 
-def test_filetype_docs_only(mock_repo):
+def test_scanner_exclude(test_repo):
     scanner = Scanner(
-        root_path=mock_repo,
+        root_path=test_repo,
         include_patterns=[],
-        exclude_patterns=[],
+        exclude_patterns=["*.png"],
         size_limit=None,
-        file_types=["docs"],
-    )
-    files, _ = scanner.scan_directory()
-
-    assert any("README" in Path(f).name for f in files)
-
-    # Accept common doc extensions
-    allowed = [".md", ".rst", ".txt"]
-    assert all(Path(f).suffix in allowed or "README" in Path(f).name for f in files)
-
-
-def test_filetype_csv(mock_repo):
-    scanner = Scanner(
-        root_path=mock_repo,
-        include_patterns=[],
-        exclude_patterns=[],
-        size_limit=None,
-        file_types=["csv"],
-    )
-    files, _ = scanner.scan_directory()
-    assert any("data.csv" in str(f) for f in files)
-
-
-def test_image_files_filtered(mock_repo):
-    scanner = Scanner(
-        root_path=mock_repo,
-        include_patterns=[],
-        exclude_patterns=[],
-        size_limit=None,
-        file_types=["image"],
-    )
-    files, _ = scanner.scan_directory()
-    assert any("logo.png" in str(f) for f in files)
-
-
-def test_size_limit(mock_repo):
-    scanner = Scanner(
-        root_path=mock_repo,
-        include_patterns=[],
-        exclude_patterns=[],
-        size_limit=1000,  # 1 KB
         file_types=["all"],
+        progress=False
     )
     files, _ = scanner.scan_directory()
-    assert not any("big.txt" in str(f) for f in files)
+    pngs = [f for f in files if f.suffix == ".png"]
+    assert len(pngs) == 0
+
+
+def test_scanner_include_pattern(test_repo):
+    scanner = Scanner(
+        root_path=test_repo,
+        include_patterns=["*.md"],
+        exclude_patterns=[],
+        size_limit=None,
+        file_types=["all"],
+        progress=False
+    )
+    files, _ = scanner.scan_directory()
+    assert all(".md" in str(f) for f in files)
+    assert len(files) == 1
+
+def test_scanner_with_verbose(test_repo):
+    scanner = Scanner(
+        root_path=test_repo,
+        include_patterns=[],
+        exclude_patterns=[],
+        size_limit=None,
+        file_types=["all"],
+        progress=False,
+        verbose=True
+    )
+    files, tree = scanner.scan_directory()
+    assert len(files) > 0
+    assert "src" in tree
+
+
+def test_scanner_async_batch_behavior(test_repo):
+    # Force a small batch size to trigger multiple async batches
+    scanner = Scanner(
+        root_path=test_repo,
+        include_patterns=[],
+        exclude_patterns=[],
+        size_limit=None,
+        file_types=["all"],
+        progress=False,
+        batch_size=2
+    )
+    files, _ = scanner.scan_directory()
+    assert len(files) >= 4

@@ -5,42 +5,62 @@ from gittxt.config import ConfigManager
 
 def run_interactive_install():
     """
-    Interactive install wizard to set up gittxt-config.json.
+    Enhanced interactive install wizard for gittxt-config.json setup.
     """
-    config = ConfigManager.load_config()
+    click.echo("\n🎉 Welcome to the Gittxt Interactive Installer 🛠️\n")
 
-    click.echo("Welcome to Gittxt Interactive Setup 🛠️")
-    click.echo("Let's configure your settings...\n")
+    config = ConfigManager.load_config()
 
     # Output directory setup
     current_out_dir = config.get("output_dir", "")
     click.echo(f"Current output directory: {current_out_dir}")
-    if click.confirm("Would you like to change it?", default=False):
+    if click.confirm("Would you like to change the output directory?", default=False):
         new_dir = click.prompt(
-            "Enter the new output directory", default=current_out_dir
+            "Enter the absolute or relative output directory",
+            default=current_out_dir
         )
         config["output_dir"] = str(Path(new_dir).expanduser().resolve())
         click.echo(f"✅ Updated output_dir to: {config['output_dir']}")
 
     # Logging level setup
+    logging_choices = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     current_log_level = config.get("logging_level", "INFO")
     click.echo(f"\nCurrent logging level: {current_log_level}")
     new_level = click.prompt(
-        "Enter new logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL)",
-        default=current_log_level,
+        "Select logging level",
+        type=click.Choice(logging_choices, case_sensitive=False),
+        default=current_log_level.upper()
     )
     config["logging_level"] = new_level.upper()
     click.echo(f"✅ Updated logging_level to: {config['logging_level']}")
 
-    # File logging toggle
-    enable_file_logging = config.get("enable_file_logging", True)
-    click.echo(f"\nFile logging currently enabled: {enable_file_logging}")
-    if click.confirm("Enable file logging?", default=enable_file_logging):
-        config["enable_file_logging"] = True
-    else:
-        config["enable_file_logging"] = False
-    click.echo(f"✅ Updated enable_file_logging to: {config['enable_file_logging']}")
+    # Output formats setup
+    output_fmt = config.get("output_format", "txt")
+    click.echo(f"\nCurrent output format(s): {output_fmt}")
+    new_fmt = click.prompt(
+        "Enter output formats (comma-separated: txt, json, md)",
+        default=output_fmt
+    )
+    config["output_format"] = new_fmt
+    click.echo(f"✅ Updated output_format to: {config['output_format']}")
 
-    # Save the updates
+    # Default file types setup
+    file_types = config.get("file_types", "code,docs")
+    click.echo(f"\nCurrent file types: {file_types}")
+    new_types = click.prompt(
+        "Enter file types to include (comma-separated: code, docs, csv, image)",
+        default=file_types
+    )
+    config["file_types"] = new_types
+    click.echo(f"✅ Updated file_types to: {config['file_types']}")
+
+    # Optional ZIP bundle default
+    if click.confirm("Would you like ZIP bundles to be created by default?", default=False):
+        config["auto_zip"] = True
+    else:
+        config["auto_zip"] = False
+    click.echo(f"✅ ZIP bundling set to: {config['auto_zip']}")
+
+    # Save config
     ConfigManager.save_config_updates(config)
-    click.echo("\n🎉 Setup complete! Your configuration has been updated.\n")
+    click.echo("\n🎉 Setup complete! Your configuration has been saved.\n")

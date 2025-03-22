@@ -12,7 +12,6 @@ except ImportError:
 
 logger = Logger.get_logger(__name__)
 
-
 class Scanner:
     """
     Scans directories, filters files by type, and returns valid files.
@@ -65,8 +64,9 @@ class Scanner:
             tqdm(files, desc="Scanning files") if self.progress and tqdm else files
         )
 
-        for file in iter_files:
+        for file in files:
             if not file.is_file():
+                self._progress_update(bar)
                 continue
             if not self._passes_filters(file):
                 continue

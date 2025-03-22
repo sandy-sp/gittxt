@@ -16,7 +16,6 @@ dist/
 
 # Poetry / Pip artifacts
 .poetry/
-.poetry.lock
 
 # Caches
 .mypy_cache/
@@ -35,3 +34,11 @@ src/gittxt-logs/
 
 # PyInstaller
 *.spec
+
+# Gittxt configuration
+gittxt-config.json
+filetype_config.json
+subcategory_config.json
+
+# Frontend UI node modules
+node_modules

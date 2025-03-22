@@ -1,141 +1,80 @@
 from pathlib import Path
-import json
+import asyncio
 from gittxt.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
-from gittxt.utils.cleanup_utils import zip_files
-from gittxt.utils.filetype_utils import classify_file
-from gittxt.utils.summary_utils import generate_summary
+from gittxt.formatters.text_formatter import TextFormatter
+from gittxt.formatters.json_formatter import JSONFormatter
+from gittxt.formatters.markdown_formatter import MarkdownFormatter
+from gittxt.formatters.zip_formatter import ZipFormatter
 
 logger = Logger.get_logger(__name__)
 
-
 class OutputBuilder:
-    """Handles output generation for scanned repositories."""
+    """Handles output generation for scanned repositories via formatter strategies."""
 
     BASE_OUTPUT_DIR = (Path(__file__).parent / "../gittxt-outputs").resolve()
 
-    def __init__(self, repo_name, output_dir=None, output_format="txt"):
+    FORMATTERS = {
+        "txt": TextFormatter,
+        "json": JSONFormatter,
+        "md": MarkdownFormatter,
+    }
+
+    def __init__(self, repo_name, output_dir=None, output_format="txt", repo_url=None):
         self.repo_name = repo_name
-        self.output_dir = (
-            Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
-        )
-        self.text_dir = self.output_dir / "text"
-        self.json_dir = self.output_dir / "json"
-        self.md_dir = self.output_dir / "md"
-        self.zip_dir = self.output_dir / "zips"
+        self.repo_url = repo_url
+        self.output_dir = Path(output_dir).resolve() if output_dir else self.BASE_OUTPUT_DIR
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
-        for folder in [self.text_dir, self.json_dir, self.md_dir, self.zip_dir]:
+
+        self.directories = {
+            "txt": self.output_dir / "text",
+            "json": self.output_dir / "json",
+            "md": self.output_dir / "md",
+            "zip": self.output_dir / "zips",
+        }
+        for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
 
-    def read_file_content(self, file_path: Path):
-        try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                return f.read()
-        except Exception:
-            return None
+    async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None):
+        tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
-    def generate_output(self, files, repo_path):
-        tree_summary = generate_tree(Path(repo_path))
+        textual_files = [f for f in all_files if self._is_textual(f)]
+        non_textual_files = [f for f in all_files if not self._is_textual(f)]
 
-        text_files = []
-        asset_files = []
         output_files = []
-
-        for file in files:
-            file_type = classify_file(file)
-            if file_type in {"code", "docs", "csv", "text"}:
-                text_files.append(file)
-            elif file_type in {"image", "media"}:
-                asset_files.append(file)
-
+        tasks = []
         for fmt in self.output_formats:
-            if fmt == "json":
-                out = self._generate_json(text_files, tree_summary, repo_path)
-            elif fmt == "md":
-                out = self._generate_markdown(text_files, tree_summary, repo_path)
-            else:
-                out = self._generate_text(text_files, tree_summary, repo_path)
-            logger.info(f"📄 {fmt.upper()} output ready at: {out}")
+            FormatterClass = self.FORMATTERS.get(fmt)
+            if FormatterClass:
+                formatter = FormatterClass(
+                    repo_name=self.repo_name,
+                    output_dir=self.directories[fmt],
+                    repo_path=repo_path,
+                    tree_summary=tree_summary,
+                    repo_url=self.repo_url
+                )
+                tasks.append(formatter.generate(textual_files, non_textual_files))
+
+        generated_outputs = await asyncio.gather(*tasks)
+        for out in generated_outputs:
+            logger.info(f"📄 Output ready at: {out}")
             output_files.append(out)
 
-        # Collect all output files + assets into ZIP
-        if output_files or asset_files:
-            zip_path = self.zip_dir / f"{self.repo_name}_bundle.zip"
-            files_to_zip = output_files + asset_files
-            zip_files(files_to_zip, zip_path)
+        if create_zip:
+            zip_formatter = ZipFormatter(
+                repo_name=self.repo_name,
+                output_dir=self.directories["zip"],
+                output_files=output_files,
+                non_textual_files=non_textual_files,
+                repo_path=repo_path
+            )
+            zip_path = await zip_formatter.generate()
             logger.info(f"📦 Zipped bundle created: {zip_path}")
+            output_files.append(zip_path)
 
-        return text_files
+        return output_files
 
-    def _generate_text(self, files, tree_summary, repo_path):
-        output_file = self.text_dir / f"{self.repo_name}.txt"
-        with output_file.open("w", encoding="utf-8") as out:
-            # Repo tree
-            out.write(f"📂 Repository Structure Overview:\n{tree_summary}\n\n")
-
-            # Summary FIRST
-            summary = generate_summary(files)
-            summary_str = "\n".join([f"{k}: {v}" for k, v in summary.items()])
-            out.write("\n📊 Summary Report:\n")
-            out.write(summary_str)
-            out.write("\n\n")
-
-            # Files section LAST
-            for file in files:
-                rel = Path(file).relative_to(repo_path)
-                content = self.read_file_content(file)
-                if content:
-                    out.write(f"=== FILE: {rel} ===\n{content.strip()}\n\n{'='*50}\n\n")
-        return output_file
-
-    def _generate_json(self, files, tree_summary, repo_path):
-        output_file = self.json_dir / f"{self.repo_name}.json"
-        data = {
-            "repository_structure": tree_summary,
-            "summary": generate_summary(files),
-            "files": [],
-        }
-        for file in files:
-            rel = Path(file).relative_to(repo_path)
-            content = self.read_file_content(file)
-            if content:
-                data["files"].append({"file": str(rel), "content": content.strip()})
-        with output_file.open("w", encoding="utf-8") as json_file:
-            json.dump(data, json_file, indent=4)
-        return output_file
-
-    def _generate_markdown(self, files, tree_summary, repo_path):
-        output_file = self.md_dir / f"{self.repo_name}.md"
-        with output_file.open("w", encoding="utf-8") as out:
-            out.write(f"# 📂 Repository Overview: `{self.repo_name}`\n\n")
-            out.write(f"## 📜 Folder Structure\n```\n{tree_summary}\n```\n")
-
-            # Summary second
-            summary = generate_summary(files)
-            summary_md = "\n".join([f"- **{k}**: {v}" for k, v in summary.items()])
-            out.write(f"\n## 📊 Summary Report\n\n{summary_md}\n")
-
-            # Files section last
-            out.write("\n## 📄 Extracted Files\n")
-            for file in files:
-                rel = Path(file).relative_to(repo_path)
-                content = self.read_file_content(file)
-                if content:
-                    lang = self._detect_code_language(rel.suffix)
-                    out.write(f"\n### `{rel}`\n```{lang}\n{content.strip()}\n```\n")
-        return output_file
-
-    def _detect_code_language(self, suffix: str) -> str:
-        # Basic language hint for markdown fenced blocks
-        mapping = {
-            ".py": "python",
-            ".js": "javascript",
-            ".ts": "typescript",
-            ".sh": "bash",
-            ".json": "json",
-            ".md": "markdown",
-            ".yml": "yaml",
-            ".yaml": "yaml",
-            ".txt": "plaintext",
-        }
-        return mapping.get(suffix.lower(), "plaintext")
+    def _is_textual(self, file: Path) -> bool:
+        from gittxt.utils.filetype_utils import classify_simple
+        primary, _ = classify_simple(file)
+        return primary == "TEXTUAL"

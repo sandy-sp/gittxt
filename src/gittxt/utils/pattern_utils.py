@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List
-
+import fnmatch
 
 def match_include(file_path: Path, include_patterns: List[str]) -> bool:
     """
@@ -12,7 +12,7 @@ def match_include(file_path: Path, include_patterns: List[str]) -> bool:
     """
     if not include_patterns:
         return True  # Default to include all if no patterns
-    return any(str(file_path).endswith(pattern) for pattern in include_patterns)
+    return any(fnmatch.fnmatch(str(file_path), pattern) for pattern in include_patterns)
 
 
 def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
@@ -23,8 +23,7 @@ def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
     :param exclude_patterns: List of patterns like ["node_modules", ".git"].
     :return: True if file matches any exclusion pattern.
     """
-    path_str = str(file_path)
-    return any(pattern in path_str for pattern in exclude_patterns)
+    return any(fnmatch.fnmatch(str(file_path), pattern) for pattern in exclude_patterns)
 
 
 def normalize_patterns(patterns: List[str]) -> List[str]:
