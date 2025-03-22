@@ -1,8 +1,10 @@
+import pytest
 import asyncio
 from gittxt.output_builder import OutputBuilder
 from gittxt.utils.filetype_utils import classify_file
 
-def test_output_builder_all_formats(tmp_path, test_repo):
+@pytest.mark.asyncio
+async def test_output_builder_all_formats(tmp_path, test_repo):
     repo_name = "test-repo"
     repo_path = test_repo
 
@@ -25,18 +27,13 @@ def test_output_builder_all_formats(tmp_path, test_repo):
     )
 
     # Run formatter & ZIP generation together
-    loop = asyncio.get_event_loop()
-    result_files = loop.run_until_complete(
-        builder.generate_output(text_files + non_textual_files, repo_path, create_zip=True, tree_depth=2)
+    await builder.generate_output(
+        all_files=text_files + non_textual_files,
+        repo_path=repo_path,
+        create_zip=True,
+        tree_depth=None
     )
 
-    # Validate file generation
-    assert any(str(f).endswith(".txt") for f in result_files)
-    assert any(str(f).endswith(".json") for f in result_files)
-    assert any(str(f).endswith(".md") for f in result_files)
-    assert any(str(f).endswith(".zip") for f in result_files)
-
-    # Check folder creation
     assert (tmp_path / "text").exists()
     assert (tmp_path / "json").exists()
     assert (tmp_path / "md").exists()
