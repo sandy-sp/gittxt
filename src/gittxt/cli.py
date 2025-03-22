@@ -75,7 +75,7 @@ def clean(output_dir):
 @click.option("--size-limit", type=int, help="Maximum file size in bytes")
 @click.option("--branch", type=str, help="Specify Git branch to scan")
 @click.option("--output-dir", type=click.Path(), default=None)
-@click.option("--output-format", default="txt", help="txt, json, md, or comma-separated list")
+@click.option("--output-format", default="txt,json", help="txt, json, md, or comma-separated list")  # synced with docs
 @click.option("--summary", is_flag=True, help="Show summary report after scan")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.option("--progress", is_flag=True, help="Show scan progress bar")
@@ -111,10 +111,10 @@ def scan(
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     include_patterns = list(include) if include else []
     exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
-    file_types = [ft.strip() for ft in file_types.split(",")]
+    file_types_list = [ft.strip() for ft in file_types.split(",")]
 
     VALID_FILETYPES = {"code", "docs", "csv", "image", "media", "all"}
-    for ft in file_types:
+    for ft in file_types_list:
         if ft not in VALID_FILETYPES:
             logger.error(f"❌ Invalid file type: {ft}. Valid options: {', '.join(VALID_FILETYPES)}")
             sys.exit(1)
@@ -124,7 +124,7 @@ def scan(
     for repo_source in repos:
         _process_repo(
             repo_source, branch, include_patterns, exclude_patterns, size_limit,
-            final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip, file_types
+            final_output_dir, output_format, summary, debug, progress, non_interactive, tree_depth, create_zip, file_types_list
         )
 
 def _process_repo(
@@ -140,7 +140,6 @@ def _process_repo(
 
     scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
 
-    # If remote, construct GitHub URL prefix
     repo_url = None
     if is_remote and "github.com" in repo_source:
         repo_url = repo_source.split(".git")[0] if ".git" in repo_source else repo_source
@@ -154,7 +153,7 @@ def _process_repo(
         progress=progress,
     )
 
-    all_files, tree_output = scanner.scan_directory()
+    all_files, _ = scanner.scan_directory()
 
     if not all_files:
         logger.warning("⚠️ No valid files found. Skipping...")
