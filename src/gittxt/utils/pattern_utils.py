@@ -11,14 +11,15 @@ def match_include(file_path: Path, include_patterns: List[str]) -> bool:
     """
     if not include_patterns:
         return True  # Default to include all if no patterns
-    return any(fnmatch.fnmatch(str(file_path), pattern) for pattern in include_patterns)
-
+    rel_path = str(file_path.relative_to(file_path.anchor)).replace("\\", "/")
+    return any(fnmatch.fnmatch(rel_path, pattern) for pattern in include_patterns)
 
 def match_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
     """
     Check if the file should be excluded based on folder or extension.
     """
-    return any(fnmatch.fnmatch(str(file_path), pattern) for pattern in exclude_patterns)
+    rel_path = str(file_path.relative_to(file_path.anchor)).replace("\\", "/")
+    return any(fnmatch.fnmatch(rel_path, pattern) for pattern in exclude_patterns)
 
 
 def normalize_patterns(patterns: List[str]) -> List[str]:
