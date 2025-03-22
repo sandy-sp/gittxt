@@ -1,9 +1,6 @@
-import os
-import shutil
 import click
 from click.testing import CliRunner
 from gittxt.cli import cli
-import pytest
 
 def test_scan_command(tmp_path, test_repo):
     runner = CliRunner()
@@ -62,20 +59,15 @@ def test_blacklist_command():
     assert result.exit_code == 0
     assert "Added" in result.output
 
+
 def test_interactive_whitelist_prompt(monkeypatch, cli_runner: CliRunner, tmp_path):
-    # Inject a dummy unknown extension file
     custom_file = tmp_path / "unknown.customext"
     custom_file.write_text("dummy content")
 
-    # Patch click.confirm to simulate user adding to whitelist interactively
     monkeypatch.setattr(click, "confirm", lambda *args, **kwargs: True)
 
-    result = cli_runner.invoke(
-        "cli",
-        [
-            "scan", str(tmp_path),
-            "--file-types", "all",
-            "--non-interactive", "False"
-        ]
-    )
+    result = cli_runner.invoke(cli, [
+        "scan", str(tmp_path),
+        "--file-types", "all"
+    ])
     assert result.exit_code == 0
