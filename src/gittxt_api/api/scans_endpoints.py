@@ -3,9 +3,11 @@ from gittxt_api.schemas.scan_schemas import ScanRequest, TreeRequest
 from gittxt_api.core.scanning_service import (
     SCANS,
     run_scan_task,
-    update_scan_progress,
+    update_scan_progress
+)
+from gittxt_api.services.tree_service import (
     build_directory_tree,
-    gather_file_extensions,  
+    gather_file_extensions,
     remove_ephemeral_outputs
 )
 from gittxt.repository import RepositoryHandler

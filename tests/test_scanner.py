@@ -41,3 +41,32 @@ def test_scanner_include_pattern(test_repo):
     files, _ = scanner.scan_directory()
     assert all(".md" in str(f) for f in files)
     assert len(files) == 1
+
+def test_scanner_with_verbose(test_repo):
+    scanner = Scanner(
+        root_path=test_repo,
+        include_patterns=[],
+        exclude_patterns=[],
+        size_limit=None,
+        file_types=["all"],
+        progress=False,
+        verbose=True
+    )
+    files, tree = scanner.scan_directory()
+    assert len(files) > 0
+    assert "src" in tree
+
+
+def test_scanner_async_batch_behavior(test_repo):
+    # Force a small batch size to trigger multiple async batches
+    scanner = Scanner(
+        root_path=test_repo,
+        include_patterns=[],
+        exclude_patterns=[],
+        size_limit=None,
+        file_types=["all"],
+        progress=False,
+        batch_size=2
+    )
+    files, _ = scanner.scan_directory()
+    assert len(files) >= 4

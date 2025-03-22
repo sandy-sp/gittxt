@@ -2,7 +2,6 @@ import pytest
 from fastapi.testclient import TestClient
 from click.testing import CliRunner
 from gittxt.cli import cli
-from app import app
 from pathlib import Path
 from gittxt_api.app import app
 

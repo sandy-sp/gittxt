@@ -38,3 +38,21 @@ def test_hash_utils():
     assert len(sha256_hash) == 64
 
     tf_path.unlink()
+
+from gittxt.utils.filetype_utils import pipeline_classify, update_whitelist, update_blacklist
+
+def test_pipeline_classify_with_overrides(tmp_path):
+    # Simulate a .foo file
+    dummy_file = tmp_path / "sample.foo"
+    dummy_file.write_text("dummy")
+
+    # Initially fallback to asset
+    assert pipeline_classify(dummy_file) == "asset"
+
+    # Whitelist it
+    update_whitelist(".foo")
+    assert pipeline_classify(dummy_file) == "docs"
+
+    # Blacklist it again
+    update_blacklist(".foo")
+    assert pipeline_classify(dummy_file) == "asset"

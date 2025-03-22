@@ -64,12 +64,6 @@ def classify_simple(file: Path) -> tuple[str, str]:
         return "NON-TEXTUAL", "binary"  # fallback
 
 
-# legacy aliases
-def classify_file(file: Path) -> str:
-    primary, sub = classify_simple(file)
-    return sub
-
-
 # --- Utilities for Dynamic Updates ---
 def add_to_subcategory(category: str, subcategory: str, ext_or_name: str):
     global SUBCATEGORY_MAP

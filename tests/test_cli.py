@@ -41,3 +41,28 @@ def test_cli_scan(tmp_path, cli_runner, test_repo):
     assert (out_dir / "json").exists()
     assert (out_dir / "md").exists()
     assert (out_dir / "zips").exists()
+
+def test_cli_tree_depth(cli_runner, test_repo):
+    # Ensure tree with depth limitation works
+    result = cli_runner.invoke("cli", ["tree", str(test_repo), "--tree-depth", "1"])
+    assert result.exit_code == 0
+    assert "src" in result.output
+    assert "level2" not in result.output  # deeper than level 1
+
+
+def test_cli_scan_noninteractive_zip(cli_runner, tmp_path, test_repo):
+    out_dir = tmp_path / "cli-out"
+    result = cli_runner.invoke(
+        "cli",
+        [
+            "scan", str(test_repo),
+            "--output-dir", str(out_dir),
+            "--file-types", "code,docs",
+            "--output-format", "txt,json",
+            "--non-interactive",
+            "--zip"
+        ]
+    )
+    assert result.exit_code == 0
+    assert (out_dir / "zips").exists()
+    assert any(".zip" in str(p) for p in (out_dir / "zips").glob("*.zip"))
