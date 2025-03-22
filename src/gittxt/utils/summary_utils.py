@@ -10,33 +10,23 @@ def estimate_tokens_from_file(file: Path, encoding_name: str = "cl100k_base") ->
         encoding = tiktoken.get_encoding(encoding_name)
         tokens = encoding.encode(content)
         return len(tokens)
-    except Exception as e:
-        print(f"Error processing {file}: {e}")
-        return 0
+    except Exception:
+        # Fallback: rough estimate based on whitespace split heuristic
+        try:
+            with file.open("r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+            return int(len(content.split()) * 0.75)
+        except Exception:
+            return 0
 
 
 def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
     summary = {
         "total_files": len(file_paths),
         "total_size": 0,
-        "TEXTUAL": {
-            "code": 0,
-            "docs": 0,
-            "configs": 0,
-            "data": 0,
-            "estimated_tokens": 0,
-            "tokens_by_type": {
-                "code": 0,
-                "docs": 0,
-                "configs": 0,
-                "data": 0
-            }
-        },
-        "NON-TEXTUAL": {
-            "image": 0,
-            "media": 0,
-            "binary": 0
-        }
+        "file_type_breakdown": {},
+        "estimated_tokens": 0,
+        "tokens_by_type": {},
     }
 
     for file in file_paths:
@@ -46,15 +36,16 @@ def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Di
             primary, sub = classify_simple(file)
             summary["total_size"] += file.stat().st_size
 
-            if primary == "TEXTUAL":
-                summary["TEXTUAL"][sub] += 1
-                if estimate_tokens:
-                    tokens = estimate_tokens_from_file(file)
-                    summary["TEXTUAL"]["estimated_tokens"] += tokens
-                    summary["TEXTUAL"]["tokens_by_type"][sub] += tokens
+            # Track file type counts
+            if sub not in summary["file_type_breakdown"]:
+                summary["file_type_breakdown"][sub] = 0
+            summary["file_type_breakdown"][sub] += 1
 
-            elif primary == "NON-TEXTUAL":
-                summary["NON-TEXTUAL"][sub] += 1
+            if primary == "TEXTUAL" and estimate_tokens:
+                tokens = estimate_tokens_from_file(file)
+                summary["estimated_tokens"] += tokens
+                summary["tokens_by_type"].setdefault(sub, 0)
+                summary["tokens_by_type"][sub] += tokens
 
         except Exception as e:
             print(f"Error processing {file}: {e}")
