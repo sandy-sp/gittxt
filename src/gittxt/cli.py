@@ -9,7 +9,7 @@ from gittxt.repository import RepositoryHandler
 from gittxt.scanner import Scanner
 from gittxt.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder, cleanup_old_outputs
-from gittxt.utils.filetype_utils import classify_file, update_whitelist, update_blacklist
+from gittxt.utils.filetype_utils import classify_file, FiletypeConfigManager
 from gittxt.utils.tree_utils import generate_tree
 from gittxt.utils.summary_utils import generate_summary
 
@@ -48,6 +48,18 @@ def classify(file):
     fpath = Path(file)
     result = classify_file(fpath)
     click.echo(f"📄 `{fpath}` classified as: {result}")
+
+@cli.command()
+@click.argument("ext", type=str)
+def whitelist(ext):
+    FiletypeConfigManager.add_to_whitelist(ext)
+    click.echo(f"✅ Added `{ext}` to whitelist.")
+
+@cli.command()
+@click.argument("ext", type=str)
+def blacklist(ext):
+    FiletypeConfigManager.add_to_blacklist(ext)
+    click.echo(f"✅ Added `{ext}` to blacklist.")
 
 @cli.command()
 @click.option("--output-dir", type=click.Path(), default=None)
