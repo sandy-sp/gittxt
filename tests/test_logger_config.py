@@ -1,26 +1,20 @@
 from gittxt.logger import Logger
 
 def test_plain_logger_output(monkeypatch, capsys):
-    # Force plain logging to stdout during this test
     monkeypatch.setenv("GITTXT_LOG_FORMAT", "plain")
-    Logger.setup_logger(force_stdout=True)
-
+    Logger.setup_logger()
     log = Logger.get_logger("plain-test")
     log.info("plain message")
-
     captured = capsys.readouterr()
-    assert "plain message" in captured.out
-
+    assert "plain message" in captured.err
 
 def test_json_logger_output(monkeypatch, capsys):
-    # Force json mode
     monkeypatch.setenv("GITTXT_LOG_FORMAT", "json")
     Logger.setup_logger()
     log = Logger.get_logger("json-test")
     log.warning("json output test")
     captured = capsys.readouterr()
-    assert '{"level": "WARNING"' in captured.out
-
+    assert '{"level": "WARNING"' in captured.err
 
 def test_rotating_file_handler_creates_log(tmp_path, monkeypatch):
     monkeypatch.setenv("GITTXT_LOG_FORMAT", "plain")
