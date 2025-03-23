@@ -1,6 +1,7 @@
 from pathlib import Path
 from zipfile import ZipFile 
 from gittxt.logger import logger
+from gittxt.utils.github_url_utils import build_github_repo_url
 import asyncio
 
 class ZipFormatter:
@@ -35,7 +36,8 @@ class ZipFormatter:
             logger.error(f"❌ Failed to create ZIP at {zip_dest}")
 
     def _get_zip_readme(self) -> str:
-        url_line = f"Repository URL: {self.repo_url}\n" if self.repo_url else ""
+        repo_link = build_github_repo_url(self.repo_url)
+        url_line = f"Repository URL: {repo_link}\n" if repo_link else ""
         return (
             f"Gittxt Export Bundle for {self.repo_name}\n"
             "===================================\n"
