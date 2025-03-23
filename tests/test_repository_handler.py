@@ -11,19 +11,15 @@ def test_local_repo_resolution(tmp_path):
     assert is_remote is False
     assert subdir == ""
 
-
 def test_invalid_local_path(tmp_path):
     invalid_path = tmp_path / "nonexistent"
-    repo_handler = RepositoryHandler(source=str(invalid_path))
-    path, subdir, is_remote, repo_name = repo_handler.get_local_path()
-
-    assert path is None
-    assert is_remote is False
-
+    with pytest.raises(ValueError):
+        repo_handler = RepositoryHandler(source=str(invalid_path))
+        repo_handler.get_local_path()
 
 @pytest.mark.parametrize("url", [
-    "https://github.com/user/testrepo",
-    "git@github.com:user/testrepo.git",
+    "https://github.com/sandy-sp/gittxt",
+    "git@github.com:sandy-sp/gittxt.git",
 ])
 def test_remote_repo_url_detection(url):
     repo_handler = RepositoryHandler(source=url)
