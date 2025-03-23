@@ -5,6 +5,8 @@ from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.filetype_utils import classify_simple
 from gittxt.utils.file_utils import async_read_text
 from datetime import datetime, timezone
+from urllib.parse import urlparse
+import re
 
 class JSONFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None):
@@ -37,7 +39,7 @@ class JSONFormatter:
             rel = Path(file).relative_to(self.repo_path)
             primary, subcat = classify_simple(file)
             content = await async_read_text(file)
-            token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
+            token_est = estimate_tokens_from_file(file)
             if content:
                 data["files"].append({
                     "file": str(rel),
@@ -80,4 +82,31 @@ class JSONFormatter:
         return sorted(files, key=file_priority)
 
     def _build_github_url(self, rel_path: Path) -> str:
-        return f"https://github.com/{self.repo_url}/blob/main/{rel_path.as_posix()}" if self.repo_url else ""
+        if not self.repo_url:
+            return ""
+
+        # Normalize and parse URL (support both https://github.com and git@github.com)
+        repo_url = self.repo_url.replace("git@github.com:", "https://github.com/")
+        repo_url = repo_url.replace(".git", "")
+        parsed = urlparse(repo_url)
+        path_parts = parsed.path.strip("/").split("/")
+
+        if len(path_parts) < 2:
+            return ""  # Invalid URL fallback
+
+        owner, repo = path_parts[:2]
+        subdir = "/".join(path_parts[3:]) if "tree" in path_parts else ""
+        branch = "main"
+        
+        # Extract branch if URL contains /tree/<branch>/
+        tree_match = re.search(r"/tree/([^/]+)", parsed.path)
+        if tree_match:
+            branch = tree_match.group(1)
+
+        rel_posix = rel_path.as_posix()
+        
+        # Construct clean GitHub URL
+        base_url = f"https://github.com/{owner}/{repo}/blob/{branch}"
+        if subdir:
+            return f"{base_url}/{subdir}/{rel_posix}"
+        return f"{base_url}/{rel_posix}"
