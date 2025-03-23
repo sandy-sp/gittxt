@@ -52,9 +52,10 @@ class Scanner:
             logger.warning(f"⚠️ Async scan fallback: {exc} — switching to sync mode.")
             self._scan_directory_sync()
             logger.info(f"✅ Sync scan complete: {len(self.accepted_files)} files processed.")
+            return
 
-        return self.accepted_files, ""  # Tree now handled externally in OutputBuilder
-
+        return self.accepted_files, ""  
+    
     async def _scan_directory_async(self):
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"📂 Found {len(all_paths)} total items")
