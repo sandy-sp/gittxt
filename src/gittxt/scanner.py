@@ -45,13 +45,15 @@ class Scanner:
 
     def scan_directory(self) -> Tuple[List[Path], str]:
         try:
+            # Avoid creating coroutine before asyncio.run()
             asyncio.run(self._scan_directory_async())
             logger.info(f"✅ Async scan complete: {len(self.accepted_files)} files processed.")
         except RuntimeError as exc:
-            logger.warning(f"⚠️ Async scan failed: {exc}. Falling back to sync.")
+            logger.warning(f"⚠️ Async scan fallback: {exc} — switching to sync mode.")
             self._scan_directory_sync()
             logger.info(f"✅ Sync scan complete: {len(self.accepted_files)} files processed.")
-        return self.accepted_files, ""  # Tree is now handled solely in OutputBuilder
+
+        return self.accepted_files, ""  # Tree now handled externally in OutputBuilder
 
     async def _scan_directory_async(self):
         all_paths = list(self.root_path.rglob("*"))
