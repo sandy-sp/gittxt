@@ -38,3 +38,15 @@ def test_artifact_404_before_scan_completion(api_client, test_repo):
     else:
         # If scan completed too fast, skip assertion
         print("⚠️ Scan completed before artifact fetch, skipping artifact 404 assertion.")
+
+def test_artifact_409_when_scan_in_progress(api_client, test_repo):
+    payload = {"repo_url": str(test_repo), "file_types": ["code", "docs"]}
+    res = api_client.post("/scans", json=payload)
+    assert res.status_code == 200
+    scan_id = res.json()["scan_id"]
+
+    # Immediately try artifact fetch
+    artifact_url = f"/artifacts/{scan_id}/txt"
+    r = api_client.get(artifact_url)
+    assert r.status_code == 409
+    assert "Scan is not completed yet" in r.text
