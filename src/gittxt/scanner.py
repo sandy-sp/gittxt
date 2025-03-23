@@ -39,7 +39,12 @@ class Scanner:
         if "all" in self.file_types:
             self.file_types = {"TEXTUAL", "NON-TEXTUAL"}
         else:
-            self.file_types = {"TEXTUAL"} if any(ft in {"code", "docs", "configs", "data"} for ft in file_types) else {"NON-TEXTUAL"}
+            non_textual_types = {"image", "media"}
+            self.file_types = set()
+            if any(ft in {"code", "docs", "configs", "data", "csv"} for ft in file_types):
+                self.file_types.add("TEXTUAL")
+            if any(ft in non_textual_types for ft in file_types):
+                self.file_types.add("NON-TEXTUAL")
 
         self.accepted_files = []
 
