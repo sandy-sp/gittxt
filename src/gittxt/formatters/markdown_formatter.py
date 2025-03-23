@@ -4,8 +4,7 @@ from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.filetype_utils import classify_simple
 from datetime import datetime, timezone
-from urllib.parse import urlparse
-import re
+from gittxt.utils.github_url_utils import build_github_url
 
 class MarkdownFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None):
@@ -54,7 +53,7 @@ class MarkdownFormatter:
             for asset in non_textual_files:
                 rel = Path(asset).relative_to(self.repo_path)
                 primary, subcat = classify_simple(asset)
-                asset_url = self._build_github_url(rel) if self.repo_url else ""
+                asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
                 await md_file.write(f"- `{rel}` ({subcat}) | Size: `{asset.stat().st_size} bytes` {asset_url}\n")
 
         return output_file
@@ -80,33 +79,3 @@ class MarkdownFormatter:
             ".md": "markdown", ".yml": "yaml", ".yaml": "yaml", ".html": "html", ".csv": "csv"
         }
         return mapping.get(suffix.lower(), "")
-
-    def _build_github_url(self, rel_path: Path) -> str:
-        if not self.repo_url:
-            return ""
-
-        # Normalize and parse URL (support both https://github.com and git@github.com)
-        repo_url = self.repo_url.replace("git@github.com:", "https://github.com/")
-        repo_url = repo_url.replace(".git", "")
-        parsed = urlparse(repo_url)
-        path_parts = parsed.path.strip("/").split("/")
-
-        if len(path_parts) < 2:
-            return ""  # Invalid URL fallback
-
-        owner, repo = path_parts[:2]
-        subdir = "/".join(path_parts[3:]) if "tree" in path_parts else ""
-        branch = "main"
-        
-        # Extract branch if URL contains /tree/<branch>/
-        tree_match = re.search(r"/tree/([^/]+)", parsed.path)
-        if tree_match:
-            branch = tree_match.group(1)
-
-        rel_posix = rel_path.as_posix()
-        
-        # Construct clean GitHub URL
-        base_url = f"https://github.com/{owner}/{repo}/blob/{branch}"
-        if subdir:
-            return f"{base_url}/{subdir}/{rel_posix}"
-        return f"{base_url}/{rel_posix}"
