@@ -1,6 +1,6 @@
 from pathlib import Path
 from zipfile import ZipFile 
-from gittxt.logger import Logger
+from gittxt.logger import logger
 import asyncio
 
 class ZipFormatter:
@@ -21,24 +21,18 @@ class ZipFormatter:
         zip_dest.parent.mkdir(parents=True, exist_ok=True)
 
         with ZipFile(zip_dest, "w") as zipf:
-            # Include all formatted TEXTUAL outputs at ZIP root
             for output in self.output_files:
                 zipf.write(output, arcname=output.name)
-
-            # README inside the ZIP explaining contents
             zipf.writestr("README-gittxt.txt", self._get_zip_readme())
-
-            # Include NON-TEXTUAL files preserving folder structure under /assets
             for asset in self.non_textual_files:
                 rel = asset.relative_to(self.repo_path)
                 arcname = f"assets/{rel}"
                 zipf.write(asset, arcname=arcname)
 
         if zip_dest.exists():
-            print(f"✅ ZIP created at {zip_dest}")
-            Logger.info(f"✅ ZIP created at {zip_dest}")
+            logger.info(f"✅ ZIP created at {zip_dest}")
         else:
-            print(f"❌ Failed to create ZIP at {zip_dest}")
+            logger.error(f"❌ Failed to create ZIP at {zip_dest}")
 
     def _get_zip_readme(self) -> str:
         url_line = f"Repository URL: {self.repo_url}\n" if self.repo_url else ""
