@@ -1,5 +1,6 @@
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import ZipFile 
+from gittxt.logger import Logger
 import asyncio
 
 class ZipFormatter:
@@ -35,6 +36,7 @@ class ZipFormatter:
 
         if zip_dest.exists():
             print(f"✅ ZIP created at {zip_dest}")
+            Logger.info(f"✅ ZIP created at {zip_dest}")
         else:
             print(f"❌ Failed to create ZIP at {zip_dest}")
 

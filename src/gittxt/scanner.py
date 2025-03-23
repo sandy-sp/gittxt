@@ -43,7 +43,7 @@ class Scanner:
 
         self.accepted_files = []
 
-    def scan_directory(self) -> Tuple[List[Path], str]:
+    def scan_directory(self) -> List[Path]:
         try:
             # Avoid creating coroutine before asyncio.run()
             asyncio.run(self._scan_directory_async())

@@ -155,9 +155,6 @@ def _process_repo(
     logger.info(f"🚀 Processing repository: {repo_source}")
     repo_handler = RepositoryHandler(repo_source, branch=branch)
     repo_path, subdir, is_remote, repo_name = repo_handler.get_local_path()
-    if not repo_path:
-        logger.error("❌ Repository resolution failed.")
-        sys.exit(1)
 
     scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
 
@@ -174,7 +171,7 @@ def _process_repo(
         progress=progress,
     )
 
-    all_files, _ = scanner.scan_directory()
+    all_files = scanner.scan_directory()
 
     if not all_files:
         logger.warning("⚠️ No valid files found. Skipping...")

@@ -58,10 +58,8 @@ class RepositoryHandler:
             subdir = parsed.get("subdir") or ""
             repo_name = parsed["repo"].replace(".git", "")
             temp_dir = self._prepare_temp_dir(repo_name)
-            success = self._clone_remote_repo(git_url, branch, temp_dir)
+            self._clone_remote_repo(git_url, branch, temp_dir)
             logger.info(f"🔄 Subdirectory inside repo: {subdir or 'root'}")
-            if not success:
-                raise ValueError("Failed to clone or resolve remote repository.")
             return str(temp_dir), subdir, self.is_remote, repo_name
 
         else:
