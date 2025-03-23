@@ -24,7 +24,7 @@ def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Di
     summary = {
         "total_files": len(file_paths),
         "total_size": 0,
-        "file_type_breakdown": {},
+        "file_type_breakdown": {"binary": 0},
         "estimated_tokens": 0,
         "tokens_by_type": {},
     }
@@ -36,6 +36,9 @@ def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Di
             primary, sub = classify_simple(file)
             summary["total_size"] += file.stat().st_size
 
+            # Inside file loop, ensure binary fallback:
+            if sub == "blacklisted":
+                sub = "binary"
             # Track file type counts
             if sub not in summary["file_type_breakdown"]:
                 summary["file_type_breakdown"][sub] = 0
