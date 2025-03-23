@@ -141,7 +141,7 @@ def _process_repo(
     scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
 
     repo_url = None
-    if is_remote and "github.com" in repo_source:
+    if is_remote:
         repo_url = repo_source.split(".git")[0] if ".git" in repo_source else repo_source
 
     scanner = Scanner(
@@ -172,6 +172,8 @@ def _process_repo(
         final_zip = click.confirm("📦 Do you want to generate a ZIP bundle with outputs + assets?", default=create_zip)
     else:
         final_zip = create_zip
+    
+    logger.debug(f"ZIP flag detected: {'auto' if create_zip else 'manual'} | Interactive: {not non_interactive}")
 
     asyncio.run(builder.generate_output(all_files, repo_path, create_zip=final_zip, tree_depth=tree_depth))
 
