@@ -3,6 +3,7 @@ from gittxt_api.core.scanning_service import SCANS
 from gittxt_api.services.artifact_service import available_artifacts
 import asyncio
 from pathlib import Path
+from fastapi.websockets import WebSocketDisconnect
 
 router = APIRouter()
 
@@ -12,9 +13,8 @@ async def websocket_progress(websocket: WebSocket, scan_id: str):
     
     # ✅ Check for invalid scan ID immediately
     if scan_id not in SCANS:
-        await websocket.send_json({"event": "error", "message": "Scan not found"})
         await websocket.close()
-        return
+        raise WebSocketDisconnect()
 
     last_progress = -1
     while True:

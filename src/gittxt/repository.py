@@ -65,22 +65,13 @@ class RepositoryHandler:
             temp_dir = self._prepare_temp_dir(repo_name)
             success = self._clone_remote_repo(git_url, branch, temp_dir)
             if not success:
-                return None, None, self.is_remote, repo_name
+                raise ValueError("Failed to clone or resolve remote repository.")
             return str(temp_dir), subdir, self.is_remote, repo_name
 
         else:
             path = Path(self.source).resolve()
             repo_name = path.name
-            if not path.exists():
-                logger.error(f"❌ Invalid local repo path: {self.source}")
-                return None, None, self.is_remote, repo_name
-
-            if not path.is_dir():
-                logger.error(f"❌ Provided path is not a directory: {self.source}")
-                return None, None, self.is_remote, repo_name
-
-            if not (path / ".git").exists():
-                logger.warning(f"⚠️ No .git directory found in: {self.source} (treated as non-Git repo)")
-
-            logger.info(f"✅ Using local repository: {path}")
+            if not path.exists() or not path.is_dir():
+                raise ValueError(f"Invalid local repo path: {self.source}")
             return str(path), "", self.is_remote, repo_name
+        

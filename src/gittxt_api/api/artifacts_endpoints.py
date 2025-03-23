@@ -16,6 +16,9 @@ def download_artifact(scan_id: str, artifact: Literal["txt", "json", "md", "zip"
     info = SCANS.get(scan_id)
     if not info or "output_dir" not in info:
         raise HTTPException(404, "Scan not found or incomplete.")
+    
+    if info.get("status") != "done":
+        raise HTTPException(404, "Scan is not completed yet.")
 
     if info.get("status") != "done":
         raise HTTPException(400, "Scan still in progress or failed. Artifacts not ready.")
