@@ -1,13 +1,14 @@
-import logging
-from gittxt.logger import Logger
 import os
+from gittxt.logger import Logger
 
 def test_plain_logger_output(monkeypatch, capsys):
-    # Force plain mode
+    # Force plain logging to stdout during this test
     monkeypatch.setenv("GITTXT_LOG_FORMAT", "plain")
-    Logger.setup_logger()
+    Logger.setup_logger(force_stdout=True)
+
     log = Logger.get_logger("plain-test")
     log.info("plain message")
+
     captured = capsys.readouterr()
     assert "plain message" in captured.out
 
