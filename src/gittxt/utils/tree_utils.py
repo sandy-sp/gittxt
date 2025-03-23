@@ -21,33 +21,25 @@ def generate_tree(
     :return: Tree string.
     """
     if exclude_dirs is None:
-        exclude_dirs = config.get(
-            "tree_exclude_dirs",
-            [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]
-        )
+        exclude_dirs = config.get("tree_exclude_dirs", [".git", "__pycache__"])
 
     if max_depth is not None and current_depth >= max_depth:
-        return ""
+        return prefix.rstrip() + "└── ..."
 
     tree_lines = []
     try:
-        contents = sorted(
-            path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())
-        )
+        contents = sorted(path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower()))
     except Exception:
         return ""
 
     contents = [c for c in contents if c.name not in exclude_dirs]
-
     pointers = ["├── "] * (len(contents) - 1) + ["└── "] if contents else []
 
     for pointer, entry in zip(pointers, contents):
         tree_lines.append(f"{prefix}{pointer}{entry.name}")
         if entry.is_dir():
             extension = "│   " if pointer != "└── " else "    "
-            subtree = generate_tree(
-                entry, prefix + extension, max_depth, current_depth + 1, exclude_dirs
-            )
+            subtree = generate_tree(entry, prefix + extension, max_depth, current_depth + 1, exclude_dirs)
             if subtree:
                 tree_lines.append(subtree)
 
