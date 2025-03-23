@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 from gittxt.formatters.zip_formatter import ZipFormatter
 
 @pytest.mark.asyncio

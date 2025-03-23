@@ -23,7 +23,7 @@ class MarkdownFormatter:
         async with aiofiles.open(output_file, "w", encoding="utf-8") as md_file:
             await md_file.write(f"# 📦 Gittxt Report for `{self.repo_name}`\n")
             await md_file.write(f"- Generated: `{datetime.now(timezone.utc).isoformat()} UTC`\n")
-            await md_file.write(f"- Format: `markdown`\n\n")
+            await md_file.write("- Format: `markdown`\n\n")
 
             await md_file.write("## 🗂 Directory Tree\n")
             await md_file.write(f"```\n{self.tree_summary}\n```\n\n")

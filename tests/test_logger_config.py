@@ -1,4 +1,3 @@
-import os
 from gittxt.logger import Logger
 
 def test_plain_logger_output(monkeypatch, capsys):

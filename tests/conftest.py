@@ -2,8 +2,6 @@ import pytest
 from fastapi.testclient import TestClient
 from click.testing import CliRunner
 from gittxt_api.app import app
-from gittxt.cli import cli
-from pathlib import Path
 
 
 @pytest.fixture(scope="session")

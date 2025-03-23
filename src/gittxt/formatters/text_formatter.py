@@ -20,7 +20,7 @@ class TextFormatter:
         ordered_files = self._sort_textual_files(text_files)
 
         async with aiofiles.open(output_file, "w", encoding="utf-8") as txt_file:
-            await txt_file.write(f"=== Gittxt Report ===\n")
+            await txt_file.write("=== Gittxt Report ===\n")
             await txt_file.write(f"Repo: {self.repo_name}\n")
             await txt_file.write(f"Generated: {datetime.now(timezone.utc).isoformat()} UTC\n\n")
 

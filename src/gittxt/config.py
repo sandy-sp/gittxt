@@ -50,7 +50,7 @@ class ConfigManager:
                 with cls.CONFIG_FILE.open("r", encoding="utf-8") as f:
                     user_config = json.load(f)
                 config.update(user_config)
-                logger.info(f"✅ Loaded gittxt-config.json")
+                logger.info("✅ Loaded gittxt-config.json")
             except (json.JSONDecodeError, IOError) as e:
                 logger.warning(f"⚠️ Could not load config file: {e}. Using defaults.")
 

@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 from gittxt.output_builder import OutputBuilder
 from gittxt.utils.filetype_utils import classify_file
 

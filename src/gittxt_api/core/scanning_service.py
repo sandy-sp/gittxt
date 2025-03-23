@@ -1,7 +1,6 @@
 import asyncio
 from pathlib import Path
 from typing import List, Optional
-import uuid
 from gittxt.repository import RepositoryHandler
 from gittxt.scanner import Scanner
 from gittxt.output_builder import OutputBuilder

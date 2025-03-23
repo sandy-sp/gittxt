@@ -1,5 +1,4 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from src.gittxt.utils.repo_url_parser import parse_github_url
 from gittxt_api.schemas.scan_schemas import ScanRequest, TreeRequest
 from gittxt_api.core.scanning_service import (
     SCANS,

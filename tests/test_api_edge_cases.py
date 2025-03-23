@@ -1,4 +1,3 @@
-import time
 from fastapi.websockets import WebSocketDisconnect
 import pytest
 

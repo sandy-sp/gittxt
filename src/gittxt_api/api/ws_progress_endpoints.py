@@ -3,7 +3,6 @@ from gittxt_api.core.scanning_service import SCANS
 from gittxt_api.services.artifact_service import available_artifacts
 import asyncio
 from pathlib import Path
-from fastapi.websockets import WebSocketDisconnect
 
 router = APIRouter()
 

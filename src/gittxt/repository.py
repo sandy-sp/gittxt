@@ -40,7 +40,7 @@ class RepositoryHandler:
             logger.warning(f"⚠️ Git clone failed for {git_url} on branch {branch}: {e}")
             # Retry without specifying branch if fallback needed
             try:
-                logger.info(f"🔄 Retrying clone without branch (use repo default)")
+                logger.info("🔄 Retrying clone without branch (use repo default)")
                 git.Repo.clone_from(git_url, str(temp_dir), depth=1)
                 return True
             except Exception as err:
