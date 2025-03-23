@@ -54,7 +54,7 @@ class Scanner:
             logger.info(f"✅ Sync scan complete: {len(self.accepted_files)} files processed.")
             return
 
-        return self.accepted_files, ""  
+        return self.accepted_files
     
     async def _scan_directory_async(self):
         all_paths = list(self.root_path.rglob("*"))

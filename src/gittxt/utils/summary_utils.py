@@ -3,7 +3,22 @@ from typing import List, Dict
 import tiktoken
 from gittxt.utils.filetype_utils import classify_simple
 
-def estimate_tokens_from_file(file: Path, encoding_name: str = "cl100k_base") -> int:
+def estimate_tokens_from_file(
+    file: Path,
+    encoding_name: str = "cl100k_base",
+    use_fallback: bool = True  # Configuration parameter to control fallback
+) -> int:
+    """
+    Estimate the number of tokens in a file.
+
+    Args:
+        file (Path): The path to the file.
+        encoding_name (str): The name of the encoding to use.
+        use_fallback (bool): Whether to use the fallback estimation method if tiktoken fails.
+
+    Returns:
+        int: The estimated number of tokens.
+    """
     try:
         with file.open("r", encoding="utf-8", errors="ignore") as f:
             content = f.read()
@@ -11,14 +26,17 @@ def estimate_tokens_from_file(file: Path, encoding_name: str = "cl100k_base") ->
         tokens = encoding.encode(content)
         return len(tokens)
     except Exception:
-        # Fallback: rough estimate based on whitespace split heuristic
-        try:
-            with file.open("r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-            return int(len(content.split()) * 0.75)
-        except Exception:
+        if use_fallback:
+            # Fallback: rough estimate based on whitespace split heuristic
+            try:
+                with file.open("r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                return int(len(content.split()) * 0.75)
+            except Exception:
+                return 0
+        else:
+            # If fallback is disabled, return 0 or handle as needed
             return 0
-
 
 def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
     summary = {

@@ -16,7 +16,6 @@ class RepositoryHandler:
     def __init__(self, source: str, branch: str = None):
         self.source = source
         self.branch_override = branch
-        self.repo_meta = {}
         self.is_remote = self.is_remote_repo(self.source)
 
     def is_remote_repo(self, source: str) -> bool:
@@ -27,25 +26,20 @@ class RepositoryHandler:
         temp_dir.mkdir(parents=True, exist_ok=True)
         return temp_dir
 
-    def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path) -> bool:
+    def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path):
         try:
             logger.info(f"🚀 Cloning repository into: {temp_dir}")
             clone_args = {"depth": 1}
             if branch:
                 clone_args["branch"] = branch
             git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
-            logger.info(f"✅ Clone successful: {temp_dir}")
-            return True
         except git.GitCommandError as e:
             logger.warning(f"⚠️ Git clone failed for {git_url} on branch {branch}: {e}")
-            # Retry without specifying branch if fallback needed
             try:
                 logger.info("🔄 Retrying clone without branch (use repo default)")
                 git.Repo.clone_from(git_url, str(temp_dir), depth=1)
-                return True
             except Exception as err:
-                logger.error(f"❌ Retry clone failed: {err}")
-                return False
+                raise RuntimeError(f"❌ Retry clone failed: {err}")
 
     def get_local_path(self) -> tuple[str, str, bool, str]:
         """

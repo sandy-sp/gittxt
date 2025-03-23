@@ -26,7 +26,7 @@ def generate_tree(
             [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]
         )
 
-    if max_depth is not None and current_depth > max_depth:
+    if max_depth is not None and current_depth >= max_depth:
         return ""
 
     tree_lines = []

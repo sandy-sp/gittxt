@@ -82,7 +82,7 @@ class OutputBuilder:
                 generated_outputs = await asyncio.gather(*tasks)
                 for out in generated_outputs:
                     logger.info(f"📄 Output ready at: {out}")
-                    output_files.extend(generated_outputs)
+                output_files.extend(generated_outputs)
                 zip_formatter.output_files = output_files.copy()
                 zip_path = await zip_formatter.generate()
                 logger.info(f"📦 Zipped bundle created: {zip_path}")

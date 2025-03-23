@@ -174,7 +174,7 @@ def _process_repo(
     else:
         final_zip = create_zip
     
-    logger.debug(f"ZIP flag detected: {'auto' if create_zip else 'manual'} | Interactive: {not non_interactive}")
+    logger.info(f"ZIP bundling: {'auto' if create_zip else 'manual'} | Interactive: {not non_interactive}")
 
     asyncio.run(builder.generate_output(all_files, repo_path, create_zip=final_zip, tree_depth=tree_depth))
 
