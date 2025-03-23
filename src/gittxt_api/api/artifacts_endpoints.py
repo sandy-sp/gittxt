@@ -20,9 +20,6 @@ def download_artifact(scan_id: str, artifact: Literal["txt", "json", "md", "zip"
     if info.get("status") != "done":
         raise HTTPException(404, "Scan is not completed yet.")
 
-    if info.get("status") != "done":
-        raise HTTPException(400, "Scan still in progress or failed. Artifacts not ready.")
-
     repo_name = info.get("repo_name")
     output_dir = Path(info["output_dir"])
 
