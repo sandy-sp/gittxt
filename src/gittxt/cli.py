@@ -126,8 +126,7 @@ def scan(
 
     if not repos:
         logger.error("❌ No repositories specified.")
-        click.echo("❌ No repositories specified.")
-        sys.exit(1)
+        raise click.UsageError("❌ No repositories specified. Provide at least one repo URL or path.")
 
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     include_patterns = list(include) if include else []
