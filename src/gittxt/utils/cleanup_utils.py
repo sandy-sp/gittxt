@@ -21,7 +21,7 @@ def cleanup_temp_folder(temp_dir: Path) -> None:
 
 def cleanup_old_outputs(output_dir: Path) -> None:
     """
-    Cleanup previous outputs (text/json/md folders) before running a new scan.
+    Cleanup previous outputs before running a new scan, including ZIPs and temp folders.
     """
-    for subdir in ["text", "json", "md"]:
+    for subdir in ["text", "json", "md", "zips", "temp"]:
         delete_directory(output_dir / subdir)

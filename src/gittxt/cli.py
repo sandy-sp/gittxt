@@ -3,20 +3,21 @@ import click
 import sys
 import logging
 import asyncio
+from gittxt import __version__
 from gittxt.config import ConfigManager
 from gittxt.logger import Logger
 from gittxt.repository import RepositoryHandler
 from gittxt.scanner import Scanner
 from gittxt.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder, cleanup_old_outputs
-from gittxt.utils.filetype_utils import classify_file, FiletypeConfigManager
-from gittxt.utils.tree_utils import generate_tree
+from gittxt.utils.filetype_utils import FiletypeConfigManager
 from gittxt.utils.summary_utils import generate_summary
 
 logger = Logger.get_logger(__name__)
 config = ConfigManager.load_config()
 
 @click.group()
+@click.version_option(version=__version__, prog_name="Gittxt CLI")
 def cli():
     """Gittxt CLI: Scan and extract text/code from GitHub repositories."""
     pass
@@ -26,40 +27,59 @@ def install():
     from gittxt.utils.install_utils import run_interactive_install
     run_interactive_install()
 
-@cli.command()
-@click.argument("repo", type=str)
-@click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
-def tree(repo, tree_depth):
-    repo_handler = RepositoryHandler(repo)
-    repo_path, subdir, is_remote, _ = repo_handler.get_local_path()
-    if not repo_path:
-        click.echo("❌ Could not resolve repository.")
-        sys.exit(1)
+@cli.group()
+def filetypes():
+    """Manage filetype whitelist and blacklist"""
+    pass
 
-    scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
-    tree_output = generate_tree(scan_root, max_depth=tree_depth)
-    click.echo(tree_output)
+@filetypes.command("list")
+def list_types():
+    """Show current whitelist and blacklist."""
+    config = FiletypeConfigManager.load_filetype_config()
+    click.echo("📄 Whitelist:")
+    for ext in sorted(config.get("whitelist", [])):
+        click.echo(f" - {ext}")
+    click.echo("\n🚫 Blacklist:")
+    for ext in sorted(config.get("blacklist", [])):
+        click.echo(f" - {ext}")
 
-    cleanup_temp_folder(Path(repo_path)) if repo_handler.is_remote else None
+@filetypes.command()
+@click.argument("exts", nargs=-1)
+def whitelist(exts):
+    """Add one or more extensions to whitelist."""
+    config = FiletypeConfigManager.load_filetype_config()
+    for ext in exts:
+        if ext in config.get("blacklist", []):
+            config["blacklist"].remove(ext)
+            click.echo(f"⚠️ Removed `{ext}` from blacklist.")
+        if ext not in config.get("whitelist", []):
+            config["whitelist"].append(ext)
+            click.echo(f"✅ Added `{ext}` to whitelist.")
+    FiletypeConfigManager.save_filetype_config(config)
 
-@cli.command()
-@click.argument("file", type=click.Path(exists=True))
-def classify(file):
-    fpath = Path(file)
-    result = classify_file(fpath)
-    click.echo(f"📄 `{fpath}` classified as: {result}")
+@filetypes.command()
+@click.argument("exts", nargs=-1)
+def blacklist(exts):
+    """Add one or more extensions to blacklist."""
+    config = FiletypeConfigManager.load_filetype_config()
+    for ext in exts:
+        if ext in config.get("whitelist", []):
+            config["whitelist"].remove(ext)
+            click.echo(f"⚠️ Removed `{ext}` from whitelist.")
+        if ext not in config.get("blacklist", []):
+            config["blacklist"].append(ext)
+            click.echo(f"✅ Added `{ext}` to blacklist.")
+    FiletypeConfigManager.save_filetype_config(config)
 
-@cli.command()
-@click.argument("ext", type=str)
-def whitelist(ext):
-    FiletypeConfigManager.add_to_whitelist(ext)
-    click.echo(f"✅ Added `{ext}` to whitelist.")
-
-@cli.command()
-@click.argument("ext", type=str)
-def blacklist(ext):
-    FiletypeConfigManager.add_to_blacklist(ext)
-    click.echo(f"✅ Added `{ext}` to blacklist.")
+@filetypes.command()
+def clear():
+    """Clear whitelist and blacklist."""
+    config = {
+        "whitelist": [],
+        "blacklist": []
+    }
+    FiletypeConfigManager.save_filetype_config(config)
+    click.echo("🧹 Whitelist and blacklist cleared.")
 
 @cli.command()
 @click.option("--output-dir", "-o", type=click.Path(), default=None)
