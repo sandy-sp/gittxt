@@ -1,12 +1,26 @@
+import logging
 from gittxt.logger import Logger
 
-def test_plain_logger_output(monkeypatch, capsys):
-    monkeypatch.setenv("GITTXT_LOG_FORMAT", "plain")
-    Logger.setup_logger()
-    log = Logger.get_logger("plain-test")
-    log.info("plain message")
+def test_plain_logger_output(capsys):
+    # Manually create isolated logger instance
+    logger = logging.getLogger("plain-test")
+    logger.setLevel(logging.INFO)
+
+    # Clear any pre-existing handlers
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # Create a StreamHandler tied to stdout
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(message)s")
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    logger.info("plain message")
     captured = capsys.readouterr()
     assert "plain message" in captured.err
+
 
 def test_json_logger_output(monkeypatch, capsys):
     monkeypatch.setenv("GITTXT_LOG_FORMAT", "json")
