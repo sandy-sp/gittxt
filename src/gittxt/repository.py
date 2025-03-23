@@ -54,6 +54,7 @@ class RepositoryHandler:
         Returns:
             (repo_path, subdir, is_remote, repo_name)
         """
+        logger.info(f"🔗 Resolving repository at {self.source}")
         if self.is_remote_repo(self.source):
             parsed = parse_github_url(self.source)
             repo_url_scheme = "git@" if self.source.startswith("git@") else "https://github.com/"
@@ -64,6 +65,7 @@ class RepositoryHandler:
             repo_name = parsed["repo"].replace(".git", "")
             temp_dir = self._prepare_temp_dir(repo_name)
             success = self._clone_remote_repo(git_url, branch, temp_dir)
+            logger.info(f"🔄 Subdirectory inside repo: {subdir or 'root'}")
             if not success:
                 raise ValueError("Failed to clone or resolve remote repository.")
             return str(temp_dir), subdir, self.is_remote, repo_name
