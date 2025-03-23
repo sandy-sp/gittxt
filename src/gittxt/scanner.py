@@ -59,20 +59,27 @@ class Scanner:
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"📂 Found {len(all_paths)} total items")
 
-        # Dynamically adjust batches but prioritize user-configured batch_size
         dynamic_batch_size = self.batch_size or 100
         if len(all_paths) > 1000:
-            dynamic_batch_size = max(self.batch_size, len(all_paths) // 20)  # Larger repos get bigger batches
+            dynamic_batch_size = max(self.batch_size, len(all_paths) // 20)
 
         bar = self._init_progress_bar(len(all_paths), "Scanning files (async batch)")
+
+        # ✅ Concurrency limiter
+        semaphore = asyncio.Semaphore(100)  # Max 100 concurrent tasks
+
+        async def limited_process(file_path: Path):
+            async with semaphore:
+                await self._process_batch_file(file_path, bar)
 
         tasks = []
         for i in range(0, len(all_paths), dynamic_batch_size):
             batch = all_paths[i:i + dynamic_batch_size]
-            tasks.extend([self._process_batch_file(path, bar) for path in batch])
+            tasks.extend([limited_process(path) for path in batch])
 
         await asyncio.gather(*tasks)
         if bar: bar.close()
+
 
     def _scan_directory_sync(self):
         files = list(self.root_path.rglob("*"))
