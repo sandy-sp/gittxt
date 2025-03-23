@@ -59,7 +59,11 @@ class Scanner:
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"📂 Found {len(all_paths)} total items")
 
-        dynamic_batch_size = min(self.batch_size, max(50, len(all_paths) // 10))
+        # Dynamically adjust batches but prioritize user-configured batch_size
+        dynamic_batch_size = self.batch_size or 100
+        if len(all_paths) > 1000:
+            dynamic_batch_size = max(self.batch_size, len(all_paths) // 20)  # Larger repos get bigger batches
+
         bar = self._init_progress_bar(len(all_paths), "Scanning files (async batch)")
 
         tasks = []
