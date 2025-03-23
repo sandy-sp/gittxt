@@ -40,7 +40,7 @@ class Logger:
         return f"{color}{msg}{reset}"
 
     @staticmethod
-    def setup_logger():
+    def setup_logger(force_stdout=False):
         Logger.LOG_DIR.mkdir(parents=True, exist_ok=True)
 
         # Prefer env first, fallback to config or WARNING
@@ -48,31 +48,34 @@ class Logger:
         log_format_style = os.getenv("GITTXT_LOG_FORMAT", "plain").lower()
 
         level_map = {
-            "DEBUG": logging.DEBUG,
-            "INFO": logging.INFO,
-            "WARNING": logging.WARNING,
-            "ERROR": logging.ERROR,
-            "CRITICAL": logging.CRITICAL,
+            "debug": logging.DEBUG,
+            "info": logging.INFO,
+            "warning": logging.WARNING,
+            "error": logging.ERROR,
+            "critical": logging.CRITICAL,
         }
-        log_level = level_map.get(log_level_str.upper(), logging.WARNING)
+        log_level = level_map.get(log_level_str.lower(), logging.WARNING)
 
-        # Remove any existing handlers
-        for handler in logging.root.handlers[:]:
-            logging.root.removeHandler(handler)
+        # 🟢 Reset logger to avoid duplicates in tests or hot reloads
+        logger = logging.getLogger()
+        logger.setLevel(log_level)
+        if logger.hasHandlers():
+            logger.handlers.clear()
 
-        console_handler = logging.StreamHandler(sys.stdout)
+        # Console Handler
+        stream = sys.stdout if force_stdout else sys.stderr
+        console_handler = logging.StreamHandler(stream)
         console_handler.setLevel(log_level)
         console_handler.setFormatter(Logger._get_formatter(mode=log_format_style))
-        logging.root.addHandler(console_handler)
+        logger.addHandler(console_handler)
 
+        # Rotating File Handler (always plain format for files)
         rotating_file_handler = RotatingFileHandler(
             Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
         )
         rotating_file_handler.setLevel(log_level)
         rotating_file_handler.setFormatter(Logger._get_formatter(mode="plain"))
-        logging.root.addHandler(rotating_file_handler)
-
-        logging.root.setLevel(log_level)
+        logger.addHandler(rotating_file_handler)
 
     @staticmethod
     def _get_formatter(mode="plain"):
