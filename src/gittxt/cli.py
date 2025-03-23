@@ -62,20 +62,21 @@ def blacklist(ext):
     click.echo(f"✅ Added `{ext}` to blacklist.")
 
 @cli.command()
-@click.option("--output-dir", type=click.Path(), default=None)
+@click.option("--output-dir", "-o", type=click.Path(), default=None)
 def clean(output_dir):
+    """Delete old outputs (text/json/md/zips folders)."""
     target_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     cleanup_old_outputs(target_dir)
     click.echo(f"🗑️ Cleaned output directory: {target_dir}")
 
 @cli.command()
 @click.argument("repos", nargs=-1)
-@click.option("--include", multiple=True, help="Include files matching patterns (e.g., .py)")
-@click.option("--exclude", multiple=True, help="Exclude files matching patterns (e.g., node_modules)")
+@click.option("--include", "-i", multiple=True, help="Include files matching patterns (e.g., .py)")
+@click.option("--exclude", "-e", multiple=True, help="Exclude files matching patterns (e.g., node_modules)")
 @click.option("--size-limit", type=int, help="Maximum file size in bytes")
 @click.option("--branch", type=str, help="Specify Git branch to scan")
-@click.option("--output-dir", type=click.Path(), default=None)
-@click.option("--output-format", default="txt,json", help="txt, json, md, or comma-separated list")  # synced with docs
+@click.option("--output-dir", "-o", type=click.Path(), default=None)
+@click.option("--output-format", "-f", default="txt,json", help="txt, json, md, or comma-separated list")  # synced with docs
 @click.option("--summary", is_flag=True, help="Show summary report after scan")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.option("--progress", is_flag=True, help="Show scan progress bar")
