@@ -48,7 +48,7 @@ class Scanner:
             # Avoid creating coroutine before asyncio.run()
             asyncio.run(self._scan_directory_async())
             logger.info(f"✅ Async scan complete: {len(self.accepted_files)} files processed.")
-        except RuntimeError as exc:
+        except (RuntimeError, asyncio.CancelledError) as exc:            
             logger.warning(f"⚠️ Async scan fallback: {exc} — switching to sync mode.")
             self._scan_directory_sync()
             logger.info(f"✅ Sync scan complete: {len(self.accepted_files)} files processed.")
