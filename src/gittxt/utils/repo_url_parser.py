@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 import re
+import os
 
 def parse_github_url(url: str) -> dict:
     """
@@ -14,7 +15,8 @@ def parse_github_url(url: str) -> dict:
     data = {"host": None, "owner": None, "repo": None, "branch": None, "subdir": None}
 
     # Allow github.com and *.mycompany.com (you can expand this list later)
-    allowed_domains = ["github.com", "git.mycompany.com"]
+    allowed_domains = ["github.com"]
+    allowed_domains.extend(os.getenv("GITTXT_ALLOWED_DOMAINS", "").split(","))  # env-configurable
 
     # SSH-style URLs
     ssh_pattern = re.compile(
