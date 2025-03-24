@@ -3,6 +3,9 @@ from zipfile import ZipFile
 from gittxt.logger import Logger
 from gittxt.utils.github_url_utils import build_github_repo_url
 import asyncio
+from gittxt.logger import Logger
+
+logger = Logger.get_logger(__name__)
 
 class ZipFormatter:
     def __init__(self, repo_name: str, output_dir: Path, output_files: list, non_textual_files: list, repo_path: Path, repo_url: str = None):
