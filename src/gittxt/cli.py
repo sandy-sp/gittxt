@@ -15,6 +15,7 @@ from gittxt.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder, cleanup_old_outputs
 from gittxt.utils.filetype_utils import FiletypeConfigManager
 from gittxt.utils.summary_utils import generate_summary
+from gittxt.utils.file_utils import load_gittxtignore
 
 logger = Logger.get_logger(__name__)
 config = ConfigManager.load_config()
@@ -147,10 +148,19 @@ async def _process_target(repo_source, branch, include_patterns, exclude_pattern
         repo_path = Path(repo_path) / subdir if subdir else Path(repo_path)
         repo_url = repo_source.split(".git")[0] if ".git" in repo_source else repo_source
 
+    # Load .gittxtignore if present
+    gittxtignore_patterns = load_gittxtignore(repo_path)
+    if gittxtignore_patterns:
+        console.print(f"[cyan]📄 Loaded {len(gittxtignore_patterns)} patterns from .gittxtignore")
+
+    # Merge all exclude patterns
+    merged_excludes = list(set(exclude_patterns + gittxtignore_patterns + config.get("exclude_patterns", [])))
+
+    # Scanner instantiation
     scanner = Scanner(
         root_path=repo_path,
         include_patterns=include_patterns,
-        exclude_patterns=exclude_patterns,
+        exclude_patterns=merged_excludes,
         size_limit=size_limit,
         file_types=file_types,
         progress=True
