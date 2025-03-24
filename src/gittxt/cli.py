@@ -87,7 +87,7 @@ def clean(output_dir):
     cleanup_old_outputs(target_dir)
     console.print(f"[bold green]Cleaned output directory: {target_dir}")
 
-@cli.command(help="📦 Scan one or multiple repositories or local directories.")
+@click.command(help="📦 Scan one or multiple repositories or local directories.")
 @click.argument("repos", nargs=-1)
 @click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory")
 @click.option("--output-format", "-f", default="txt,json", help="txt, json, or md")
@@ -109,7 +109,17 @@ def scan(
         console.print("[bold red]❌ No repositories or directories specified.")
         sys.exit(1)
 
-    asyncio.run(_handle_repos(repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types))
+    allowed_formats = {"txt", "json", "md"}
+    requested_formats = {fmt.strip() for fmt in output_format.split(",")}
+    if not requested_formats.issubset(allowed_formats):
+        console.print(f"[red]❌ Invalid output format. Allowed formats: {', '.join(allowed_formats)}")
+        sys.exit(1)
+
+    asyncio.run(
+        _handle_repos(
+            repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, config
+        )
+    )
 
 async def _handle_repos(repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types):
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
@@ -167,16 +177,14 @@ async def _process_target(repo_source, branch, include_patterns, exclude_pattern
 
     logger.info("✅ Gittxt scan completed.")
 
-
-def _print_summary(repo_name, summary_data, final_output_dir):
+def _print_summary(repo_name, summary_data, final_output_dir, output_format):
     table = Table(title=f"Scan Summary: {repo_name}")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="magenta")
-
     table.add_row("Total Files", str(summary_data.get("total_files")))
     table.add_row("Total Size (bytes)", str(summary_data.get("total_size")))
     table.add_row("Estimated Tokens", str(summary_data.get("estimated_tokens")))
-    table.add_row("Output Formats", summary_data.get("output_format", "-"))
+    table.add_row("Output Formats", output_format)
 
     console.print(table)
     console.print(f"[bold yellow]Output directory:[/] {final_output_dir / repo_name}")
