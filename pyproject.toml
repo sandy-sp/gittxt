@@ -44,7 +44,8 @@ dependencies = [
     "pytest-tornasync (>=0.6.0.post2,<0.7.0)",
     "pytest-trio (>=0.8.0,<0.9.0)",
     "pytest-twisted (>=1.14.3,<2.0.0)",
-    "twisted (>=24.11.0,<25.0.0)"
+    "twisted (>=24.11.0,<25.0.0)",
+    "rich (>=13.9.4,<14.0.0)"
 ]
 
 [project.urls]
@@ -52,7 +53,7 @@ Repository = "https://github.com/sandy-sp/gittxt"
 Homepage = "https://github.com/sandy-sp/gittxt"
 
 [project.scripts]
-gittxt = "gittxt.cli:main"
+gittxt = "gittxt.cli:cli"
 
 [tool.black]
 line-length = 88
@@ -83,3 +84,4 @@ pytest-mock = "^3.0"
 ruff = "^0.2.0"
 black = "^24.0.0"
 pytest-asyncio = "^0.21.0"
+rich = "^13.9.4"

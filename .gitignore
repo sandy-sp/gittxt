@@ -39,6 +39,7 @@ src/gittxt-logs/
 gittxt-config.json
 filetype_config.json
 subcategory_config.json
+poetry.lock
 
 # Frontend UI node modules
 node_modules

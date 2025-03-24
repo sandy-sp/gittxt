@@ -1,19 +1,17 @@
 import asyncio
 from pathlib import Path
-from typing import List, Tuple, Optional
-
+from typing import List, Optional
 from gittxt.logger import Logger
 from gittxt.utils import pattern_utils, filetype_utils
-
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = None
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 
 logger = Logger.get_logger(__name__)
 
 class Scanner:
-    """Scans directories, applies filters, and categorizes files into TEXTUAL / NON-TEXTUAL."""
+    """
+    Scans directories, applies patterns and size filters,
+    categorizes files into TEXTUAL / NON-TEXTUAL groups.
+    """
 
     def __init__(
         self,
@@ -30,84 +28,52 @@ class Scanner:
         self.include_patterns = pattern_utils.normalize_patterns(include_patterns)
         self.exclude_patterns = pattern_utils.normalize_patterns(exclude_patterns)
         self.size_limit = size_limit
-        self.file_types = set(file_types)
+        self.file_types = self._normalize_file_types(file_types)
         self.progress = progress
         self.batch_size = batch_size
         self.verbose = verbose
-
-        # Normalize "all" flag
-        if "all" in self.file_types:
-            self.file_types = {"TEXTUAL", "NON-TEXTUAL"}
-        else:
-            non_textual_types = {"image", "media"}
-            self.file_types = set()
-            if any(ft in {"code", "docs", "configs", "data", "csv"} for ft in file_types):
-                self.file_types.add("TEXTUAL")
-            if any(ft in non_textual_types for ft in file_types):
-                self.file_types.add("NON-TEXTUAL")
-
         self.accepted_files = []
 
-    def scan_directory(self) -> List[Path]:
-        try:
-            # Avoid creating coroutine before asyncio.run()
-            asyncio.run(self._scan_directory_async())
-            logger.info(f"✅ Async scan complete: {len(self.accepted_files)} files processed.")
-        except (RuntimeError, asyncio.CancelledError) as exc:            
-            logger.warning(f"⚠️ Async scan fallback: {exc} — switching to sync mode.")
-            self._scan_directory_sync()
-            logger.info(f"✅ Sync scan complete: {len(self.accepted_files)} files processed.")
-            return
+    def _normalize_file_types(self, file_types):
+        if "all" in file_types:
+            return {"TEXTUAL", "NON-TEXTUAL"}
+        ft_set = set()
+        if any(ft in {"code", "docs", "configs", "data", "csv"} for ft in file_types):
+            ft_set.add("TEXTUAL")
+        if any(ft in {"image", "media"} for ft in file_types):
+            ft_set.add("NON-TEXTUAL")
+        return ft_set
 
-        return self.accepted_files
-    
-    async def _scan_directory_async(self):
+    async def scan_directory(self) -> List[Path]:
+        """Fully async entry point (no asyncio.run() inside)."""
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"📂 Found {len(all_paths)} total items")
 
-        dynamic_batch_size = self.batch_size or 100
-        if len(all_paths) > 1000:
-            dynamic_batch_size = max(self.batch_size, len(all_paths) // 20)
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TimeElapsedColumn(),
+            transient=True
+        ) as progress_bar:
+            task = progress_bar.add_task("Scanning repository files", total=len(all_paths))
 
-        bar = self._init_progress_bar(len(all_paths), "Scanning files (async batch)")
+            semaphore = asyncio.Semaphore(100) 
 
-        # ✅ Concurrency limiter
-        semaphore = asyncio.Semaphore(100)  # Max 100 concurrent tasks
+            async def limited_process(file_path: Path):
+                async with semaphore:
+                    await asyncio.to_thread(self._process_single_file, file_path)
+                    progress_bar.update(task, advance=1)
 
-        async def limited_process(file_path: Path):
-            async with semaphore:
-                await self._process_batch_file(file_path, bar)
+            await asyncio.gather(*[limited_process(f) for f in all_paths])
+            progress_bar.update(task, completed=len(all_paths))
 
-        tasks = []
-        for i in range(0, len(all_paths), dynamic_batch_size):
-            batch = all_paths[i:i + dynamic_batch_size]
-            tasks.extend([limited_process(path) for path in batch])
-
-        await asyncio.gather(*tasks)
-        if bar: bar.close()
-
-
-    def _scan_directory_sync(self):
-        files = list(self.root_path.rglob("*"))
-        bar = self._init_progress_bar(len(files), "Scanning files (sync)")
-
-        for file in files:
-            if not file.is_file():
-                self._progress_update(bar)
-                continue
-            self._process_single_file(file)
-            self._progress_update(bar)
-
-        if bar: bar.close()
-
-    async def _process_batch_file(self, file_path: Path, bar):
-        if not file_path.is_file():
-            self._progress_update(bar)
-            return
-        await asyncio.to_thread(self._process_single_file, file_path)
-        self._progress_update(bar)
+        logger.info(f"✅ Scan complete: {len(self.accepted_files)} files accepted.")
+        return self.accepted_files
 
     def _process_single_file(self, file_path: Path):
+        if not file_path.is_file():
+            return
         if not self._passes_filters(file_path):
             return
 
@@ -123,12 +89,3 @@ class Scanner:
             self.size_limit,
             self.verbose
         )
-
-    def _init_progress_bar(self, total, desc):
-        if self.progress and tqdm and total >= 1:
-            return tqdm(total=total, desc=desc, unit="file", dynamic_ncols=True)
-        return None
-
-    def _progress_update(self, bar):
-        if bar:
-            bar.update(1)
