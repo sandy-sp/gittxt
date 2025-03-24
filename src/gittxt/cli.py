@@ -81,6 +81,22 @@ def clear():
     FiletypeConfigManager.save_filetype_config({"whitelist": [], "blacklist": []})
     console.print("[cyan]Whitelist and blacklist cleared.")
 
+@filetypes.command("move", help="🔄 Move an extension from one category to another dynamically.")
+@click.argument("ext")
+@click.argument("from_subcat")
+@click.argument("to_subcat")
+def move_category(ext, from_subcat, to_subcat):
+    from gittxt.utils.filetype_utils import move_extension
+
+    from_key = ("TEXTUAL" if from_subcat in ["code", "docs", "configs", "data"] else "NON-TEXTUAL", from_subcat)
+    to_key = ("TEXTUAL" if to_subcat in ["code", "docs", "configs", "data"] else "NON-TEXTUAL", to_subcat)
+    
+    try:
+        move_extension(ext, from_key, to_key)
+        console.print(f"[green]✅ Moved `{ext}` from `{from_subcat}` to `{to_subcat}` successfully.")
+    except Exception as e:
+        console.print(f"[red]❌ Failed to move: {e}")
+
 @cli.command(help="🔄 Remove previous scan outputs (text/json/md/zips folders).")
 @click.option("--output-dir", "-o", type=click.Path(), default=None)
 def clean(output_dir):
