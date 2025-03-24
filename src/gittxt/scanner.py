@@ -44,8 +44,17 @@ class Scanner:
             ft_set.add("NON-TEXTUAL")
         return ft_set
 
+    async def _process_single_file(self, file_path: Path):
+        if not file_path.is_file():
+            return
+        if not self._passes_filters(file_path):
+            return
+
+        primary, _ = filetype_utils.classify_simple(file_path)
+        if primary in self.file_types:
+            self.accepted_files.append(file_path.resolve())
+
     async def scan_directory(self) -> List[Path]:
-        """Fully async entry point (no asyncio.run() inside)."""
         all_paths = list(self.root_path.rglob("*"))
         logger.debug(f"📂 Found {len(all_paths)} total items")
 
@@ -58,11 +67,11 @@ class Scanner:
         ) as progress_bar:
             task = progress_bar.add_task("Scanning repository files", total=len(all_paths))
 
-            semaphore = asyncio.Semaphore(100) 
+            semaphore = asyncio.Semaphore(100)
 
             async def limited_process(file_path: Path):
                 async with semaphore:
-                    await asyncio.to_thread(self._process_single_file, file_path)
+                    await self._process_single_file(file_path)
                     progress_bar.update(task, advance=1)
 
             await asyncio.gather(*[limited_process(f) for f in all_paths])
@@ -70,16 +79,6 @@ class Scanner:
 
         logger.info(f"✅ Scan complete: {len(self.accepted_files)} files accepted.")
         return self.accepted_files
-
-    def _process_single_file(self, file_path: Path):
-        if not file_path.is_file():
-            return
-        if not self._passes_filters(file_path):
-            return
-
-        primary, _ = filetype_utils.classify_simple(file_path)
-        if primary in self.file_types:
-            self.accepted_files.append(file_path.resolve())
 
     def _passes_filters(self, file_path: Path) -> bool:
         return pattern_utils.passes_all_filters(
