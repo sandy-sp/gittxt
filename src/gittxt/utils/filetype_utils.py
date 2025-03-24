@@ -110,7 +110,13 @@ def add_to_subcategory(category: str, subcategory: str, ext_or_name: str):
 
 def move_extension(ext_or_name: str, from_sub: tuple[str, str], to_sub: tuple[str, str]):
     global SUBCATEGORY_MAP
-    # remove from old
-    SUBCATEGORY_MAP[from_sub[0]][from_sub[1]].remove(ext_or_name)
-    # add to new
-    add_to_subcategory(to_sub[0], to_sub[1], ext_or_name)
+    if ext_or_name in SUBCATEGORY_MAP[from_sub[0]][from_sub[1]]:
+        SUBCATEGORY_MAP[from_sub[0]][from_sub[1]].remove(ext_or_name)
+        if to_sub[1] not in SUBCATEGORY_MAP[to_sub[0]]:
+            SUBCATEGORY_MAP[to_sub[0]][to_sub[1]] = []
+        SUBCATEGORY_MAP[to_sub[0]][to_sub[1]].append(ext_or_name)
+        with CONFIG_FILE.open("w", encoding="utf-8") as f:
+            json.dump(SUBCATEGORY_MAP, f, indent=4)
+    else:
+        raise ValueError(f"{ext_or_name} not found in {from_sub[1]}")
+
