@@ -98,8 +98,9 @@ def clean(output_dir):
 @click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
 @click.option("--file-types", default="all", help="Specify types: code, docs, csv, image, media, all")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
+@click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
 def scan(
-    repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, debug
+    repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, debug, non_interactive
 ):
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -108,6 +109,9 @@ def scan(
     if not repos:
         console.print("[bold red]❌ No repositories or directories specified.")
         sys.exit(1)
+    
+    if not non_interactive:
+        console.print("[cyan]⚠️ This is an interactive session. Prompts will be shown if required.")
 
     allowed_formats = {"txt", "json", "md"}
     requested_formats = {fmt.strip() for fmt in output_format.split(",")}
