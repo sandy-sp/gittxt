@@ -56,7 +56,7 @@ class JSONFormatter:
         for asset in non_textual_files:
             rel = Path(asset).relative_to(self.repo_path)
             primary, subcat = classify_simple(asset)
-            asset_url = self._build_github_url(rel) if self.repo_url else ""
+            asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
             data["assets"].append({
                 "file": str(rel),
                 "type": subcat,
