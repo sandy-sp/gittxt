@@ -101,7 +101,7 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
         exclude_dirs=merged_excludes,
         size_limit=size_limit,
         include_patterns=include_patterns,
-        custom_exclude_patterns=exclude_patterns,
+        exclude_patterns=exclude_patterns,
         progress=True
     )
 

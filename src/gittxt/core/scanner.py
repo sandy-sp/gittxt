@@ -19,7 +19,7 @@ class Scanner:
         exclude_dirs: List[str],
         size_limit: Optional[int],
         include_patterns: Optional[List[str]] = None,
-        custom_exclude_patterns: Optional[List[str]] = None,
+        exclude_patterns: Optional[List[str]] = None,
         progress: bool = False,
         batch_size: int = 50,
         verbose: bool = False,
@@ -32,7 +32,7 @@ class Scanner:
         self.verbose = verbose
         self.accepted_files = []
         self.include_patterns = include_patterns or []
-        self.custom_exclude_patterns = custom_exclude_patterns or []
+        self.exclude_patterns = exclude_patterns or []
 
     async def _process_single_file(self, file_path: Path):
         if not file_path.is_file():
@@ -46,7 +46,7 @@ class Scanner:
             return
 
         # Apply custom exclude-patterns
-        for pattern in self.custom_exclude_patterns:
+        for pattern in self.exclude_patterns:
             if file_path.match(pattern):
                 if self.verbose:
                     logger.debug(f"🛑 Skipped (exclude pattern): {file_path}")
