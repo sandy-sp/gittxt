@@ -53,4 +53,3 @@ class TextFormatter:
                 await txt_file.write(f"{rel} | TYPE: {subcat} | SIZE: {asset.stat().st_size} bytes {asset_url}\n")
 
         return output_file
-
