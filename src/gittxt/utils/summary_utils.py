@@ -3,6 +3,17 @@ from typing import List, Dict
 import tiktoken
 from gittxt.utils.filetype_utils import classify_simple
 import aiofiles
+import humanize
+
+def format_number_short(n: int) -> str:
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    elif n >= 1_000:
+        return f"{n / 1_000:.1f}k"
+    return str(n)
+
+def format_size_short(n: int) -> str:
+    return humanize.naturalsize(n, binary=False)
 
 async def estimate_tokens_from_file(
     file: Path,
@@ -31,7 +42,7 @@ async def estimate_tokens_from_file(
             try:
                 async with aiofiles.open(file, "r", encoding="utf-8", errors="ignore") as f:
                     content = await f.read()
-                return int(len(content.split()) * 0.75)
+                return int(len(content) / 4)
             except Exception:
                 return 0
         return 0
