@@ -59,6 +59,9 @@ class RepositoryHandler:
             branch = self.branch_override or parsed.get("branch")
 
             subdir = parsed.get("subdir") or ""
+            if ".." in subdir:
+                raise ValueError(f"❌ Unsafe subdirectory path detected: {subdir}")
+
             repo_name = parsed["repo"].replace(".git", "")
             temp_dir = self._prepare_temp_dir(repo_name)
             self._clone_remote_repo(git_url, branch, temp_dir)
@@ -71,4 +74,3 @@ class RepositoryHandler:
             if not path.exists() or not path.is_dir():
                 raise ValueError(f"Invalid local repo path: {self.source}")
             return str(path), "", self.is_remote, repo_name
-        
