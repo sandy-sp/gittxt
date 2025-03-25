@@ -2,9 +2,9 @@ from pathlib import Path
 import mimetypes
 import json
 from binaryornot.check import is_binary
-from gittxt.config import FiletypeConfigManager
+from gittxt.core.config import FiletypeConfigManager
 
-CONFIG_FILE = Path(__file__).parent / "../subcategory_config.json"
+CONFIG_FILE = Path(__file__).parent / "../config/subcategory_config.json"
 
 # --- Dynamic Configurable Subcategory Map ---
 

@@ -1,9 +1,8 @@
 from pathlib import Path
 from zipfile import ZipFile 
-from gittxt.logger import Logger
+from gittxt.core.logger import Logger
 from gittxt.utils.github_url_utils import build_github_repo_url
 import asyncio
-from gittxt.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
