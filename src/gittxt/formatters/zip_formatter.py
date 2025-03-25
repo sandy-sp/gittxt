@@ -12,7 +12,7 @@ class ZipFormatter:
     def __init__(self, repo_name: str, output_dir: Path, output_files: list, non_textual_files: list, repo_path: Path, repo_url: str = None):
         self.repo_name = repo_name
         self.output_dir = output_dir
-        self.output_files = output_files  # txt, json, md outputs
+        self.output_files = output_files
         self.non_textual_files = non_textual_files
         self.repo_path = repo_path
         self.repo_url = repo_url
@@ -27,15 +27,26 @@ class ZipFormatter:
 
         with ZipFile(zip_dest, "w") as zipf:
             for output in self.output_files:
-                zipf.write(output, arcname=output.name)
+                if output and output.exists():
+                    zipf.write(output, arcname=output.name)
+                else:
+                    logger.warning(f"⚠️ Skipping missing or invalid output file: {output}")
+
             zipf.writestr("README-gittxt.txt", self._get_zip_readme())
+
             for asset in self.non_textual_files:
-                rel = asset.relative_to(self.repo_path)
-                rel_str = str(rel).replace(os.sep, "/")
-                name_hash = hashlib.sha1(rel_str.encode()).hexdigest()[:8]
-                safe_name = f"{rel.stem}_{name_hash}{rel.suffix}"
-                arcname = f"assets/{safe_name}"
-                zipf.write(asset, arcname=arcname)
+                if not asset.exists():
+                    logger.warning(f"⚠️ Skipping missing asset: {asset}")
+                    continue
+                try:
+                    rel = asset.relative_to(self.repo_path)
+                    rel_str = str(rel).replace(os.sep, "/")
+                    name_hash = hashlib.sha1(rel_str.encode()).hexdigest()[:8]
+                    safe_name = f"{rel.stem}_{name_hash}{rel.suffix}"
+                    arcname = f"assets/{safe_name}"
+                    zipf.write(asset, arcname=arcname)
+                except Exception as e:
+                    logger.error(f"❌ Failed to add asset {asset}: {e}")
 
         if zip_dest.exists():
             logger.info(f"✅ ZIP created at {zip_dest}")
