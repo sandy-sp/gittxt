@@ -6,7 +6,6 @@ from gittxt.utils.filetype_utils import classify_simple
 from gittxt.utils.file_utils import async_read_text
 from datetime import datetime, timezone
 from gittxt.utils.github_url_utils import build_github_url
-from gittxt.utils.summary_utils import estimate_tokens_from_file
 from gittxt.utils.formatter_utils import sort_textual_files
 
 class JSONFormatter:
@@ -40,19 +39,18 @@ class JSONFormatter:
             rel = file.relative_to(self.repo_path.resolve())
             primary, subcat = classify_simple(file)
             content = await async_read_text(file)
-            token_est = await estimate_tokens_from_file(file)
-            file_url = build_github_url(self.repo_url, rel)
             if not content:
                 continue
             token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
+            file_url = build_github_url(self.repo_url, rel)
             data["files"].append({
-                    "file": str(rel),
-                    "type": subcat,
-                    "size_bytes": file.stat().st_size,
-                    "tokens_est": token_est,
-                    "content": content.strip(),
-                    "url": file_url
-                })
+                "file": str(rel),
+                "type": subcat,
+                "size_bytes": file.stat().st_size,
+                "tokens_est": token_est,
+                "content": content.strip(),
+                "url": file_url
+            })
 
         # NON-TEXTUAL FILES SECTION
         for asset in non_textual_files:
