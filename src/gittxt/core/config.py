@@ -13,8 +13,8 @@ load_dotenv()
 class ConfigManager:
     """Handles main Gittxt configuration and environment overrides."""
 
-    SRC_DIR = Path(__file__).parent.resolve()
-    CONFIG_FILE = SRC_DIR / "config/gittxt-config.json"
+    SRC_DIR = Path(__file__).resolve().parent
+    CONFIG_FILE = SRC_DIR.parent / "config" / "gittxt-config.json"
 
     @staticmethod
     def _determine_default_output_dir():
@@ -96,7 +96,7 @@ class FiletypeConfigManager:
     """Handles loading and saving filetype_config.json (whitelist/blacklist)"""
 
     SRC_DIR = Path(__file__).parent.resolve()
-    FILETYPE_CONFIG_PATH = SRC_DIR / "config/filetype_config.json"
+    FILETYPE_CONFIG_PATH = SRC_DIR / "config" / "filetype_config.json"
 
     DEFAULT_FILETYPE_CONFIG = {
         "whitelist": [],
@@ -137,6 +137,6 @@ class FiletypeConfigManager:
             cls.save_filetype_config(config)
 
 
-# Initial bootstrapping
-ConfigManager.save_default_config()
-FiletypeConfigManager.save_filetype_config(FiletypeConfigManager.load_filetype_config())
+if __name__ == "__main__":
+    ConfigManager.save_default_config()
+    FiletypeConfigManager.save_filetype_config(FiletypeConfigManager.load_filetype_config())
