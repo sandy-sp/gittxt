@@ -34,17 +34,14 @@ async def estimate_tokens_from_file(
     try:
         async with aiofiles.open(file, "r", encoding="utf-8", errors="ignore") as f:
             content = await f.read()
-        encoding = tiktoken.get_encoding(encoding_name)
-        tokens = encoding.encode(content)
-        return len(tokens)
-    except Exception:
-        if use_fallback:
-            try:
-                async with aiofiles.open(file, "r", encoding="utf-8", errors="ignore") as f:
-                    content = await f.read()
+        try:
+            encoding = tiktoken.get_encoding(encoding_name)
+            return len(encoding.encode(content))
+        except Exception:
+            if use_fallback:
                 return int(len(content) / 4)
-            except Exception:
-                return 0
+            return 0
+    except Exception:
         return 0
 
 async def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
