@@ -84,7 +84,7 @@ class OutputBuilder:
                 for out in generated_outputs:
                     logger.info(f"📄 Output ready at: {out}")
                 output_files.extend(generated_outputs)
-                zip_formatter.output_files = output_files.copy()
+                zip_formatter.output_files = output_files
                 zip_path = await zip_formatter.generate()
                 logger.info(f"📦 Zipped bundle created: {zip_path}")
                 output_files.append(zip_path)
