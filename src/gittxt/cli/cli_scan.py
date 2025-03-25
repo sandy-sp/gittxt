@@ -30,7 +30,7 @@ console = Console()
 @click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
 @click.option("--zip", "create_zip", is_flag=True, help="Create zipped output bundle")
 def scan(
-    repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, debug, non_interactive
+    repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, debug, non_interactive, create_zip
 ):
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
