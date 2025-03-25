@@ -42,8 +42,10 @@ class JSONFormatter:
             content = await async_read_text(file)
             token_est = estimate_tokens_from_file(file)
             file_url = build_github_url(self.repo_url, rel)
-            if content:
-                data["files"].append({
+            if not content:
+                continue
+            token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
+            data["files"].append({
                     "file": str(rel),
                     "type": subcat,
                     "size_bytes": file.stat().st_size,

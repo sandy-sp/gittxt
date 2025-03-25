@@ -39,14 +39,15 @@ class MarkdownFormatter:
             for file in ordered_files:
                 rel = Path(file).relative_to(self.repo_path)
                 primary, subcat = classify_simple(file)
-                content = await async_read_text(file)
-                token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
                 lang = self._detect_code_language(file.suffix)
-                if content:
-                    await md_file.write(f"\n### 📄 `{rel}` ({subcat})\n")
-                    await md_file.write(f"- Size: `{file.stat().st_size} bytes`\n")
-                    await md_file.write(f"- Tokens (est.): `{token_est}`\n")
-                    await md_file.write(f"```{lang}\n{content.strip()}\n```\n")
+                content = await async_read_text(file)
+                if not content:
+                    continue
+                token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
+                await md_file.write(f"\n### 📄 `{rel}` ({subcat})\n")
+                await md_file.write(f"- Size: `{file.stat().st_size} bytes`\n")
+                await md_file.write(f"- Tokens (est.): `{token_est}`\n")
+                await md_file.write(f"```{lang}\n{content.strip()}\n```\n")
 
             # NON-TEXTUAL FILES SECTION
             await md_file.write("\n## 🎨 Non-Textual Assets\n")

@@ -38,10 +38,11 @@ class TextFormatter:
                 rel = Path(file).relative_to(self.repo_path)
                 primary, subcat = classify_simple(file)
                 content = await async_read_text(file)
+                if not content:
+                    continue
                 token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
-                if content:
-                    await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {file.stat().st_size} bytes | TOKENS: {token_est}\n---\n")
-                    await txt_file.write(f"{content.strip()}\n")
+                await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {file.stat().st_size} bytes | TOKENS: {token_est}\n---\n")
+                await txt_file.write(f"{content.strip()}\n")
 
             await txt_file.write("\n=== 🎨 Non-Textual Assets ===\n")
             for asset in non_textual_files:
