@@ -7,7 +7,7 @@ from gittxt.utils.file_utils import async_read_text
 from datetime import datetime, timezone
 from gittxt.utils.github_url_utils import build_github_url
 from gittxt.utils.summary_utils import estimate_tokens_from_file
-
+from gittxt.utils.formatter_utils import sort_textual_files
 
 class JSONFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None):
@@ -21,7 +21,7 @@ class JSONFormatter:
         output_file = self.output_dir / f"{self.repo_name}.json"
         summary = generate_summary(text_files + non_textual_files)
 
-        ordered_files = self._sort_textual_files(text_files)
+        ordered_files = sort_textual_files(text_files)
 
         data = {
             "metadata": {
@@ -70,18 +70,3 @@ class JSONFormatter:
             await json_file.write(json.dumps(data, indent=4, ensure_ascii=False))
 
         return output_file
-
-    def _sort_textual_files(self, files):
-        priority = ["readme", "license", ".gitignore", "config", "docs", "code", "data"]
-        def file_priority(file):
-            fname = file.name.lower()
-            if fname.startswith("readme"):
-                return 0
-            if fname in {"license", "notice"}:
-                return 1
-            if fname in {".gitignore", ".dockerignore", ".gitattributes"}:
-                return 2
-            ext_priority = {"configs": 3, "docs": 4, "code": 5, "data": 6}
-            _, subcat = classify_simple(file)
-            return ext_priority.get(subcat, 7)
-        return sorted(files, key=file_priority)
