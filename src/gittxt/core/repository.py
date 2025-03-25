@@ -3,7 +3,6 @@ import git
 from gittxt.core.logger import Logger
 from gittxt.utils.repo_url_parser import parse_github_url
 from gittxt import config
-from gittxt.core.constants import TEMP_DIR
 from gittxt.utils.cleanup_utils import delete_directory 
 
 logger = Logger.get_logger(__name__)
@@ -20,9 +19,13 @@ class RepositoryHandler:
         return "github.com" in source or source.startswith("git@")
 
     def _prepare_temp_dir(self, repo_name: str) -> Path:
-        temp_dir = Path(TEMP_DIR) / repo_name
+        base_output_dir = Path(config.get("output_dir")).resolve()
+        temp_root = base_output_dir / "temp"
+        temp_dir = temp_root / repo_name
+
         if temp_dir.exists():
             delete_directory(temp_dir)
+
         temp_dir.mkdir(parents=True, exist_ok=True)
         return temp_dir
 
