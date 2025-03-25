@@ -18,6 +18,8 @@ class Scanner:
         root_path: Path,
         exclude_dirs: List[str],
         size_limit: Optional[int],
+        include_patterns: Optional[List[str]] = None,
+        custom_exclude_patterns: Optional[List[str]] = None,
         progress: bool = False,
         batch_size: int = 50,
         verbose: bool = False,
@@ -29,16 +31,36 @@ class Scanner:
         self.batch_size = batch_size
         self.verbose = verbose
         self.accepted_files = []
+        self.include_patterns = include_patterns or []
+        self.custom_exclude_patterns = custom_exclude_patterns or []
 
     async def _process_single_file(self, file_path: Path):
         if not file_path.is_file():
             return
         if not pattern_utils.passes_all_filters(file_path, self.exclude_dirs, self.size_limit, self.verbose):
             return
-
         primary, _ = filetype_utils.classify_simple(file_path)
-        if primary == "TEXTUAL":
-            self.accepted_files.append(file_path.resolve())
+
+        # Exclude hard-coded non-textuals (cannot be forced in)
+        if primary != "TEXTUAL":
+            return
+
+        # Apply custom exclude-patterns
+        for pattern in self.custom_exclude_patterns:
+            if file_path.match(pattern):
+                if self.verbose:
+                    logger.debug(f"🛑 Skipped (exclude pattern): {file_path}")
+                return
+
+        # Apply include-patterns (only if specified)
+        if self.include_patterns:
+            if not any(file_path.match(pat) for pat in self.include_patterns):
+                if self.verbose:
+                    logger.debug(f"🛑 Skipped (not in include patterns): {file_path}")
+                return
+
+        # If passed all filters
+        self.accepted_files.append(file_path.resolve())
 
     async def scan_directory(self) -> List[Path]:
         all_paths = [
