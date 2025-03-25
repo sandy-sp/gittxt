@@ -3,6 +3,7 @@ from zipfile import ZipFile
 from gittxt.core.logger import Logger
 from gittxt.utils.github_url_utils import build_github_repo_url
 import asyncio
+import hashlib
 
 logger = Logger.get_logger(__name__)
 
@@ -29,7 +30,10 @@ class ZipFormatter:
             zipf.writestr("README-gittxt.txt", self._get_zip_readme())
             for asset in self.non_textual_files:
                 rel = asset.relative_to(self.repo_path)
-                arcname = f"assets/{rel}"
+                rel_str = str(rel).replace(os.sep, "/")
+                name_hash = hashlib.sha1(rel_str.encode()).hexdigest()[:8]
+                safe_name = f"{rel.stem}_{name_hash}{rel.suffix}"
+                arcname = f"assets/{safe_name}"
                 zipf.write(asset, arcname=arcname)
 
         if zip_dest.exists():
