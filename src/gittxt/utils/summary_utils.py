@@ -36,7 +36,7 @@ async def estimate_tokens_from_file(
                 return 0
         return 0
 
-def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
+async def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
     summary = {
         "total_files": len(file_paths),
         "total_size": 0,
@@ -61,7 +61,7 @@ def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Di
             summary["file_type_breakdown"][sub] += 1
 
             if primary == "TEXTUAL" and estimate_tokens:
-                tokens = estimate_tokens_from_file(file)
+                tokens = await estimate_tokens_from_file(file)
                 summary["estimated_tokens"] += tokens
                 summary["tokens_by_type"].setdefault(sub, 0)
                 summary["tokens_by_type"][sub] += tokens
