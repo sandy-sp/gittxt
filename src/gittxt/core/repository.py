@@ -3,14 +3,12 @@ import git
 from gittxt.core.logger import Logger
 from gittxt.utils.repo_url_parser import parse_github_url
 from gittxt import config
+from gittxt.core.constants import TEMP_DIR
 
 logger = Logger.get_logger(__name__)
 
 class RepositoryHandler:
     """Handles GitHub repo cloning and local directory resolution."""
-
-    BASE_OUTPUT_DIR = (Path(__file__).parent / "../gittxt-outputs").resolve()
-    TEMP_DIR = BASE_OUTPUT_DIR / "temp"
 
     def __init__(self, source: str, branch: str = None):
         self.source = source

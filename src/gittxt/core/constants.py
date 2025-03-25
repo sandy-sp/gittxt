@@ -1,0 +1,8 @@
+
+TEXT_DIR = "text"
+JSON_DIR = "json"
+MD_DIR = "md"
+ZIP_DIR = "zips"
+TEMP_DIR = "temp"
+
+OUTPUT_SUBDIRS = [TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR, TEMP_DIR]

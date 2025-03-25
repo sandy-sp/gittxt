@@ -7,6 +7,7 @@ from gittxt.formatters.json_formatter import JSONFormatter
 from gittxt.formatters.markdown_formatter import MarkdownFormatter
 from gittxt.formatters.zip_formatter import ZipFormatter
 from gittxt.utils.filetype_utils import classify_simple
+from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR
 
 logger = Logger.get_logger(__name__)
 
@@ -28,10 +29,10 @@ class OutputBuilder:
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
 
         self.directories = {
-            "txt": self.output_dir / "text",
-            "json": self.output_dir / "json",
-            "md": self.output_dir / "md",
-            "zip": self.output_dir / "zips",
+            "txt": self.output_dir / TEXT_DIR,
+            "json": self.output_dir / JSON_DIR,
+            "md": self.output_dir / MD_DIR,
+            "zip": self.output_dir / ZIP_DIR,
         }
         for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)

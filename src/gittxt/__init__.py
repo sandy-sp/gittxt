@@ -1,6 +1,7 @@
 from pathlib import Path
 from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
+from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR
 
 # Package Metadata
 __version__ = "1.6.0"
@@ -15,10 +16,10 @@ config = ConfigManager.load_config()
 BASE_DIR = Path(__file__).parent.resolve()
 LOG_DIR = (BASE_DIR / "../gittxt-logs").resolve()
 OUTPUT_DIR = Path(config.get("output_dir")).resolve()
-TEXT_DIR = OUTPUT_DIR / "text"
-JSON_DIR = OUTPUT_DIR / "json"
-MD_DIR = OUTPUT_DIR / "md"
-ZIP_DIR = OUTPUT_DIR / "zips"
+TEXT_DIR = OUTPUT_DIR / TEXT_DIR
+JSON_DIR = OUTPUT_DIR / JSON_DIR
+MD_DIR = OUTPUT_DIR / MD_DIR
+ZIP_DIR = OUTPUT_DIR / ZIP_DIR
 
 # Auto-create necessary folders
 for directory in [LOG_DIR, OUTPUT_DIR, TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR]:
