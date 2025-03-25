@@ -25,26 +25,21 @@ class ConfigManager:
         else:
             return (home_dir / "Gittxt").resolve()
 
-    # Updated DEFAULT CONFIG with tree_exclude_dirs
     DEFAULT_CONFIG = {
         "output_dir": str(_determine_default_output_dir.__func__()),
         "size_limit": None,
-        "include_patterns": [],
-        "exclude_patterns": [".git", "node_modules", "__pycache__", ".log"],
-        "custom_exclude_patterns": [],
+        "exclude_dirs": [".git", "__pycache__", "node_modules", ".vscode", ".pytest_cache"],
         "output_format": "txt",
-        "file_types": "code,docs",
         "logging_level": "WARNING",
         "log_format": "plain",
         "auto_zip": False,
-        "tree_exclude_dirs": [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]  # ✅ ADDED
+        "tree_exclude_dirs": [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]
     }
 
     @classmethod
     def load_config(cls):
         config = cls.DEFAULT_CONFIG.copy()
 
-        # Step 1: Load from gittxt-config.json if present
         if cls.CONFIG_FILE.exists():
             try:
                 with cls.CONFIG_FILE.open("r", encoding="utf-8") as f:
@@ -54,10 +49,8 @@ class ConfigManager:
             except (json.JSONDecodeError, IOError) as e:
                 logger.warning(f"⚠️ Could not load config file: {e}. Using defaults.")
 
-        # Step 2: .env overrides
         config["output_dir"] = os.getenv("GITTXT_OUTPUT_DIR", config["output_dir"])
         config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
-        config["file_types"] = os.getenv("GITTXT_FILE_TYPES", config["file_types"])
         config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
         config["log_format"] = os.getenv("GITTXT_LOG_FORMAT", config["log_format"])
         config["size_limit"] = (
@@ -65,12 +58,7 @@ class ConfigManager:
         )
         config["auto_zip"] = os.getenv("GITTXT_AUTO_ZIP", str(config["auto_zip"])).lower() == "true"
 
-        # Step 3: Path normalization
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
-
-        # Step 4: Merge default excludes + custom excludes
-        merged_excludes = set(config["exclude_patterns"]) | set(config.get("custom_exclude_patterns", []))
-        config["exclude_patterns"] = sorted(merged_excludes)
 
         logger.info("✅ Final config loaded (env + json + defaults merged)")
         return config
@@ -93,13 +81,13 @@ class ConfigManager:
 
 
 class FiletypeConfigManager:
-    """Handles loading and saving filetype_config.json (whitelist/blacklist)"""
+    """Manages whitelist and blacklist of file types (only TEXTUAL can move)."""
 
     SRC_DIR = Path(__file__).parent.parent.resolve()
     FILETYPE_CONFIG_PATH = SRC_DIR / "config" / "filetype_config.json"
 
     DEFAULT_FILETYPE_CONFIG = {
-        "whitelist": [],
+        "whitelist": [".py", ".md", ".txt", ".html", ".json", ".yml", ".yaml", ".csv"],
         "blacklist": [".zip", ".exe", ".bin", ".docx", ".xls", ".pdf"]
     }
 
