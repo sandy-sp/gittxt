@@ -103,7 +103,7 @@ async def _process_target(repo_source, branch, include_patterns, exclude_pattern
 
     await builder.generate_output(all_files, repo_path, create_zip=False, tree_depth=tree_depth)
 
-    summary_data = generate_summary(all_files)
+    summary_data = await generate_summary(all_files)
     _print_summary(repo_name, summary_data, final_output_dir, output_format)
 
     if is_remote:
