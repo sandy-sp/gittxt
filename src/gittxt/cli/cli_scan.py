@@ -12,7 +12,7 @@ from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary
 from .cli_utils import config, _print_summary
-
+from gittxt.formatters.zip_formatter import ZipFormatter
 logger = Logger.get_logger(__name__)
 console = Console()
 
@@ -28,6 +28,7 @@ console = Console()
 @click.option("--file-types", default="all", help="Specify types: code, docs, csv, image, media, all")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
+@click.option("--zip", "create_zip", is_flag=True, help="Create zipped output bundle")
 def scan(
     repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, debug, non_interactive
 ):
@@ -50,20 +51,20 @@ def scan(
 
     asyncio.run(
         _handle_repos(
-            repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types
+            repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, create_zip=ZipFormatter or config.get("auto_zip", False)
         )
     )
 
-async def _handle_repos(repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types):
+async def _handle_repos(repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, create_zip=False):
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     include_patterns = list(include) if include else []
     exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
     file_types_list = [ft.strip() for ft in file_types.split(",")]
 
     for repo_source in repos:
-        await _process_target(repo_source, branch, include_patterns, exclude_patterns, size_limit, final_output_dir, output_format, tree_depth, file_types_list)
+        await _process_target(repo_source, branch, include_patterns, exclude_patterns, size_limit, final_output_dir, output_format, tree_depth, file_types_list, create_zip=create_zip)
 
-async def _process_target(repo_source, branch, include_patterns, exclude_patterns, size_limit, final_output_dir, output_format, tree_depth, file_types):
+async def _process_target(repo_source, branch, include_patterns, exclude_patterns, size_limit, final_output_dir, output_format, tree_depth, file_types, create_zip=False):
     repo_url = None
     if Path(repo_source).exists():
         repo_path = Path(repo_source).resolve()
@@ -101,7 +102,7 @@ async def _process_target(repo_source, branch, include_patterns, exclude_pattern
         repo_url=repo_url
     )
 
-    await builder.generate_output(all_files, repo_path, create_zip=False, tree_depth=tree_depth)
+    await builder.generate_output(all_files, repo_path, create_zip=create_zip, create_zip=False, tree_depth=tree_depth)
 
     summary_data = await generate_summary(all_files)
     _print_summary(repo_name, summary_data, final_output_dir, output_format)
