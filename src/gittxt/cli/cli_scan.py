@@ -84,7 +84,7 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
         repo_path = Path(repo_source).resolve()
         repo_name = repo_path.name
         is_remote = False
-        repo_url = None
+        repo_url = f"file://{repo_path}"
     else:
         parsed = parse_github_url(repo_source)
         repo_handler = RepositoryHandler(repo_source, branch=branch)
