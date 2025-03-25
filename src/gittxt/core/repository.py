@@ -19,7 +19,7 @@ class RepositoryHandler:
         return "github.com" in source or source.startswith("git@")
 
     def _prepare_temp_dir(self, repo_name: str) -> Path:
-        temp_dir = self.TEMP_DIR / repo_name
+        temp_dir = Path(TEMP_DIR) / repo_name
         temp_dir.mkdir(parents=True, exist_ok=True)
         return temp_dir
 
