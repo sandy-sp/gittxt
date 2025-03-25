@@ -39,10 +39,12 @@ class Scanner:
             return
         if not pattern_utils.passes_all_filters(file_path, self.exclude_dirs, self.size_limit, self.verbose):
             return
-        primary, _ = filetype_utils.classify_simple(file_path)
+        primary, reason = filetype_utils.classify_simple(file_path)
 
         # Exclude hard-coded non-textuals (cannot be forced in)
         if primary != "TEXTUAL":
+            if self.verbose:
+                logger.debug(f"🛑 Skipped (non-textual: {reason}): {file_path}")
             return
 
         # Apply custom exclude-patterns
