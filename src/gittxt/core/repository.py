@@ -2,9 +2,8 @@ from pathlib import Path
 import git
 from gittxt.core.logger import Logger
 from gittxt.utils.repo_url_parser import parse_github_url
-from gittxt.core.config import ConfigManager
+from gittxt import config
 
-config = ConfigManager.load_config()
 logger = Logger.get_logger(__name__)
 
 class RepositoryHandler:

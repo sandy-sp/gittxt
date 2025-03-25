@@ -1,8 +1,6 @@
 from pathlib import Path
-from gittxt.core.config import ConfigManager
+from gittxt import config
 import os
-
-config = ConfigManager.load_config()
 
 def generate_tree(path: Path, prefix: str = "", max_depth: int = None, current_depth: int = 0, exclude_dirs: list = None) -> str:
     """

@@ -1,14 +1,12 @@
 from pathlib import Path
 import click
-from gittxt.core.config import ConfigManager
+from gittxt import config
 
 def run_interactive_install():
     """
     Enhanced interactive install wizard for gittxt-config.json setup.
     """
     click.echo("\n🎉 Welcome to the Gittxt Interactive Installer 🛠️\n")
-
-    config = ConfigManager.load_config()
 
     # Output directory setup
     current_out_dir = config.get("output_dir", "")
@@ -61,5 +59,5 @@ def run_interactive_install():
     click.echo(f"✅ ZIP bundling set to: {config['auto_zip']}")
 
     # Save config
-    ConfigManager.save_config_updates(config)
+    config.save_config_updates(config)
     click.echo("\n🎉 Setup complete! Your configuration has been saved.\n")

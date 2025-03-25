@@ -6,7 +6,7 @@ import json
 from logging.handlers import RotatingFileHandler
 
 try:
-    from gittxt.core.config import ConfigManager
+    from gittxt import config
 except ImportError:
     ConfigManager = None  # fallback for isolated runs
 

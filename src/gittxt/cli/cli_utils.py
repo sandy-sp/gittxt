@@ -1,8 +1,7 @@
 from rich.console import Console
 from rich.table import Table
-from gittxt.core.config import ConfigManager
+from gittxt import config
 
-config = ConfigManager.load_config()
 console = Console()
 
 def _print_summary(repo_name, summary_data, final_output_dir, output_format):
