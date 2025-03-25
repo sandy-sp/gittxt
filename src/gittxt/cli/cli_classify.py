@@ -19,8 +19,8 @@ console = Console()
 @click.option("--exclude-dir", "exclude_dirs", multiple=True, help="Exclude folders (e.g., .git, node_modules)")
 def classify(repo, exclude_dirs):
     exclude_dirs = normalize_patterns(list(exclude_dirs))
-    whitelist_types = set()
-    blacklist_types = set()
+    whitelist_types = defaultdict(set)
+    blacklist_types = defaultdict(set)
 
     if Path(repo).exists():
         repo_path = Path(repo).resolve()
@@ -48,31 +48,42 @@ def classify(repo, exclude_dirs):
         primary, _ = classify_simple(file)
 
         if ext in whitelist_cfg or primary == "TEXTUAL":
-            whitelist_types.add(ext)
+            whitelist_types[ext].add(file.name)
         else:
-            blacklist_types.add(ext)
+            blacklist_types[ext].add(file.name)
 
-    wl_count = len(whitelist_types)
-    bl_count = len(blacklist_types)
+    wl_flat = []
+    for ext, names in sorted(whitelist_types.items()):
+        if ext == "(no ext)":
+            wl_flat.extend(sorted(names))
+        else:
+            wl_flat.append(ext)
 
-    wl_display = ", ".join(sorted(whitelist_types)) or "-"
-    bl_display = ", ".join(sorted(blacklist_types)) or "-"
+    bl_flat = []
+    for ext, names in sorted(blacklist_types.items()):
+        if ext == "(no ext)":
+            bl_flat.extend(sorted(names))
+        else:
+            bl_flat.append(ext)
+
+    wl_display = ", ".join(wl_flat) or "-"
+    bl_display = ", ".join(bl_flat) or "-"
 
     wl_panel = Panel(
-        Text(f"{wl_display}\n\n[Total: {wl_count}]", style="green"),
+        Text(f"{wl_display}\n\n[Total: {len(wl_flat)}]", style="green"),
         title="✅ Whitelist / Textual",
         expand=True,
         border_style="green"
     )
 
     bl_panel = Panel(
-        Text(f"{bl_display}\n\n[Total: {bl_count}]", style="red"),
+        Text(f"{bl_display}\n\n[Total: {len(bl_flat)}]", style="red"),
         title="❌ Blacklist / Non-Textual",
         expand=True,
         border_style="red"
     )
 
-    header_text = Text(f"\n📦 File Type Classification Summary for {repo_owner}/{repo_name}\n", style="bold white")
+    header_text = Text(f"\n📦 File Type Classification Summary for [bold cyan]{repo_owner}/{repo_name}[/bold cyan]\n", style="bold white")
 
     console.print(header_text)
     console.print(Columns([wl_panel, bl_panel]))
