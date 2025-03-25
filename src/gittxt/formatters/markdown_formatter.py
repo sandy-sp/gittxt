@@ -17,7 +17,7 @@ class MarkdownFormatter:
 
     async def generate(self, text_files, non_textual_files):
         output_file = self.output_dir / f"{self.repo_name}.md"
-        summary = generate_summary(text_files + non_textual_files)
+        summary = await generate_summary(text_files + non_textual_files)
 
         # Sort TEXTUAL files by priority order
         ordered_files = sort_textual_files(text_files)
@@ -38,7 +38,7 @@ class MarkdownFormatter:
             # TEXTUAL FILES SECTION
             await md_file.write("## 📝 Extracted Textual Files\n")
             for file in ordered_files:
-                rel = Path(file).relative_to(self.repo_path)
+                rel = file.relative_to(self.repo_path.resolve())
                 primary, subcat = classify_simple(file)
                 lang = self._detect_code_language(file.suffix)
                 content = await async_read_text(file)

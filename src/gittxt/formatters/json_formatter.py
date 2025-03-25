@@ -19,7 +19,7 @@ class JSONFormatter:
 
     async def generate(self, text_files, non_textual_files):
         output_file = self.output_dir / f"{self.repo_name}.json"
-        summary = generate_summary(text_files + non_textual_files)
+        summary = await generate_summary(text_files + non_textual_files)
 
         ordered_files = sort_textual_files(text_files)
 
@@ -37,7 +37,7 @@ class JSONFormatter:
 
         # TEXTUAL FILES SECTION
         for file in ordered_files:
-            rel = Path(file).relative_to(self.repo_path)
+            rel = file.relative_to(self.repo_path.resolve())
             primary, subcat = classify_simple(file)
             content = await async_read_text(file)
             token_est = await estimate_tokens_from_file(file)
