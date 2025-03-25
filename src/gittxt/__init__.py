@@ -24,7 +24,10 @@ TEMP_DIR = OUTPUT_DIR / TEMP_DIR
 
 # Auto-create necessary folders
 for directory in [LOG_DIR, OUTPUT_DIR, TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR, TEMP_DIR]:
-    directory.mkdir(parents=True, exist_ok=True)
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to create directory {directory}: {e}")
 
 logger.info("✅ Gittxt initialized successfully.")
 logger.info(f"📂 Output Directory: {OUTPUT_DIR}")
