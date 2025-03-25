@@ -40,11 +40,11 @@ class JSONFormatter:
             rel = Path(file).relative_to(self.repo_path)
             primary, subcat = classify_simple(file)
             content = await async_read_text(file)
-            token_est = estimate_tokens_from_file(file)
+            token_est = await estimate_tokens_from_file(file)
             file_url = build_github_url(self.repo_url, rel)
             if not content:
                 continue
-            token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
+            token_est = await summary.get("tokens_by_type", {}).get(subcat, 0)
             data["files"].append({
                     "file": str(rel),
                     "type": subcat,

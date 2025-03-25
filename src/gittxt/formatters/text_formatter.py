@@ -40,7 +40,7 @@ class TextFormatter:
                 content = await async_read_text(file)
                 if not content:
                     continue
-                token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
+                token_est = await summary.get("tokens_by_type", {}).get(subcat, 0)
                 await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {file.stat().st_size} bytes | TOKENS: {token_est}\n---\n")
                 await txt_file.write(f"{content.strip()}\n")
 

@@ -2,11 +2,12 @@ from pathlib import Path
 from typing import List, Dict
 import tiktoken
 from gittxt.utils.filetype_utils import classify_simple
+import aiofiles
 
-def estimate_tokens_from_file(
+async def estimate_tokens_from_file(
     file: Path,
     encoding_name: str = "cl100k_base",
-    use_fallback: bool = True  # Configuration parameter to control fallback
+    use_fallback: bool = True
 ) -> int:
     """
     Estimate the number of tokens in a file.
@@ -20,23 +21,20 @@ def estimate_tokens_from_file(
         int: The estimated number of tokens.
     """
     try:
-        with file.open("r", encoding="utf-8", errors="ignore") as f:
-            content = f.read()
+        async with aiofiles.open(file, "r", encoding="utf-8", errors="ignore") as f:
+            content = await f.read()
         encoding = tiktoken.get_encoding(encoding_name)
         tokens = encoding.encode(content)
         return len(tokens)
     except Exception:
         if use_fallback:
-            # Fallback: rough estimate based on whitespace split heuristic
             try:
-                with file.open("r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
+                async with aiofiles.open(file, "r", encoding="utf-8", errors="ignore") as f:
+                    content = await f.read()
                 return int(len(content.split()) * 0.75)
             except Exception:
                 return 0
-        else:
-            # If fallback is disabled, return 0 or handle as needed
-            return 0
+        return 0
 
 def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
     summary = {
