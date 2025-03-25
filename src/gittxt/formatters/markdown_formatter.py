@@ -44,7 +44,7 @@ class MarkdownFormatter:
                 content = await async_read_text(file)
                 if not content:
                     continue
-                token_est = await summary.get("tokens_by_type", {}).get(subcat, 0)
+                token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
                 await md_file.write(f"\n### 📄 `{rel}` ({subcat})\n")
                 await md_file.write(f"- Size: `{file.stat().st_size} bytes`\n")
                 await md_file.write(f"- Tokens (est.): `{token_est}`\n")

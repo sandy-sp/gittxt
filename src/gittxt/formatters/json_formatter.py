@@ -44,7 +44,7 @@ class JSONFormatter:
             file_url = build_github_url(self.repo_url, rel)
             if not content:
                 continue
-            token_est = await summary.get("tokens_by_type", {}).get(subcat, 0)
+            token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
             data["files"].append({
                     "file": str(rel),
                     "type": subcat,
