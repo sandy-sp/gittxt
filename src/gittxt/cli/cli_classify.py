@@ -47,10 +47,11 @@ def classify(repo, exclude_dirs):
         ext = file.suffix.lower() or "(no ext)"
         primary, _ = classify_simple(file)
 
-        if ext in whitelist_cfg or primary == "TEXTUAL":
+        if ext in whitelist_cfg:
             whitelist_types[ext].add(file.name)
-        else:
+        elif ext in blacklist_cfg or primary == "NON-TEXTUAL":
             blacklist_types[ext].add(file.name)
+        # else: skip showing default/heuristic
 
     wl_flat = []
     for ext, names in sorted(whitelist_types.items()):
