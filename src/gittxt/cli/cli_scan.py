@@ -63,7 +63,11 @@ async def _handle_repos(repos, exclude_dirs, size_limit, branch, output_dir, out
         await _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip)
 
 async def _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False):
-    repo_url = None
+    repo_url = f"file://{repo_path}" if not is_remote else (
+        f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir")
+        else f"{base}/tree/{parsed['branch']}"
+    )
+
     if Path(repo_source).exists():
         repo_path = Path(repo_source).resolve()
         repo_name = repo_path.name

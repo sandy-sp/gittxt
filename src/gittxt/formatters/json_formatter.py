@@ -42,7 +42,7 @@ class JSONFormatter:
             if not content:
                 continue
             token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
-            file_url = build_github_url(self.repo_url, rel)
+            file_url = build_github_url(self.repo_url, rel) if self.repo_url and self.repo_url.startswith("http") else ""
             data["files"].append({
                 "file": str(rel),
                 "type": subcat,
