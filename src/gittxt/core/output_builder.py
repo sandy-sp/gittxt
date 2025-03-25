@@ -37,7 +37,7 @@ class OutputBuilder:
         for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
 
-    async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None):
+    async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"):
         tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
         # Avoid running classify_simple() twice
@@ -66,10 +66,10 @@ class OutputBuilder:
                     tree_summary=tree_summary,
                     repo_url=self.repo_url
                 )
-                tasks.append(formatter.generate(file_groups["textual"], file_groups["non_textual"]))
+                tasks.append(formatter.generate(file_groups["textual"], file_groups["non_textual"], mode=mode))
 
         # ZIP bundle task (runs concurrently)
-        if create_zip:
+        if create_zip and mode == "rich":
             zip_formatter = ZipFormatter(
                 repo_name=self.repo_name,
                 output_dir=self.directories["zip"],
