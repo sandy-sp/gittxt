@@ -4,7 +4,8 @@ import json
 from binaryornot.check import is_binary
 from gittxt.core.config import FiletypeConfigManager
 
-CONFIG_FILE = Path(__file__).parent / "../config/subcategory_config.json"
+CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "subcategory_config.json"
+CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # --- Dynamic Configurable Subcategory Map ---
 
