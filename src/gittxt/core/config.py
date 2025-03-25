@@ -116,6 +116,7 @@ class FiletypeConfigManager:
     @classmethod
     def save_filetype_config(cls, config: dict):
         try:
+            cls.FILETYPE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
             with cls.FILETYPE_CONFIG_PATH.open("w", encoding="utf-8") as f:
                 json.dump(config, f, indent=4)
             logger.info(f"✅ Updated filetype config: {cls.FILETYPE_CONFIG_PATH}")
