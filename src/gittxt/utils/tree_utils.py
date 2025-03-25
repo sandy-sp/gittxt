@@ -14,7 +14,7 @@ def generate_tree(path: Path, prefix: str = "", max_depth: int = None, current_d
     :return: Tree string.
     """
     if exclude_dirs is None:
-        exclude_dirs = config.get("tree_exclude_dirs", [".git", "__pycache__"])
+        exclude_dirs = [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]
 
     if max_depth is not None and current_depth >= max_depth:
         return prefix.rstrip() + "└── ..."
