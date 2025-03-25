@@ -31,6 +31,7 @@ console = Console()
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
 @click.option("--zip", "create_zip", is_flag=True, help="Create zipped output bundle")
+@click.option("--lite", is_flag=True, help="Generate minimal output (tree + code only)")
 def scan(
     repos, exclude_dirs, size_limit, branch, output_dir, output_format,
     tree_depth, debug, non_interactive, create_zip,
@@ -59,22 +60,23 @@ def scan(
             repos, exclude_dirs, size_limit, branch, output_dir,
             output_format, tree_depth, create_zip=create_zip or config.get("auto_zip", False),
             include_patterns=include_patterns,
-            exclude_patterns=exclude_patterns
+            exclude_patterns=exclude_patterns,
+            lite=lite
         )
     )
 
-async def _handle_repos(repos, exclude_dirs, include_patterns, exclude_patterns, size_limit, branch, output_dir, output_format, tree_depth, create_zip=False):
+async def _handle_repos(repos, exclude_dirs, include_patterns, exclude_patterns, size_limit, branch, output_dir, output_format, tree_depth, create_zip=False, lite=False):
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     exclude_dirs = list(exclude_dirs) if exclude_dirs else config.get("exclude_dirs", [])
 
     for repo_source in repos:
         try:
-            await _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip)
+            await _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip, mode="lite" if lite else "rich")
         except Exception as e:
             logger.error(f"❌ Failed to process {repo_source}: {e}")
             console.print(f"[red]❌ Failed to scan {repo_source}: {e}")
             
-async def _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False):
+async def _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False, mode="rich"):
     repo_url = f"file://{repo_path}" if not is_remote else (
         f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir")
         else f"{base}/tree/{parsed['branch']}"
@@ -119,7 +121,7 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
         repo_url=repo_url
     )
 
-    await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth)
+    await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth, mode=mode)
 
     summary_data = await generate_summary(all_files)
     _print_summary(repo_name, summary_data, final_output_dir, output_format)
