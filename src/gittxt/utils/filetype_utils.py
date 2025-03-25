@@ -7,11 +7,6 @@ from gittxt.core.config import FiletypeConfigManager
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "subcategory_config.json"
 CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# Load config once
-filetype_config = FiletypeConfigManager.load_filetype_config()
-whitelist = filetype_config.get("whitelist", [])
-blacklist = filetype_config.get("blacklist", [])
-
 
 def is_text_file_heuristic(file: Path) -> bool:
     """
@@ -36,6 +31,9 @@ def is_text_file(file: Path) -> bool:
     Config-aware TEXTUAL detection (used during actual scan logic).
     """
     ext = file.suffix.lower()
+    config = FiletypeConfigManager.load_filetype_config()
+    whitelist = config.get("whitelist", [])
+    blacklist = config.get("blacklist", [])
     if ext in blacklist:
         return False
     if ext in whitelist:
@@ -49,16 +47,15 @@ def classify_simple(file: Path) -> tuple[str, str]:
     Reason: whitelisted, blacklisted, or default
     """
     ext = file.suffix.lower()
-
+    config = FiletypeConfigManager.load_filetype_config()
+    whitelist = config.get("whitelist", [])
+    blacklist = config.get("blacklist", [])
     if ext in blacklist:
         return "NON-TEXTUAL", "blacklisted"
-
     if ext in whitelist:
         return "TEXTUAL", "whitelisted"
-
     if is_text_file_heuristic(file):
         return "TEXTUAL", "default"
-
     return "NON-TEXTUAL", "default"
 
 
