@@ -20,19 +20,17 @@ console = Console()
 
 @click.command(help="📦 Scan one or multiple repositories or local directories.")
 @click.argument("repos", nargs=-1)
+@click.option("--exclude-dir", "exclude_dirs", multiple=True, help="Exclude folder paths (e.g., node_modules, .git)")
 @click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory")
 @click.option("--output-format", "-f", default="txt,json", help="txt, json, or md")
-@click.option("--include", "-i", multiple=True, help="Include files matching patterns (e.g., .py)")
-@click.option("--exclude", "-e", multiple=True, help="Exclude files matching patterns (e.g., node_modules)")
 @click.option("--size-limit", type=int, help="Maximum file size in bytes")
 @click.option("--branch", type=str, help="Specify Git branch to scan")
 @click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
-@click.option("--file-types", default="all", help="Specify types: code, docs, csv, image, media, all")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
 @click.option("--zip", "create_zip", is_flag=True, help="Create zipped output bundle")
 def scan(
-    repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, debug, non_interactive, create_zip
+    repos, exclude_dirs, size_limit, branch, output_dir, output_format, tree_depth, debug, non_interactive, create_zip
 ):
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -53,20 +51,18 @@ def scan(
 
     asyncio.run(
         _handle_repos(
-            repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, create_zip=create_zip or config.get("auto_zip", False)
+            repos, exclude_dirs, size_limit, branch, output_dir, output_format, tree_depth, create_zip=create_zip or config.get("auto_zip", False)
         )
     )
 
-async def _handle_repos(repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, create_zip=False):
+async def _handle_repos(repos, exclude_dirs, size_limit, branch, output_dir, output_format, tree_depth, create_zip=False):
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
-    include_patterns = list(include) if include else []
-    exclude_patterns = list(exclude) if exclude else config.get("exclude_patterns", [])
-    file_types_list = [ft.strip() for ft in file_types.split(",")]
+    exclude_dirs = list(exclude_dirs) if exclude_dirs else config.get("exclude_dirs", [])
 
     for repo_source in repos:
-        await _process_target(repo_source, branch, include_patterns, exclude_patterns, size_limit, final_output_dir, output_format, tree_depth, file_types_list, create_zip=create_zip)
+        await _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip)
 
-async def _process_target(repo_source, branch, include_patterns, exclude_patterns, size_limit, final_output_dir, output_format, tree_depth, file_types, create_zip=False):
+async def _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False):
     repo_url = None
     if Path(repo_source).exists():
         repo_path = Path(repo_source).resolve()
@@ -82,14 +78,12 @@ async def _process_target(repo_source, branch, include_patterns, exclude_pattern
         repo_url = f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir") else f"{base}/tree/{parsed['branch']}"
 
     gittxtignore_patterns = load_gittxtignore(repo_path)
-    merged_excludes = list(set(exclude_patterns + gittxtignore_patterns + config.get("exclude_patterns", [])))
+    merged_excludes = list(set(exclude_dirs + gittxtignore_patterns + config.get("exclude_dirs", [])))
 
     scanner = Scanner(
         root_path=repo_path,
-        include_patterns=include_patterns,
-        exclude_patterns=merged_excludes,
+        exclude_dirs=merged_excludes,
         size_limit=size_limit,
-        file_types=file_types,
         progress=True
     )
 
