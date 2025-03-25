@@ -51,7 +51,7 @@ def scan(
 
     asyncio.run(
         _handle_repos(
-            repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, create_zip=ZipFormatter or config.get("auto_zip", False)
+            repos, include, exclude, size_limit, branch, output_dir, output_format, tree_depth, file_types, create_zip=create_zip or config.get("auto_zip", False)
         )
     )
 
@@ -102,7 +102,7 @@ async def _process_target(repo_source, branch, include_patterns, exclude_pattern
         repo_url=repo_url
     )
 
-    await builder.generate_output(all_files, repo_path, create_zip=create_zip, create_zip=False, tree_depth=tree_depth)
+    await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth)
 
     summary_data = await generate_summary(all_files)
     _print_summary(repo_name, summary_data, final_output_dir, output_format)
