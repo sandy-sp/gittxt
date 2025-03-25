@@ -1,5 +1,5 @@
 from pathlib import Path
-from gittxt.config import ConfigManager
+from gittxt.core.config import ConfigManager
 import os
 
 config = ConfigManager.load_config()

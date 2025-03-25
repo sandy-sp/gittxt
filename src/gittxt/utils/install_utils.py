@@ -1,7 +1,6 @@
 from pathlib import Path
 import click
-from gittxt.config import ConfigManager
-
+from gittxt.core.config import ConfigManager
 
 def run_interactive_install():
     """

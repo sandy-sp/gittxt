@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 import fnmatch
-from gittxt.logger import Logger
+from gittxt.core.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
