@@ -20,7 +20,7 @@ except ImportError:
 class Logger:
     """Handles logging configuration for Gittxt, including JSON + colorized output."""
 
-    BASE_DIR = Path(__file__).parent.parent.resolve()
+    BASE_DIR = Path(__file__).parent.parent.parent.resolve()
     LOG_DIR = BASE_DIR / "gittxt-logs"
     LOG_FILE = LOG_DIR / "gittxt.log"
 

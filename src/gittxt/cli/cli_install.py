@@ -1,7 +1,7 @@
 import click
 from rich.console import Console
 from pathlib import Path
-from gittxt.logger import Logger
+from gittxt.core.logger import Logger
 from gittxt.utils.cleanup_utils import cleanup_old_outputs
 from gittxt.utils.install_utils import run_interactive_install
 from .cli_utils import config

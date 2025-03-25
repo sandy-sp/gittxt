@@ -4,10 +4,10 @@ import logging
 from pathlib import Path
 import click
 from rich.console import Console
-from gittxt.logger import Logger
-from gittxt.repository import RepositoryHandler
-from gittxt.scanner import Scanner
-from gittxt.output_builder import OutputBuilder
+from gittxt.core.logger import Logger
+from gittxt.core.repository import RepositoryHandler
+from gittxt.core.scanner import Scanner
+from gittxt.core.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary

@@ -1,6 +1,6 @@
 from rich.console import Console
 from rich.table import Table
-from gittxt.config import ConfigManager
+from gittxt.core.config import ConfigManager
 
 config = ConfigManager.load_config()
 console = Console()
