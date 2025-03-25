@@ -53,7 +53,7 @@ class MarkdownFormatter:
             # NON-TEXTUAL FILES SECTION
             await md_file.write("\n## 🎨 Non-Textual Assets\n")
             for asset in non_textual_files:
-                rel = Path(asset).relative_to(self.repo_path)
+                rel = asset.relative_to(self.repo_path.resolve())
                 primary, subcat = classify_simple(asset)
                 asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
                 await md_file.write(f"- `{rel}` ({subcat}) | Size: `{asset.stat().st_size} bytes` {asset_url}\n")
