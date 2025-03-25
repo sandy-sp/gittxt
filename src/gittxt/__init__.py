@@ -1,6 +1,6 @@
 from pathlib import Path
-from gittxt.logger import Logger
-from gittxt.config import ConfigManager
+from gittxt.core.logger import Logger
+from gittxt.core.config import ConfigManager
 
 # Package Metadata
 __version__ = "1.6.0"
