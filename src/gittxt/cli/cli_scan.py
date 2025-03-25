@@ -13,6 +13,8 @@ from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary
 from .cli_utils import config, _print_summary
 from gittxt.formatters.zip_formatter import ZipFormatter
+from gittxt.utils.repo_url_parser import parse_github_url
+
 logger = Logger.get_logger(__name__)
 console = Console()
 
@@ -39,7 +41,7 @@ def scan(
     if not repos:
         console.print("[bold red]❌ No repositories or directories specified.")
         sys.exit(1)
-    
+
     if not non_interactive:
         console.print("[cyan]⚠️ Interactive mode enabled.")
 
@@ -70,11 +72,14 @@ async def _process_target(repo_source, branch, include_patterns, exclude_pattern
         repo_path = Path(repo_source).resolve()
         repo_name = repo_path.name
         is_remote = False
+        repo_url = None
     else:
+        parsed = parse_github_url(repo_source)
         repo_handler = RepositoryHandler(repo_source, branch=branch)
         repo_path, subdir, is_remote, repo_name = repo_handler.get_local_path()
         repo_path = Path(repo_path) / subdir if subdir else Path(repo_path)
-        repo_url = repo_source.split(".git")[0] if ".git" in repo_source else repo_source
+        base = f"https://github.com/{parsed['owner']}/{parsed['repo']}"
+        repo_url = f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir") else f"{base}/tree/{parsed['branch']}"
 
     gittxtignore_patterns = load_gittxtignore(repo_path)
     merged_excludes = list(set(exclude_patterns + gittxtignore_patterns + config.get("exclude_patterns", [])))
