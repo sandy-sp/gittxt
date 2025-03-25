@@ -64,7 +64,10 @@ class RepositoryHandler:
 
             repo_name = parsed["repo"].replace(".git", "")
             temp_dir = self._prepare_temp_dir(repo_name)
-            self._clone_remote_repo(git_url, branch, temp_dir)
+            try:
+                self._clone_remote_repo(git_url, branch, temp_dir)
+            except Exception as e:
+                raise RuntimeError(f"❌ Failed to clone repository: {e}")
             logger.info(f"🔄 Subdirectory inside repo: {subdir or 'root'}")
             return str(temp_dir), subdir, self.is_remote, repo_name
 

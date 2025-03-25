@@ -60,8 +60,12 @@ async def _handle_repos(repos, exclude_dirs, size_limit, branch, output_dir, out
     exclude_dirs = list(exclude_dirs) if exclude_dirs else config.get("exclude_dirs", [])
 
     for repo_source in repos:
-        await _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip)
-
+        try:
+            await _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip)
+        except Exception as e:
+            logger.error(f"❌ Failed to process {repo_source}: {e}")
+            console.print(f"[red]❌ Failed to scan {repo_source}: {e}")
+            
 async def _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False):
     repo_url = f"file://{repo_path}" if not is_remote else (
         f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir")
