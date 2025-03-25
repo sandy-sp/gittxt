@@ -20,9 +20,11 @@ console = Console()
 
 @click.command(help="📦 Scan one or multiple repositories or local directories.")
 @click.argument("repos", nargs=-1)
-@click.option("--exclude-dir", "exclude_dirs", multiple=True, help="Exclude folder paths (e.g., node_modules, .git)")
+@click.option("--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths (e.g., node_modules, .git)")
 @click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory")
 @click.option("--output-format", "-f", default="txt,json", help="txt, json, or md")
+@click.option("--include-patterns", "-i", multiple=True, help="Include only files matching these glob patterns (textual only)")
+@click.option("--exclude-patterns", "-e", multiple=True, help="Exclude files matching these glob patterns (e.g. *.log)")
 @click.option("--size-limit", type=int, help="Maximum file size in bytes")
 @click.option("--branch", type=str, help="Specify Git branch to scan")
 @click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
@@ -30,8 +32,11 @@ console = Console()
 @click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
 @click.option("--zip", "create_zip", is_flag=True, help="Create zipped output bundle")
 def scan(
-    repos, exclude_dirs, size_limit, branch, output_dir, output_format, tree_depth, debug, non_interactive, create_zip
+    repos, exclude_dirs, size_limit, branch, output_dir, output_format,
+    tree_depth, debug, non_interactive, create_zip,
+    include_patterns, exclude_patterns
 ):
+
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("🔍 Debug mode enabled.")
@@ -51,22 +56,25 @@ def scan(
 
     asyncio.run(
         _handle_repos(
-            repos, exclude_dirs, size_limit, branch, output_dir, output_format, tree_depth, create_zip=create_zip or config.get("auto_zip", False)
+            repos, exclude_dirs, size_limit, branch, output_dir,
+            output_format, tree_depth, create_zip=create_zip or config.get("auto_zip", False),
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns
         )
     )
 
-async def _handle_repos(repos, exclude_dirs, size_limit, branch, output_dir, output_format, tree_depth, create_zip=False):
+async def _handle_repos(repos, exclude_dirs, include_patterns, exclude_patterns, size_limit, branch, output_dir, output_format, tree_depth, create_zip=False):
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     exclude_dirs = list(exclude_dirs) if exclude_dirs else config.get("exclude_dirs", [])
 
     for repo_source in repos:
         try:
-            await _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip)
+            await _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip)
         except Exception as e:
             logger.error(f"❌ Failed to process {repo_source}: {e}")
             console.print(f"[red]❌ Failed to scan {repo_source}: {e}")
             
-async def _process_target(repo_source, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False):
+async def _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False):
     repo_url = f"file://{repo_path}" if not is_remote else (
         f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir")
         else f"{base}/tree/{parsed['branch']}"
@@ -92,6 +100,8 @@ async def _process_target(repo_source, branch, exclude_dirs, size_limit, final_o
         root_path=repo_path,
         exclude_dirs=merged_excludes,
         size_limit=size_limit,
+        include_patterns=include_patterns,
+        custom_exclude_patterns=exclude_patterns,
         progress=True
     )
 
