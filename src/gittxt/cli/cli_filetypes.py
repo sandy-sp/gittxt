@@ -1,7 +1,8 @@
 import click
+from pathlib import Path
 from rich.console import Console
 from rich.table import Table
-from gittxt.utils.filetype_utils import FiletypeConfigManager
+from gittxt.utils.filetype_utils import FiletypeConfigManager, is_text_file, classify_simple
 
 console = Console()
 
@@ -28,6 +29,11 @@ def list_types():
 def whitelist(exts):
     config = FiletypeConfigManager.load_filetype_config()
     for ext in exts:
+        dummy = Path(f"test{ext if ext.startswith('.') else '.' + ext}")
+        if not is_text_file(dummy):
+            console.print(f"[red]❌ Cannot whitelist non-textual file type `{ext}`.")
+            continue
+
         if ext in config.get("blacklist", []):
             config["blacklist"].remove(ext)
             console.print(f"[yellow]Removed `{ext}` from blacklist.")

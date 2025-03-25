@@ -7,19 +7,17 @@ from gittxt.core.config import FiletypeConfigManager
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "subcategory_config.json"
 CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# Simplified Classification: Only TEXTUAL vs NON-TEXTUAL
+# Load config once
 filetype_config = FiletypeConfigManager.load_filetype_config()
 whitelist = filetype_config.get("whitelist", [])
 blacklist = filetype_config.get("blacklist", [])
 
 
-def is_text_file(file: Path) -> bool:
-    ext = file.suffix.lower()
-    if ext in blacklist:
-        return False
-    if ext in whitelist:
-        return True
-
+def is_text_file_heuristic(file: Path) -> bool:
+    """
+    Heuristic-based TEXTUAL detection using binary check and MIME type.
+    Ignores whitelist/blacklist config.
+    """
     try:
         if is_binary(str(file)):
             return False
@@ -33,7 +31,23 @@ def is_text_file(file: Path) -> bool:
         return False
 
 
+def is_text_file(file: Path) -> bool:
+    """
+    Config-aware TEXTUAL detection (used during actual scan logic).
+    """
+    ext = file.suffix.lower()
+    if ext in blacklist:
+        return False
+    if ext in whitelist:
+        return True
+    return is_text_file_heuristic(file)
+
+
 def classify_simple(file: Path) -> tuple[str, str]:
+    """
+    Returns ("TEXTUAL" | "NON-TEXTUAL", reason)
+    Reason: whitelisted, blacklisted, or default
+    """
     ext = file.suffix.lower()
 
     if ext in blacklist:
@@ -42,8 +56,9 @@ def classify_simple(file: Path) -> tuple[str, str]:
     if ext in whitelist:
         return "TEXTUAL", "whitelisted"
 
-    if is_text_file(file):
+    if is_text_file_heuristic(file):
         return "TEXTUAL", "default"
+
     return "NON-TEXTUAL", "default"
 
 
