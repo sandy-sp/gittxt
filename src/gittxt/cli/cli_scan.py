@@ -77,11 +77,6 @@ async def _handle_repos(repos, exclude_dirs, include_patterns, exclude_patterns,
             console.print(f"[red]❌ Failed to scan {repo_source}: {e}")
             
 async def _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False, mode="rich"):
-    repo_url = f"file://{repo_path}" if not is_remote else (
-        f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir")
-        else f"{base}/tree/{parsed['branch']}"
-    )
-
     if Path(repo_source).exists():
         repo_path = Path(repo_source).resolve()
         repo_name = repo_path.name
@@ -93,7 +88,8 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
         repo_path, subdir, is_remote, repo_name = repo_handler.get_local_path()
         repo_path = Path(repo_path) / subdir if subdir else Path(repo_path)
         base = f"https://github.com/{parsed['owner']}/{parsed['repo']}"
-        repo_url = f"{base}/tree/{parsed['branch']}/{parsed['subdir']}" if parsed.get("subdir") else f"{base}/tree/{parsed['branch']}"
+        repo_url = parsed.get("subdir") and f"{base}/tree/{parsed.get('branch', 'main')}/{parsed['subdir']}" \
+                  or f"{base}/tree/{parsed.get('branch', 'main')}"
 
     gittxtignore_patterns = load_gittxtignore(repo_path)
     merged_excludes = list(set(exclude_dirs + gittxtignore_patterns + config.get("exclude_dirs", [])))
