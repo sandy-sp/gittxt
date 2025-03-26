@@ -53,11 +53,17 @@ class ConfigManager:
         config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
         config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
         config["log_format"] = os.getenv("GITTXT_LOG_FORMAT", config["log_format"])
-        config["size_limit"] = (
-            int(os.getenv("GITTXT_SIZE_LIMIT", config["size_limit"] or 0)) or None
-        )
-        config["auto_zip"] = os.getenv("GITTXT_AUTO_ZIP", str(config["auto_zip"])).lower() == "true"
-
+        try:
+            size_limit_val = os.getenv("GITTXT_SIZE_LIMIT", config["size_limit"])
+            config["size_limit"] = int(size_limit_val) if size_limit_val is not None and size_limit_val != "" else None
+        except ValueError:
+            logger.warning(f"Invalid GITTXT_SIZE_LIMIT value: {os.getenv('GITTXT_SIZE_LIMIT')}. Using default.")
+            config["size_limit"] = None
+        auto_zip_val = os.getenv("GITTXT_AUTO_ZIP")
+        if auto_zip_val is not None:
+            config["auto_zip"] = auto_zip_val.lower() == "true"
+        else:
+            config["auto_zip"] = config["auto_zip"]
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
 
         logger.info("✅ Final config loaded (env + json + defaults merged)")
