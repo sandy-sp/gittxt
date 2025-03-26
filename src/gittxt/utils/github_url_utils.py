@@ -3,9 +3,13 @@ import re
 from pathlib import Path
 
 def build_github_url(repo_url: str, rel_path: Path) -> str:
+    """
+    Build a direct GitHub file URL for a file in a given repo + path.
+    """
     if not repo_url:
         return ""
 
+    # Convert SSH to https form
     repo_url = repo_url.replace("git@github.com:", "https://github.com/")
     repo_url = repo_url.replace(".git", "")
     parsed = urlparse(repo_url)
@@ -27,10 +31,9 @@ def build_github_url(repo_url: str, rel_path: Path) -> str:
         return f"{base_url}/{subdir}/{rel_path.as_posix()}"
     return f"{base_url}/{rel_path.as_posix()}"
 
-
 def build_github_repo_url(repo_url: str) -> str:
     """
-    Used for repo-level URL in README (no /blob/)
+    Used for repo-level URL in the ZIP readme or summary references (no /blob/).
     """
     if not repo_url:
         return ""
