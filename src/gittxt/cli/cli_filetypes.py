@@ -2,15 +2,15 @@ import click
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
-from gittxt.utils.filetype_utils import FiletypeConfigManager, is_text_file, classify_simple
+from gittxt.utils.filetype_utils import FiletypeConfigManager, is_text_file
 
 console = Console()
 
-@click.group(help="🗂 Manage filetype whitelist and blacklist.")
+@click.group(help="🗂 Manage textual filetype whitelist/blacklist by extension.")
 def filetypes():
     pass
 
-@filetypes.command("list", help="🔍 Show current whitelist and blacklist.")
+@filetypes.command("list", help="🔍 Show current whitelist and blacklist of file extensions.")
 def list_types():
     config = FiletypeConfigManager.load_filetype_config()
     table = Table(title="Current Whitelist & Blacklist")
@@ -24,7 +24,7 @@ def list_types():
         table.add_row(wl, bl)
     console.print(table)
 
-@filetypes.command(help="➕ Add extensions to whitelist (TEXTUAL only).")
+@filetypes.command(help="➕ Add extensions to the textual whitelist.")
 @click.argument("exts", nargs=-1)
 def whitelist(exts):
     config = FiletypeConfigManager.load_filetype_config()
@@ -32,7 +32,7 @@ def whitelist(exts):
         normalized_ext = ext.lower() if ext.startswith('.') else f".{ext.lower()}"
         dummy = Path(f"test{normalized_ext}")
         if not is_text_file(dummy):
-            console.print(f"[red]❌ Cannot whitelist non-textual file type `{ext}`.")
+            console.print(f"[red]❌ `{ext}` is not considered textual by default heuristics. Skipping.")
             continue
 
         if normalized_ext in config.get("blacklist", []):
@@ -41,14 +41,16 @@ def whitelist(exts):
         if normalized_ext not in config.get("whitelist", []):
             config["whitelist"].append(normalized_ext)
             console.print(f"[green]Added `{normalized_ext}` to whitelist.")
+
     FiletypeConfigManager.save_filetype_config(config)
 
-@filetypes.command(help="🚫 Add extensions to blacklist (TEXTUAL only).")
+@filetypes.command(help="🚫 Add extensions to the non-textual blacklist.")
 @click.argument("exts", nargs=-1)
 def blacklist(exts):
     config = FiletypeConfigManager.load_filetype_config()
     for ext in exts:
         normalized_ext = ext.lower() if ext.startswith('.') else f".{ext.lower()}"
+        # Move from whitelist to blacklist if necessary
         if normalized_ext in config.get("whitelist", []):
             config["whitelist"].remove(normalized_ext)
             console.print(f"[yellow]Removed `{normalized_ext}` from whitelist.")
