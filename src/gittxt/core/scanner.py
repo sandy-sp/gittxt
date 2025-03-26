@@ -79,7 +79,7 @@ class Scanner:
             transient=True
         ) as progress_bar:
             task = progress_bar.add_task("Scanning repository files", total=len(all_paths))
-            semaphore = asyncio.Semaphore(100)
+            semaphore = asyncio.Semaphore(200)
 
             async def limited_process(file_path: Path):
                 async with semaphore:
