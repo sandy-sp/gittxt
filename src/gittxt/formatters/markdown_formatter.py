@@ -2,7 +2,6 @@ from pathlib import Path
 import aiofiles
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
-from gittxt.utils.filetype_utils import classify_simple
 from datetime import datetime, timezone
 from gittxt.utils.github_url_utils import build_github_url
 from gittxt.utils.formatter_utils import sort_textual_files

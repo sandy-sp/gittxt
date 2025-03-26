@@ -1,5 +1,4 @@
 from pathlib import Path
-from gittxt import config
 import os
 
 def generate_tree(path: Path, prefix: str = "", max_depth: int = None, current_depth: int = 0, exclude_dirs: list = None) -> str:

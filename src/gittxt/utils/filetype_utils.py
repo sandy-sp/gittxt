@@ -1,6 +1,5 @@
 from pathlib import Path
 import mimetypes
-import json
 from binaryornot.check import is_binary
 from gittxt.core.config import FiletypeConfigManager
 

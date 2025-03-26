@@ -1,6 +1,5 @@
 from rich.console import Console
 from rich.table import Table
-from gittxt import config
 
 console = Console()
 

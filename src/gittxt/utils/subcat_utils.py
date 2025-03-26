@@ -1,6 +1,5 @@
 from pathlib import Path
 import mimetypes
-import json
 
 SUBCATEGORY_CONFIG = {
     ".py": "code",

@@ -1,6 +1,4 @@
 from pathlib import Path
-from gittxt.utils.filetype_utils import classify_simple
-from pathlib import Path
 from pygments.lexers import get_lexer_for_filename
 from pygments.util import ClassNotFound
 
