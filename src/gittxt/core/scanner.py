@@ -1,23 +1,24 @@
 import asyncio
 from pathlib import Path
 from typing import List, Optional
-from gittxt.core.logger import Logger
-from gittxt.utils import pattern_utils, filetype_utils
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from gittxt.core.logger import Logger
+from gittxt.core.config import ConfigManager
+from gittxt.utils import pattern_utils, filetype_utils
 
 logger = Logger.get_logger(__name__)
 
 class Scanner:
     """
-    Scans directories, applies directory exclusion and size filters,
-    then classifies files as TEXTUAL or NON-TEXTUAL.
+    Scans directories for textual files, ignoring non-textual.
+    Applies folder and size excludes. Optionally merges .gitignore.
     """
 
     def __init__(
         self,
         root_path: Path,
-        exclude_dirs: List[str],
-        size_limit: Optional[int],
+        exclude_dirs: Optional[List[str]] = None,
+        size_limit: Optional[int] = None,
         include_patterns: Optional[List[str]] = None,
         exclude_patterns: Optional[List[str]] = None,
         progress: bool = False,
@@ -25,52 +26,27 @@ class Scanner:
         verbose: bool = False,
     ):
         self.root_path = root_path.resolve()
-        self.exclude_dirs = pattern_utils.normalize_patterns(exclude_dirs)
+        self.exclude_dirs = exclude_dirs or []
         self.size_limit = size_limit
+        self.include_patterns = list(include_patterns) if include_patterns else []
+        self.exclude_patterns = list(exclude_patterns) if exclude_patterns else []
         self.progress = progress
         self.batch_size = batch_size
         self.verbose = verbose
         self.accepted_files = []
-        self.include_patterns = include_patterns or []
-        self.exclude_patterns = exclude_patterns or []
-
-    async def _process_single_file(self, file_path: Path):
-        if not file_path.is_file():
-            return
-        if not pattern_utils.passes_all_filters(file_path, self.exclude_dirs, self.size_limit, self.verbose):
-            return
-        primary, reason = filetype_utils.classify_simple(file_path)
-
-        # Exclude hard-coded non-textuals (cannot be forced in)
-        if primary != "TEXTUAL":
-            if self.verbose:
-                logger.debug(f"🛑 Skipped (non-textual: {reason}): {file_path}")
-            return
-
-        # Apply custom exclude-patterns
-        for pattern in self.exclude_patterns:
-            if file_path.match(pattern):
-                if self.verbose:
-                    logger.debug(f"🛑 Skipped (exclude pattern): {file_path}")
-                return
-
-        # Apply include-patterns (only if specified)
-        if self.include_patterns:
-            if not any(file_path.match(pat) for pat in self.include_patterns):
-                if self.verbose:
-                    logger.debug(f"🛑 Skipped (not in include patterns): {file_path}")
-                return
-
-        # If passed all filters
-        self.accepted_files.append(file_path.resolve())
 
     async def scan_directory(self) -> List[Path]:
-        all_paths = [
-            p for p in self.root_path.rglob("*")
-            if not pattern_utils.match_exclude_dir(p, self.exclude_dirs)
-        ]
-        logger.debug(f"📂 Found {len(all_paths)} total items after pruning excluded dirs")
+        """
+        Async-friendly method to gather textual files under root_path,
+        skipping excluded directories and large files.
+        """
+        all_items = [p for p in self.root_path.rglob("*") if not pattern_utils.match_exclude_dir(p, self.exclude_dirs)]
+        logger.debug(f"📂 Found {len(all_items)} items after exclude_dir filtering.")
+        config = ConfigManager.load_config()
+        concurrency = config.get("scan_concurrency", 200)
+        semaphore = asyncio.Semaphore(concurrency)
 
+        # Setup progress bar if needed
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -78,19 +54,39 @@ class Scanner:
             TimeElapsedColumn(),
             transient=True
         ) as progress_bar:
-            task = progress_bar.add_task("Scanning repository files", total=len(all_paths))
-            from gittxt.core.config import ConfigManager
-            config = ConfigManager.load_config()
-            concurrency = config.get("scan_concurrency", 200)
-            semaphore = asyncio.Semaphore(concurrency)
+            task_id = progress_bar.add_task("Scanning repository files...", total=len(all_items))
 
-            async def limited_process(file_path: Path):
+            async def process_path(path: Path):
                 async with semaphore:
-                    await self._process_single_file(file_path)
-                    progress_bar.update(task, advance=1)
+                    await self._process_single(path)
+                    progress_bar.update(task_id, advance=1)
 
-            await asyncio.gather(*[limited_process(f) for f in all_paths])
-            progress_bar.update(task, completed=len(all_paths))
+            await asyncio.gather(*[process_path(p) for p in all_items])
+            progress_bar.update(task_id, completed=len(all_items))
 
-        logger.info(f"✅ Scan complete: {len(self.accepted_files)} textual files accepted.")
         return self.accepted_files
+
+    async def _process_single(self, path: Path):
+        if not path.is_file():
+            return
+        if not pattern_utils.passes_all_filters(path, self.exclude_dirs, self.size_limit, self.verbose):
+            return
+
+        # Next, check exclude patterns or include patterns
+        if self.exclude_patterns and any(path.match(p) for p in self.exclude_patterns):
+            if self.verbose:
+                logger.debug(f"🛑 Skipped by exclude pattern: {path}")
+            return
+
+        if self.include_patterns and not any(path.match(p) for p in self.include_patterns):
+            if self.verbose:
+                logger.debug(f"🛑 Skipped by not matching include pattern: {path}")
+            return
+
+        # Check textual vs. non-textual
+        label = filetype_utils.classify_file(path)
+        if label == "TEXTUAL":
+            self.accepted_files.append(path)
+        else:
+            if self.verbose:
+                logger.debug(f"🛑 Skipped non-textual file: {path}")
