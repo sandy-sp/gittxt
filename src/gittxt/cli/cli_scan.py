@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import logging
 from pathlib import Path
@@ -40,7 +41,8 @@ def scan(
         logger.debug("🔍 Debug mode enabled.")
 
     if not repos:
-        raise click.ClickException("[bold red]❌ No repositories or directories specified.")
+        console.print("[bold red]❌ No repositories or directories specified.")
+        sys.exit(1)
 
     if not non_interactive:
         console.print("[cyan]⚠️ Interactive mode enabled.")
@@ -48,7 +50,8 @@ def scan(
     allowed_formats = {"txt", "json", "md"}
     requested_formats = {fmt.strip() for fmt in output_format.split(",")}
     if not requested_formats.issubset(allowed_formats):
-        raise click.ClickException(f"Invalid output format. Allowed: {', '.join(allowed_formats)}")
+        console.print(f"[bold red]Invalid output format. Allowed: {', '.join(allowed_formats)}")
+        sys.exit(1)
 
     asyncio.run(
         _handle_repos(
