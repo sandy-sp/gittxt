@@ -1,1 +1,3 @@
-# src/gittxt/utils/__init__.py
+"""
+Utility functions and helpers for the Gittxt project.
+"""
