@@ -79,7 +79,10 @@ class Scanner:
             transient=True
         ) as progress_bar:
             task = progress_bar.add_task("Scanning repository files", total=len(all_paths))
-            semaphore = asyncio.Semaphore(200)
+            from gittxt.core.config import ConfigManager
+            config = ConfigManager.load_config()
+            concurrency = config.get("scan_concurrency", 200)
+            semaphore = asyncio.Semaphore(concurrency)
 
             async def limited_process(file_path: Path):
                 async with semaphore:

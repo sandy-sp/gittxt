@@ -33,7 +33,8 @@ class ConfigManager:
         "logging_level": "WARNING",
         "log_format": "plain",
         "auto_zip": False,
-        "tree_exclude_dirs": [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]
+        "tree_exclude_dirs": [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"],
+        "scan_concurrency": 200
     }
 
     @classmethod
