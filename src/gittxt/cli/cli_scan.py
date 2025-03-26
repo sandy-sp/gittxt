@@ -18,7 +18,7 @@ from gittxt.utils.repo_url_parser import parse_github_url
 logger = Logger.get_logger(__name__)
 console = Console()
 
-@click.command(help="📦 Scan one or multiple repositories or local directories.")
+@click.command(help="📦 Scan one or more repositories or local directories.\n\nExample:\n  gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json")
 @click.argument("repos", nargs=-1)
 @click.option("--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths (e.g., node_modules, .git)")
 @click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory")
