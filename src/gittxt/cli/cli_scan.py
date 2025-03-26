@@ -51,8 +51,7 @@ def scan(
     allowed_formats = {"txt", "json", "md"}
     requested_formats = {fmt.strip() for fmt in output_format.split(",")}
     if not requested_formats.issubset(allowed_formats):
-        console.print(f"[red]❌ Invalid output format. Allowed: {', '.join(allowed_formats)}")
-        sys.exit(1)
+        raise click.ClickException(f"Invalid output format. Allowed: {', '.join(allowed_formats)}")
 
     asyncio.run(
         _handle_repos(
@@ -81,6 +80,7 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
         repo_name = repo_path.name
         is_remote = False
         repo_url = f"file://{repo_path}"
+        logger.debug(f"Local repository resolved: {repo_path} (repo_url: {repo_url})")
     else:
         parsed = parse_github_url(repo_source)
         repo_handler = RepositoryHandler(repo_source, branch=branch)
@@ -93,6 +93,7 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
             repo_url = f"{base}/tree/{branch_used}/{subdir_used}"
         else:
             repo_url = f"{base}/tree/{branch_used}"
+        logger.debug(f"Remote repository resolved: {repo_path} (repo_url: {repo_url})")
 
     gittxtignore_patterns = load_gittxtignore(repo_path)
     merged_excludes = list(set(exclude_dirs + gittxtignore_patterns + config.get("exclude_dirs", [])))
