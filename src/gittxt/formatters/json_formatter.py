@@ -46,7 +46,11 @@ class JSONFormatter:
             rel = file.relative_to(self.repo_path.resolve())
             subcat = detect_subcategory(file)
             lang = detect_language(file)
-            content = await async_read_text(file)
+            try:
+                content = await async_read_text(file)
+            except UnicodeDecodeError as ude:
+                logger.warning(f"Unicode decode error in file {file}: {ude}. Skipping file.")
+                continue
             if not content:
                 continue
             token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
