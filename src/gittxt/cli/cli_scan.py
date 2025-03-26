@@ -88,8 +88,12 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
         repo_path, subdir, is_remote, repo_name = repo_handler.get_local_path()
         repo_path = Path(repo_path) / subdir if subdir else Path(repo_path)
         base = f"https://github.com/{parsed['owner']}/{parsed['repo']}"
-        repo_url = parsed.get("subdir") and f"{base}/tree/{parsed.get('branch', 'main')}/{parsed['subdir']}" \
-                  or f"{base}/tree/{parsed.get('branch', 'main')}"
+        branch_used = parsed.get("branch") or "main"
+        subdir_used = parsed.get("subdir", "").strip("/")
+        if subdir_used:
+            repo_url = f"{base}/tree/{branch_used}/{subdir_used}"
+        else:
+            repo_url = f"{base}/tree/{branch_used}"
 
     gittxtignore_patterns = load_gittxtignore(repo_path)
     merged_excludes = list(set(exclude_dirs + gittxtignore_patterns + config.get("exclude_dirs", [])))
