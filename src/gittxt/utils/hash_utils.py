@@ -1,14 +1,10 @@
 from pathlib import Path
 import hashlib
 
-
 def get_file_hash(file_path: Path, algo: str = "sha256") -> str:
     """
     Generate a hash for a file using the specified hashing algorithm.
-
-    :param file_path: Path to the file.
-    :param algo: Hashing algorithm (e.g., "sha256", "md5").
-    :return: Hexadecimal hash string.
+    Returns None if hashing fails.
     """
     hashers = {"sha256": hashlib.sha256, "md5": hashlib.md5}
 
