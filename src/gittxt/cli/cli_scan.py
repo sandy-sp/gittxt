@@ -43,8 +43,7 @@ def scan(
         logger.debug("🔍 Debug mode enabled.")
 
     if not repos:
-        console.print("[bold red]❌ No repositories or directories specified.")
-        sys.exit(1)
+        raise click.ClickException("[bold red]❌ No repositories or directories specified.")
 
     if not non_interactive:
         console.print("[cyan]⚠️ Interactive mode enabled.")
