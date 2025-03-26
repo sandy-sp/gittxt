@@ -29,17 +29,18 @@ def list_types():
 def whitelist(exts):
     config = FiletypeConfigManager.load_filetype_config()
     for ext in exts:
-        dummy = Path(f"test{ext if ext.startswith('.') else '.' + ext}")
+        normalized_ext = ext.lower() if ext.startswith('.') else f".{ext.lower()}"
+        dummy = Path(f"test{normalized_ext}")
         if not is_text_file(dummy):
             console.print(f"[red]❌ Cannot whitelist non-textual file type `{ext}`.")
             continue
 
-        if ext in config.get("blacklist", []):
-            config["blacklist"].remove(ext)
-            console.print(f"[yellow]Removed `{ext}` from blacklist.")
-        if ext not in config.get("whitelist", []):
-            config["whitelist"].append(ext)
-            console.print(f"[green]Added `{ext}` to whitelist.")
+        if normalized_ext in config.get("blacklist", []):
+            config["blacklist"].remove(normalized_ext)
+            console.print(f"[yellow]Removed `{normalized_ext}` from blacklist.")
+        if normalized_ext not in config.get("whitelist", []):
+            config["whitelist"].append(normalized_ext)
+            console.print(f"[green]Added `{normalized_ext}` to whitelist.")
     FiletypeConfigManager.save_filetype_config(config)
 
 @filetypes.command(help="🚫 Add extensions to blacklist (TEXTUAL only).")
@@ -47,12 +48,13 @@ def whitelist(exts):
 def blacklist(exts):
     config = FiletypeConfigManager.load_filetype_config()
     for ext in exts:
-        if ext in config.get("whitelist", []):
-            config["whitelist"].remove(ext)
-            console.print(f"[yellow]Removed `{ext}` from whitelist.")
-        if ext not in config.get("blacklist", []):
-            config["blacklist"].append(ext)
-            console.print(f"[red]Added `{ext}` to blacklist.")
+        normalized_ext = ext.lower() if ext.startswith('.') else f".{ext.lower()}"
+        if normalized_ext in config.get("whitelist", []):
+            config["whitelist"].remove(normalized_ext)
+            console.print(f"[yellow]Removed `{normalized_ext}` from whitelist.")
+        if normalized_ext not in config.get("blacklist", []):
+            config["blacklist"].append(normalized_ext)
+            console.print(f"[red]Added `{normalized_ext}` to blacklist.")
     FiletypeConfigManager.save_filetype_config(config)
 
 @filetypes.command(help="🧹 Clear both whitelist and blacklist.")
