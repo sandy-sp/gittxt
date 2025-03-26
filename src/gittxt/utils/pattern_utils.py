@@ -29,7 +29,12 @@ def passes_all_filters(file_path: Path, exclude_dirs: List[str], size_limit: int
 
     if size_limit and file_path.stat().st_size > size_limit:
         if verbose:
-            logger.debug(f"🛑 Skipped (size limit): {file_path}")
+            logger.debug(f"🛑 Skipped (size limit {file_path.stat().st_size} > {size_limit}): {file_path}")
         return False
 
+    # If include_patterns are specified but the file doesn't match any, log and skip.
+    if verbose and hasattr(file_path, "match"):
+        matched = any(file_path.match(pat) for pat in [])
+        if not matched:
+            logger.debug(f"File {file_path} did not match any include pattern (if any specified).")
     return True
