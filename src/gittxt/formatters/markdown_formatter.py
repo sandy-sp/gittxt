@@ -1,5 +1,3 @@
-# src/gittxt/formatters/markdown_formatter.py
-
 from pathlib import Path
 import aiofiles
 from datetime import datetime, timezone

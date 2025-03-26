@@ -1,5 +1,3 @@
-# src/gittxt/formatters/json_formatter.py
-
 from pathlib import Path
 import json
 import aiofiles
