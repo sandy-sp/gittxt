@@ -25,6 +25,7 @@ class ConfigManager:
         else:
             return (home_dir / "Gittxt").resolve()
 
+    # Removed file_types from the default config
     DEFAULT_CONFIG = {
         "output_dir": str(_determine_default_output_dir.__func__()),
         "size_limit": None,
@@ -50,6 +51,7 @@ class ConfigManager:
             except (json.JSONDecodeError, IOError) as e:
                 logger.warning(f"⚠️ Could not load config file: {e}. Using defaults.")
 
+        # Apply environment overrides
         config["output_dir"] = os.getenv("GITTXT_OUTPUT_DIR", config["output_dir"])
         config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
         config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
@@ -60,11 +62,11 @@ class ConfigManager:
         except ValueError:
             logger.warning(f"Invalid GITTXT_SIZE_LIMIT value: {os.getenv('GITTXT_SIZE_LIMIT')}. Using default.")
             config["size_limit"] = None
+
         auto_zip_val = os.getenv("GITTXT_AUTO_ZIP")
         if auto_zip_val is not None:
             config["auto_zip"] = auto_zip_val.lower() == "true"
-        else:
-            config["auto_zip"] = config["auto_zip"]
+
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
 
         logger.info("✅ Final config loaded (env + json + defaults merged)")
@@ -79,6 +81,7 @@ class ConfigManager:
 
     @classmethod
     def save_config_updates(cls, updated_config: dict):
+        # Make sure we don't re-add 'file_types' or anything
         try:
             with cls.CONFIG_FILE.open("w", encoding="utf-8") as f:
                 json.dump(updated_config, f, indent=4)
@@ -88,7 +91,10 @@ class ConfigManager:
 
 
 class FiletypeConfigManager:
-    """Manages whitelist and blacklist of file types (only TEXTUAL can move)."""
+    """
+    Manages whitelist and blacklist of file types (only TEXTUAL).
+    Users can add or remove extensions, e.g. .ipynb -> textual or .pdf -> blacklist.
+    """
 
     SRC_DIR = Path(__file__).parent.parent.resolve()
     FILETYPE_CONFIG_PATH = SRC_DIR / "config" / "filetype_config.json"
