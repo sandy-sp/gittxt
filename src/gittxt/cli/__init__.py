@@ -2,7 +2,9 @@ import click
 from .cli_scan import scan
 from .cli_filetypes import filetypes
 from .cli_install import install, clean
+from .cli_utils import config
 from .cli_classify import classify
+
 from gittxt.__init__ import __version__
 
 @click.group()
