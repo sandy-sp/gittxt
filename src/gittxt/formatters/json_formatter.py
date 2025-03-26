@@ -1,13 +1,14 @@
+# src/gittxt/formatters/json_formatter.py
+
 from pathlib import Path
 import json
 import aiofiles
+from datetime import datetime, timezone
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.file_utils import async_read_text
-from datetime import datetime, timezone
 from gittxt.utils.github_url_utils import build_github_url
 from gittxt.utils.formatter_utils import sort_textual_files
 from gittxt.utils.subcat_utils import detect_subcategory
-from gittxt.utils.formatter_utils import detect_language
 
 class JSONFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None):
@@ -18,12 +19,23 @@ class JSONFormatter:
         self.repo_url = repo_url
 
     async def generate(self, text_files, non_textual_files, mode="rich"):
+        """
+        Generate a JSON output with optional 'rich' mode (full summary, code blocks, etc.)
+        or 'lite' mode (minimal content).
+        """
         output_file = self.output_dir / f"{self.repo_name}.json"
 
         if mode == "rich":
             summary = await generate_summary(text_files + non_textual_files)
         else:
-            summary = {"total_files": len(text_files), "total_size": 0, "estimated_tokens": 0, "tokens_by_type": {}}
+            # Minimal summary if 'lite'
+            summary = {
+                "total_files": len(text_files),
+                "total_size": sum(f.stat().st_size for f in text_files + non_textual_files),
+                "estimated_tokens": 0,
+                "file_type_breakdown": {},
+                "tokens_by_type": {}
+            }
 
         ordered_files = sort_textual_files(text_files)
 
@@ -32,6 +44,7 @@ class JSONFormatter:
             "files": []
         }
 
+        # In "rich" mode, add detailed metadata and assets
         if mode == "rich":
             data["metadata"] = {
                 "repo_name": self.repo_name,
@@ -41,40 +54,42 @@ class JSONFormatter:
             data["summary"] = summary
             data["assets"] = []
 
+        # TEXTUAL section
         for file in ordered_files:
-            rel = file.relative_to(self.repo_path.resolve())
-            subcat = detect_subcategory(file)
-            lang = detect_language(file)
-            try:
-                content = await async_read_text(file)
-            except UnicodeDecodeError as ude:
-                logger.warning(f"Unicode decode error in file {file}: {ude}. Skipping file.")
-                continue
-            if not content:
-                continue
-            token_est = summary.get("tokens_by_type", {}).get(subcat, 0)
-            file_url = build_github_url(self.repo_url, rel) if self.repo_url and self.repo_url.startswith("http") else ""
+            rel = file.relative_to(self.repo_path)
+            subcat = detect_subcategory(file, "TEXTUAL")  # second arg since we already know it's textual
+            file_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
+
+            content = ""
+            if mode == "rich":
+                # read full content
+                content = await async_read_text(file) or ""
+            # in "lite" mode, you might skip content or only snippet the first X lines
+            elif mode == "lite":
+                # example: read a short snippet
+                raw = await async_read_text(file) or ""
+                content = raw[:200]  # snippet
 
             file_obj = {
                 "file": str(rel),
-                "content": content.strip()
+                "content": content.strip() if content else ""
             }
 
             if mode == "rich":
                 file_obj.update({
                     "type": subcat,
                     "size_bytes": file.stat().st_size,
-                    "tokens_est": token_est,
-                    "language": lang,
+                    "tokens_est": summary["tokens_by_type"].get(subcat, 0),
                     "url": file_url
                 })
 
             data["files"].append(file_obj)
 
+        # NON-TEXTUAL section
         if mode == "rich":
             for asset in non_textual_files:
-                rel = asset.relative_to(self.repo_path.resolve())
-                subcat = detect_subcategory(asset)
+                rel = asset.relative_to(self.repo_path)
+                subcat = detect_subcategory(asset, "NON-TEXTUAL")
                 asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
                 data["assets"].append({
                     "file": str(rel),
