@@ -16,14 +16,14 @@ config = ConfigManager.load_config()
 BASE_DIR = Path(__file__).parent.resolve()
 LOG_DIR = (BASE_DIR / "../gittxt-logs").resolve()
 OUTPUT_DIR = Path(config.get("output_dir")).resolve()
-TEXT_DIR = OUTPUT_DIR / TEXT_DIR
-JSON_DIR = OUTPUT_DIR / JSON_DIR
-MD_DIR = OUTPUT_DIR / MD_DIR
-ZIP_DIR = OUTPUT_DIR / ZIP_DIR
-TEMP_DIR = OUTPUT_DIR / TEMP_DIR
+OUTPUT_TEXT_DIR = OUTPUT_DIR / TEXT_DIR
+OUTPUT_JSON_DIR = OUTPUT_DIR / JSON_DIR
+OUTPUT_MD_DIR = OUTPUT_DIR / MD_DIR
+OUTPUT_ZIP_DIR = OUTPUT_DIR / ZIP_DIR
+OUTPUT_TEMP_DIR = OUTPUT_DIR / TEMP_DIR
 
-# Auto-create necessary folders
-for directory in [LOG_DIR, OUTPUT_DIR, TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR, TEMP_DIR]:
+# Auto-create necessary folders using the new output directory variables
+for directory in [LOG_DIR, OUTPUT_DIR, OUTPUT_TEXT_DIR, OUTPUT_JSON_DIR, OUTPUT_MD_DIR, OUTPUT_ZIP_DIR, OUTPUT_TEMP_DIR]:
     try:
         directory.mkdir(parents=True, exist_ok=True)
     except Exception as e:
