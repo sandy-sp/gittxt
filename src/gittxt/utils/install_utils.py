@@ -4,8 +4,8 @@ from gittxt.core.config import ConfigManager
 
 def run_interactive_install():
     """
-    Enhanced interactive install wizard for gittxt-config.json setup, 
-    now simplified to skip file_types prompt.
+    Simplified interactive install wizard for gittxt-config.json setup,
+    focusing only on textual scanning (no subcategory toggles).
     """
     click.echo("\n🎉 Welcome to the Gittxt Interactive Installer 🛠️\n")
 
@@ -43,8 +43,6 @@ def run_interactive_install():
     )
     config["output_format"] = new_fmt
     click.echo(f"✅ Updated output_format to: {config['output_format']}")
-
-    # Remove file_types prompt. We are strictly textual now.
 
     # Optional ZIP
     if click.confirm("Would you like ZIP bundles to be created by default?", default=False):
