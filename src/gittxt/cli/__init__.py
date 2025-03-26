@@ -3,8 +3,6 @@ from .cli_scan import scan
 from .cli_filetypes import filetypes
 from .cli_install import install, clean
 from .cli_utils import config
-from .cli_classify import classify
-
 from gittxt.__init__ import __version__
 
 @click.group()
@@ -17,4 +15,3 @@ cli.add_command(scan)
 cli.add_command(filetypes)
 cli.add_command(install)
 cli.add_command(clean)
-cli.add_command(classify)
