@@ -31,18 +31,17 @@ class RepositoryHandler:
 
     def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path):
         try:
-            logger.info(f"🚀 Cloning repository into: {temp_dir}")
+            logger.info(f"🚀 Cloning repository {git_url} (branch: {branch}) into: {temp_dir}")
             clone_args = {"depth": 1}
             if branch:
                 clone_args["branch"] = branch
             git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
         except git.GitCommandError as e:
-            logger.warning(f"⚠️ Git clone failed for {git_url} on branch {branch}: {e}")
+            logger.warning(f"⚠️ Clone with branch '{branch}' failed for {git_url}: {e}. Retrying without branch parameter.")
             try:
-                logger.info("🔄 Retrying clone without branch (use repo default)")
                 git.Repo.clone_from(git_url, str(temp_dir), depth=1)
             except Exception as err:
-                raise RuntimeError(f"❌ Retry clone failed: {err}")
+                raise RuntimeError(f"❌ Retry clone without branch failed: {err}")
 
     def get_local_path(self) -> tuple[str, str, bool, str]:
         """
