@@ -12,7 +12,7 @@ def normalize_patterns(patterns: List[str]) -> List[str]:
 
 def match_exclude_dir(path: Path, exclude_dirs: List[str]) -> bool:
     """
-    Check if the path is inside any of the excluded directories.
+    Check if the path (any of its parent folders) is in the list of excluded directories.
     """
     parts = {p.lower() for p in path.parts}
     return any(excl.lower() in parts for excl in exclude_dirs)
@@ -28,7 +28,7 @@ def passes_all_filters(file_path: Path, exclude_dirs: List[str], size_limit: int
 
     if size_limit and file_path.stat().st_size > size_limit:
         if verbose:
-            logger.debug(f"🛑 Skipped (size limit {file_path.stat().st_size} > {size_limit}): {file_path}")
+            logger.debug(f"🛑 Skipped (size {file_path.stat().st_size} > limit {size_limit}): {file_path}")
         return False
 
     return True
