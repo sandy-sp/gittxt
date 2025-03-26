@@ -1,4 +1,3 @@
-import sys
 import asyncio
 import logging
 from pathlib import Path
@@ -12,13 +11,12 @@ from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary
 from .cli_utils import config, _print_summary
-from gittxt.formatters.zip_formatter import ZipFormatter
 from gittxt.utils.repo_url_parser import parse_github_url
 
 logger = Logger.get_logger(__name__)
 console = Console()
 
-@click.command(help="📦 Scan one or more repositories or local directories.\n\nExample:\n  gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json")
+@click.command(help="📦 Scan local dirs or GitHub repos, capturing TEXT ONLY. e.g.\n  gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json")
 @click.argument("repos", nargs=-1)
 @click.option("--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths (e.g., node_modules, .git)")
 @click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory")
@@ -26,7 +24,7 @@ console = Console()
 @click.option("--include-patterns", "-i", multiple=True, help="Include only files matching these glob patterns (applies to TEXTUAL files only)")
 @click.option("--exclude-patterns", "-e", multiple=True, help="Exclude files matching these glob patterns (e.g. *.log)")
 @click.option("--size-limit", type=int, help="Maximum file size in bytes")
-@click.option("--branch", type=str, help="Specify Git branch to scan")
+@click.option("--branch", type=str, help="Specify Git branch to scan (GitHub URLs)")
 @click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
@@ -35,9 +33,8 @@ console = Console()
 def scan(
     repos, exclude_dirs, size_limit, branch, output_dir, output_format,
     tree_depth, debug, non_interactive, create_zip,
-    include_patterns, exclude_patterns
+    include_patterns, exclude_patterns, lite
 ):
-
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("🔍 Debug mode enabled.")
@@ -63,18 +60,27 @@ def scan(
         )
     )
 
-async def _handle_repos(repos, exclude_dirs, include_patterns, exclude_patterns, size_limit, branch, output_dir, output_format, tree_depth, create_zip=False, lite=False):
+async def _handle_repos(repos, exclude_dirs, size_limit, branch, output_dir,
+                        output_format, tree_depth, create_zip,
+                        include_patterns, exclude_patterns, lite):
     final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
     exclude_dirs = list(exclude_dirs) if exclude_dirs else config.get("exclude_dirs", [])
 
     for repo_source in repos:
         try:
-            await _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=create_zip, mode="lite" if lite else "rich")
+            await _process_target(
+                repo_source, include_patterns, exclude_patterns, branch, exclude_dirs,
+                size_limit, final_output_dir, output_format, tree_depth,
+                create_zip=create_zip, mode="lite" if lite else "rich"
+            )
         except Exception as e:
             logger.error(f"❌ Failed to process {repo_source}: {e}")
             console.print(f"[red]❌ Failed to scan {repo_source}: {e}")
-            
-async def _process_target(repo_source, include_patterns, exclude_patterns, branch, exclude_dirs, size_limit, final_output_dir, output_format, tree_depth, create_zip=False, mode="rich"):
+
+async def _process_target(repo_source, include_patterns, exclude_patterns, branch,
+                          exclude_dirs, size_limit, final_output_dir, output_format,
+                          tree_depth, create_zip, mode):
+    # Local or remote
     if Path(repo_source).exists():
         repo_path = Path(repo_source).resolve()
         repo_name = repo_path.name
@@ -98,6 +104,7 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
     gittxtignore_patterns = load_gittxtignore(repo_path)
     merged_excludes = list(set(exclude_dirs + gittxtignore_patterns + config.get("exclude_dirs", [])))
 
+    # Strict textual scanning
     scanner = Scanner(
         root_path=repo_path,
         exclude_dirs=merged_excludes,
@@ -120,7 +127,6 @@ async def _process_target(repo_source, include_patterns, exclude_patterns, branc
         output_format=output_format,
         repo_url=repo_url
     )
-
     await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth, mode=mode)
 
     summary_data = await generate_summary(all_files)
