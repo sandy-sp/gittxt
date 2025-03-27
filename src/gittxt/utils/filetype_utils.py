@@ -3,14 +3,9 @@ import mimetypes
 from binaryornot.check import is_binary
 from gittxt.core.logger import Logger
 import json
+from gittxt.core.constants import DEFAULT_FILETYPE_CONFIG
 
 logger = Logger.get_logger(__name__)
-
-# Updated config keys to textual_exts / non_textual_exts instead of whitelist/blacklist
-DEFAULT_FILETYPE_CONFIG = {
-    "textual_exts": [".py", ".md", ".txt", ".html", ".json", ".yml", ".yaml", ".csv"],
-    "non_textual_exts": [".zip", ".exe", ".bin", ".docx", ".xls", ".pdf"],
-}
 
 class FiletypeConfigManager:
     """
