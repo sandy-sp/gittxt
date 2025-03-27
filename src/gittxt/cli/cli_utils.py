@@ -1,6 +1,6 @@
 from rich.console import Console
 from rich.table import Table
-from gittxt import ConfigManager
+from gittxt.core.config import ConfigManager
 
 config = ConfigManager.load_config()
 console = Console()
@@ -14,9 +14,9 @@ def _print_summary(repo_name, summary_data, final_output_dir, output_format):
     table.add_row("Estimated Tokens", str(summary_data.get("estimated_tokens")))
     table.add_row("Output Formats", output_format)
     console.print(table)
-    # Ensure the output directory exists and is writable
     try:
         (final_output_dir / repo_name).mkdir(parents=True, exist_ok=True)
     except Exception as e:
         console.print(f"[red]❌ Cannot create output directory {final_output_dir / repo_name}: {e}")
     console.print(f"[bold yellow]Output directory:[/] {final_output_dir / repo_name}")
+    pass
