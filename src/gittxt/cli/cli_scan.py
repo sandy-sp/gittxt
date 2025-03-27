@@ -11,38 +11,25 @@ from gittxt.core.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary
-from .cli_utils import config, _print_summary
-from gittxt.utils.repo_url_parser import parse_github_url
+from .cli_utils import config
 
 logger = Logger.get_logger(__name__)
 console = Console()
 
-@click.command(
-    help=(
-        "📦 Scan local dirs or GitHub repos, capturing TEXT ONLY.\n\n"
-        "Examples:\n"
-        "  gittxt scan https://github.com/sandy-sp/gittxt -o txt,json\n"
-    )
-)
+@click.command(help="📦 Scan directories or GitHub repos (textual only).")
 @click.argument("repos", nargs=-1)
-@click.option(
-    "--sync",
-    is_flag=True,
-    default=False,
-    help="Opt-in to .gitignore usage. If set, merges .gitignore patterns into excludes."
-)
-@click.option("--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths (e.g., node_modules, .git)")
-@click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory")
-@click.option("--output-format", "-f", default="txt,json", help="txt, json, or md")
-@click.option("--include-patterns", "-i", multiple=True, help="Include only files matching these glob patterns (textual only)")
-@click.option("--exclude-patterns", "-e", multiple=True, help="Exclude files matching these glob patterns (e.g. *.log)")
-@click.option("--size-limit", type=int, help="Maximum file size in bytes")
-@click.option("--branch", type=str, help="Specify Git branch to scan (GitHub URLs)")
-@click.option("--tree-depth", type=int, default=None, help="Limit tree view to N folder levels.")
-@click.option("--debug", is_flag=True, help="Enable debug logging")
-@click.option("--non-interactive", is_flag=True, help="Skip prompts for CI/CD workflows")
-@click.option("--zip", "create_zip", is_flag=True, help="Create zipped output bundle")
-@click.option("--lite", is_flag=True, help="Generate minimal output (tree + code only)")
+@click.option("--sync", is_flag=True, default=False, help="Opt-in to .gitignore usage.")
+@click.option("--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths.")
+@click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory.")
+@click.option("--output-format", "-f", default="txt,json", help="Comma-separated: txt, json, md.")
+@click.option("--include-patterns", "-i", multiple=True, help="Glob to include (only textual).")
+@click.option("--exclude-patterns", "-e", multiple=True, help="Glob to exclude.")
+@click.option("--size-limit", type=int, help="Max file size in bytes.")
+@click.option("--branch", type=str, help="Git branch for remote repos.")
+@click.option("--tree-depth", type=int, default=None, help="Limit tree output to N levels.")
+@click.option("--debug", is_flag=True, help="Enable debug logging.")
+@click.option("--zip", "create_zip", is_flag=True, help="Create a ZIP bundle.")
+@click.option("--lite", is_flag=True, help="Generate minimal output instead of full content.")
 def scan(
     repos,
     sync,
@@ -53,7 +40,6 @@ def scan(
     output_format,
     tree_depth,
     debug,
-    non_interactive,
     create_zip,
     include_patterns,
     exclude_patterns,
@@ -64,33 +50,33 @@ def scan(
         logger.debug("🔍 Debug mode enabled.")
 
     if not repos:
-        console.print("[bold red]❌ No repositories or directories specified.[/bold red]")
+        console.print("[bold red]❌ No repositories specified.[/bold red]")
         sys.exit(1)
 
-    if not non_interactive:
-        console.print("[cyan]⚠️ Interactive mode enabled.[/cyan]")
-
+    # Validate output formats
     allowed_formats = {"txt", "json", "md"}
-    requested_formats = {fmt.strip() for fmt in output_format.split(",")}
-    if not requested_formats.issubset(allowed_formats):
-        console.print(f"[bold red]Invalid output format. Allowed: {', '.join(allowed_formats)}[/bold red]")
+    requested = {fmt.strip() for fmt in output_format.split(",")}
+    if not requested.issubset(allowed_formats):
+        console.print(f"[red]Invalid format. Allowed: {allowed_formats}[/red]")
         sys.exit(1)
 
-    # Run the async logic
+    mode = "lite" if lite else "rich"
+    final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
+
     asyncio.run(
         _handle_repos(
-            repos=repos,
-            sync=sync,
-            exclude_dirs=exclude_dirs,
-            size_limit=size_limit,
-            branch=branch,
-            output_dir=output_dir,
-            output_format=output_format,
-            tree_depth=tree_depth,
-            create_zip=create_zip or config.get("auto_zip", False),
-            include_patterns=include_patterns,
-            exclude_patterns=exclude_patterns,
-            lite=lite
+            repos,
+            sync,
+            exclude_dirs,
+            size_limit,
+            branch,
+            final_output_dir,
+            requested,
+            tree_depth,
+            create_zip,
+            include_patterns,
+            exclude_patterns,
+            mode
         )
     )
 
@@ -100,110 +86,90 @@ async def _handle_repos(
     exclude_dirs,
     size_limit,
     branch,
-    output_dir,
-    output_format,
-    tree_depth,
-    create_zip,
-    include_patterns,
-    exclude_patterns,
-    lite
-):
-    final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
-    # Merge user-provided excludes with global config excludes
-    exclude_dirs = list(exclude_dirs) if exclude_dirs else config.get("exclude_dirs", [])
-
-    for repo_source in repos:
-        try:
-            await _process_target(
-                repo_source=repo_source,
-                sync=sync,
-                include_patterns=include_patterns,
-                exclude_patterns=exclude_patterns,
-                branch=branch,
-                exclude_dirs=exclude_dirs,
-                size_limit=size_limit,
-                final_output_dir=final_output_dir,
-                output_format=output_format,
-                tree_depth=tree_depth,
-                create_zip=create_zip,
-                mode="lite" if lite else "rich"
-            )
-        except Exception as e:
-            logger.error(f"❌ Failed to process {repo_source}: {e}")
-            console.print(f"[red]❌ Failed to scan {repo_source}: {e}[/red]")
-
-async def _process_target(
-    repo_source,
-    sync,
-    include_patterns,
-    exclude_patterns,
-    branch,
-    exclude_dirs,
-    size_limit,
     final_output_dir,
-    output_format,
+    output_formats,
     tree_depth,
     create_zip,
+    include_patterns,
+    exclude_patterns,
     mode
 ):
-    # Determine local or remote
-    if Path(repo_source).exists():
-        repo_path = Path(repo_source).resolve()
-        repo_name = repo_path.name
-        is_remote = False
-        repo_url = f"file://{repo_path}"
-        logger.debug(f"Local repository resolved: {repo_path} (repo_url: {repo_url})")
-    else:
-        parsed = parse_github_url(repo_source)
-        repo_handler = RepositoryHandler(repo_source, branch=branch)
-        path_str, subdir, is_remote, repo_name = repo_handler.get_local_path()
-        repo_path = Path(path_str) / subdir if subdir else Path(path_str)
-        base = f"https://github.com/{parsed['owner']}/{parsed['repo']}"
-        branch_used = parsed.get("branch") or "main"
-        subdir_used = parsed.get("subdir", "").strip("/")
-        if subdir_used:
-            repo_url = f"{base}/tree/{branch_used}/{subdir_used}"
-        else:
-            repo_url = f"{base}/tree/{branch_used}"
-        logger.debug(f"Remote repository resolved: {repo_path} (repo_url: {repo_url})")
+    for repo_source in repos:
+        try:
+            await _process_one_repo(
+                repo_source,
+                sync,
+                exclude_dirs,
+                size_limit,
+                branch,
+                final_output_dir,
+                output_formats,
+                tree_depth,
+                create_zip,
+                include_patterns,
+                exclude_patterns,
+                mode
+            )
+        except Exception as e:
+            logger.error(f"❌ Failed processing {repo_source}: {e}")
+            console.print(f"[red]❌ {repo_source} => {e}[/red]")
 
-    # Optionally merge .gitignore patterns if --sync
-    if sync:
-        gitignore_patterns = load_gittxtignore(repo_path)
-    else:
-        gitignore_patterns = []
+async def _process_one_repo(
+    repo_source,
+    sync,
+    exclude_dirs,
+    size_limit,
+    branch,
+    final_output_dir,
+    output_formats,
+    tree_depth,
+    create_zip,
+    include_patterns,
+    exclude_patterns,
+    mode
+):
+    # Decide local vs. remote
+    handler = RepositoryHandler(repo_source, branch=branch)
+    repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
+    scan_root = Path(repo_path)
+    if subdir:
+        scan_root = scan_root / subdir
 
-    merged_excludes = list(set(exclude_dirs + gitignore_patterns + config.get("exclude_dirs", [])))
+    # Optionally load .gittxtignore if --sync
+    dynamic_ignores = load_gittxtignore(scan_root) if sync else []
+    merged_exclude_dirs = list(set(exclude_dirs + dynamic_ignores))
 
-    # Strict textual scanning
     scanner = Scanner(
-        root_path=repo_path,
-        exclude_dirs=merged_excludes,
+        root_path=scan_root,
+        exclude_dirs=merged_exclude_dirs,
         size_limit=size_limit,
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         progress=True
     )
-
     all_files = await scanner.scan_directory()
+
     if not all_files:
-        console.print("[yellow]⚠️ No valid files found. Skipping...[/yellow]")
+        console.print("[yellow]⚠️ No valid textual files found.[/yellow]")
         if is_remote:
-            cleanup_temp_folder(repo_path)
+            cleanup_temp_folder(Path(repo_path))
         return
 
     builder = OutputBuilder(
         repo_name=repo_name,
         output_dir=final_output_dir,
-        output_format=output_format,
-        repo_url=repo_url
+        output_format=",".join(output_formats),
+        repo_url=repo_source if is_remote else None,
+        branch=used_branch,
+        subdir=subdir
     )
+
     await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth, mode=mode)
 
+    # Optional summary
     summary_data = await generate_summary(all_files)
-    _print_summary(repo_name, summary_data, final_output_dir, output_format)
+    console.print(f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]")
+    console.print(summary_data)  # or format it more nicely
 
     if is_remote:
-        cleanup_temp_folder(repo_path)
-
-    logger.info("✅ Gittxt scan completed.")
+        cleanup_temp_folder(Path(repo_path))
