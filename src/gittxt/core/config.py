@@ -3,10 +3,10 @@ import json
 import platform
 import os
 from dotenv import load_dotenv
-from gittxt.core.logger import Logger
 from gittxt.core.constants import DEFAULT_EXCLUDE_DIRS
+import logging
 
-logger = Logger.get_logger(__name__)
+logger = logging.getLogger("gittxt.config")
 
 # Load .env if present
 load_dotenv()
