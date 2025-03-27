@@ -41,9 +41,11 @@ def add_textual(exts):
 
     for ext in all_exts:
         normalized = ext if ext.startswith('.') else f".{ext.lower()}"
-        FiletypeConfigManager.add_textual_ext(normalized)
-        console.print(f"[green]➕ Added '{normalized}' to textual list.")
-
+        result = FiletypeConfigManager.add_textual_ext(normalized)
+        if result is True:
+            console.print(f"[green]➕ Added '{normalized}' to textual list.[/green]")
+        else:
+            console.print(f"[yellow]⚠️ Skipped '{normalized}': not a valid textual filetype.[/yellow]")
 
 @filetypes.command(help="🚫 Add extensions to the non-textual list.")
 @click.argument("exts", nargs=-1)
@@ -55,7 +57,7 @@ def add_non_textual(exts):
     for ext in exts:
         normalized = ext if ext.startswith('.') else f".{ext.lower()}"
         FiletypeConfigManager.add_non_textual_ext(normalized)
-        console.print(f"[red]Added '{normalized}' to non-textual list.[/red]")
+        console.print(f"[green]Added '{normalized}' to [red]non-textual[/red] list.[/green]")
 
 @filetypes.command(help="🧹 Clear both textual and non-textual extension lists.")
 def clear():
