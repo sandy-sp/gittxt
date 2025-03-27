@@ -5,6 +5,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeEl
 from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
 from gittxt.utils import pattern_utils, filetype_utils
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 logger = Logger.get_logger(__name__)
 
@@ -72,21 +73,26 @@ class Scanner:
         if not pattern_utils.passes_all_filters(path, self.exclude_dirs, self.size_limit, self.verbose):
             return
 
-        # Next, check exclude patterns or include patterns
+        # Skip excluded patterns
         if self.exclude_patterns and any(path.match(p) for p in self.exclude_patterns):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by exclude pattern: {path}")
             return
 
+        # Skip files not matching include patterns
         if self.include_patterns and not any(path.match(p) for p in self.include_patterns):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by not matching include pattern: {path}")
             return
 
-        # Check textual vs. non-textual
+        # Validate file type
         label = filetype_utils.classify_file(path)
-        if label == "TEXTUAL":
-            self.accepted_files.append(path)
-        else:
+        if label != "TEXTUAL":
+            # Warn if included file is non-textual
+            if self.include_patterns and any(path.match(p) for p in self.include_patterns):
+                logger.warning(f"⚠️ Skipped non-textual file matched by --include: {path}")
             if self.verbose:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
+            return
+
+        self.accepted_files.append(path)
