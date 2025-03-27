@@ -6,11 +6,15 @@ from gittxt.utils.filetype_utils import FiletypeConfigManager
 
 console = Console()
 
-@click.group(help="🗂 Manage default textual or non-textual extensions.")
+class FiletypesGroup(click.Group):
+    def list_commands(self, ctx):
+        return ["list", "add-textual", "add-non-textual", "clear"]
+    
+@click.group(cls=FiletypesGroup, help="🗂 Manage default textual or non-textual extensions.")
 def filetypes():
     pass
 
-@filetypes.command("list", help="🔍 Show current textual vs. non-textual extensions.")
+@filetypes.command("list", help="🔍 Show current textual vs non-textual extensions.")
 def list_types():
     config = FiletypeConfigManager.load_config()
     textual = config.get("textual_exts", [])
@@ -31,14 +35,23 @@ def list_types():
 @filetypes.command(help="➕ Add extensions to the textual list.")
 @click.argument("exts", nargs=-1)
 def add_textual(exts):
-    for ext in exts:
+    all_exts = []
+    for raw in exts:
+        all_exts.extend([e.strip() for e in raw.split(",") if e.strip()])
+
+    for ext in all_exts:
         normalized = ext if ext.startswith('.') else f".{ext.lower()}"
         FiletypeConfigManager.add_textual_ext(normalized)
-        console.print(f"[green]Added '{normalized}' to textual list.[/green]")
+        console.print(f"[green]➕ Added '{normalized}' to textual list.")
+
 
 @filetypes.command(help="🚫 Add extensions to the non-textual list.")
 @click.argument("exts", nargs=-1)
 def add_non_textual(exts):
+    all_exts = []
+    for raw in exts:
+        all_exts.extend([e.strip() for e in raw.split(",") if e.strip()])
+        
     for ext in exts:
         normalized = ext if ext.startswith('.') else f".{ext.lower()}"
         FiletypeConfigManager.add_non_textual_ext(normalized)
