@@ -12,6 +12,9 @@ from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary
 from .cli_utils import config
+from rich.table import Table
+from rich.panel import Panel
+from rich import box
 
 logger = Logger.get_logger(__name__)
 console = Console()
@@ -137,7 +140,7 @@ async def _process_one_repo(
 
     # Optionally load .gittxtignore if --sync
     dynamic_ignores = load_gittxtignore(scan_root) if sync else []
-    merged_exclude_dirs = list(set(exclude_dirs + dynamic_ignores))
+    merged_exclude_dirs = list(exclude_dirs) + list(dynamic_ignores)
 
     scanner = Scanner(
         root_path=scan_root,
@@ -166,10 +169,40 @@ async def _process_one_repo(
 
     await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth, mode=mode)
 
-    # Optional summary
+    # Summary Output
     summary_data = await generate_summary(all_files)
     console.print(f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]")
-    console.print(summary_data)  # or format it more nicely
+
+    def render_summary_table(summary_data, repo_name):
+        table = Table(title=f"📊 Gittxt Summary: {repo_name}", box=box.ROUNDED, border_style="cyan")
+        table.add_column("Metric", style="bold magenta")
+        table.add_column("Value", justify="right", style="green")
+
+        table.add_row("📄 Total Files", str(summary_data["total_files"]))
+        table.add_row("📦 Total Size", f'{summary_data["total_size"]:,} bytes')
+        table.add_row("🔢 Estimated Tokens", f'{summary_data["estimated_tokens"]:,}')
+
+        sub_table = Table.grid()
+        sub_table.add_column("Type", style="yellow")
+        sub_table.add_column("Files", justify="right")
+        sub_table.add_column("Tokens", justify="right")
+
+        breakdown = summary_data.get("file_type_breakdown", {})
+        token_data = summary_data.get("tokens_by_type", {})
+
+        for subcat in sorted(breakdown.keys()):
+            sub_table.add_row(
+                subcat,
+                str(breakdown[subcat]),
+                str(token_data.get(subcat, 0))
+            )
+
+        panel = Panel(sub_table, title="🧩 File Type Breakdown", border_style="blue")
+        
+        console.print(table)
+        console.print(panel)
+
+    render_summary_table(summary_data, repo_name)
 
     if is_remote:
         cleanup_temp_folder(Path(repo_path))
