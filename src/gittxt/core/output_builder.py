@@ -8,14 +8,11 @@ from gittxt.formatters.json_formatter import JSONFormatter
 from gittxt.formatters.markdown_formatter import MarkdownFormatter
 from gittxt.formatters.zip_formatter import ZipFormatter
 from gittxt.utils.filetype_utils import classify_file
+from gittxt.utils.summary_utils import generate_summary
 
 logger = Logger.get_logger(__name__)
 
 class OutputBuilder:
-    """
-    Handles output generation for scanned repositories via formatter strategies.
-    """
-
     FORMATTERS = {
         "txt": TextFormatter,
         "json": JSONFormatter,
@@ -40,40 +37,54 @@ class OutputBuilder:
             folder.mkdir(parents=True, exist_ok=True)
 
     async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"):
-        """
-        Produce outputs (txt, json, md) plus optional ZIP, in either 'lite' or 'rich' mode.
-        """
         tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
+        # 1. Classify files
         textual_files, non_textual_files = [], []
         for f in all_files:
-            primary = classify_file(f)
-            if primary == "TEXTUAL":
+            if classify_file(f) == "TEXTUAL":
                 textual_files.append(f)
             else:
                 non_textual_files.append(f)
 
-        # Prepare tasks for each formatter
+        # 2. Generate summary once
+        summary_data = await generate_summary(textual_files + non_textual_files)
+
+        # 3. Formatters
+        output_files = []
         tasks = []
+
         for fmt in self.output_formats:
             FormatterClass = self.FORMATTERS.get(fmt)
-            if FormatterClass:
-                formatter = FormatterClass(
-                    repo_name=self.repo_name,
-                    output_dir=self.directories[fmt],
-                    repo_path=repo_path,
-                    tree_summary=tree_summary,
-                    repo_url=self.repo_url
-                )
-                tasks.append(formatter.generate(textual_files, non_textual_files, mode=mode))
+            if not FormatterClass:
+                logger.warning(f"⚠️ Unsupported formatter: {fmt}")
+                continue
 
-        output_files = []
-        generated = await asyncio.gather(*tasks)
-        for out in generated:
-            if out:
-                logger.info(f"📄 Output ready at: {out}")
-                output_files.append(out)
+            formatter = FormatterClass(
+                repo_name=self.repo_name,
+                output_dir=self.directories[fmt],
+                repo_path=repo_path,
+                tree_summary=tree_summary,
+                repo_url=self.repo_url,
+                branch=self.branch,
+                subdir=self.subdir
+            )
 
+            tasks.append(formatter.generate(
+                text_files=textual_files,
+                non_textual_files=non_textual_files,
+                summary_data=summary_data,
+                mode=mode
+            ))
+
+        results = await asyncio.gather(*tasks)
+
+        for result in results:
+            if result:
+                output_files.append(result)
+                logger.info(f"📄 Output generated: {result}")
+
+        # 4. ZIP Bundle
         if create_zip:
             zip_formatter = ZipFormatter(
                 repo_name=self.repo_name,
@@ -85,7 +96,7 @@ class OutputBuilder:
             )
             zip_path = await zip_formatter.generate()
             if zip_path:
-                logger.info(f"📦 Zipped bundle created: {zip_path}")
                 output_files.append(zip_path)
+                logger.info(f"📦 Zipped bundle created: {zip_path}")
 
         return output_files
