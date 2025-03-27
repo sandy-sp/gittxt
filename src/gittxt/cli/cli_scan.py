@@ -11,6 +11,8 @@ from gittxt.core.output_builder import OutputBuilder
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary
+from gittxt.utils.filetype_utils import FiletypeConfigManager
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from .cli_utils import config
 from rich.table import Table
 from rich.console import Console
@@ -140,8 +142,14 @@ async def _process_one_repo(
 
     # Optionally load .gittxtignore if --sync
     dynamic_ignores = load_gittxtignore(scan_root) if sync else []
-    merged_exclude_dirs = list(exclude_dirs) + list(dynamic_ignores)
+    merged_exclude_dirs = list(set(exclude_dirs) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT))
 
+    # Warn user if --include-patterns has known non-textual extensions
+    for pattern in include_patterns:
+        ext = Path(pattern).suffix.lower()
+        if ext and not FiletypeConfigManager.is_known_textual_ext(ext):
+            console.print(f"[yellow]⚠️ Warning: Include pattern '{pattern}' targets non-textual file types. These will be skipped.[/yellow]")
+    
     scanner = Scanner(
         root_path=scan_root,
         exclude_dirs=merged_exclude_dirs,
