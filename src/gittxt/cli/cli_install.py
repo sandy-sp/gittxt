@@ -13,7 +13,7 @@ console = Console()
 def install():
     run_interactive_install()
 
-@click.command(help="🔄 Remove previous scan outputs (text/json/md/zips folders).")
+@click.command(help="🔄 Remove previous scan outputs (including text/json/md/zips).")
 @click.option("--output-dir", "-o", type=click.Path(), default=None)
 def clean(output_dir):
     target_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
