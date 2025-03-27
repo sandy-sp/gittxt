@@ -5,10 +5,19 @@ from .cli_install import install, clean
 from .cli_utils import config
 from gittxt.__init__ import __version__
 
-@click.group()
+class CustomGroup(click.Group):
+    def __init__(self, *args, **kwargs):
+        kwargs["invoke_without_command"] = False
+        kwargs["help"] = "[🚀] Gittxt CLI - Extract and classify Git repositories."
+        super().__init__(*args, **kwargs)
+
+    def list_commands(self, ctx):
+        # Custom order instead of alphabetical
+        return ["scan", "install", "filetypes", "clean"]
+    
+@click.group(cls=CustomGroup)
 @click.version_option(version=__version__, prog_name="Gittxt CLI 🛠", hidden=True)
 def cli():
-    """[🚀] Gittxt CLI - Extract and classify Git repositories."""
     pass
 
 cli.add_command(scan)
