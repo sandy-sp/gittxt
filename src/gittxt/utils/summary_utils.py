@@ -3,8 +3,8 @@ from typing import List, Dict
 import aiofiles
 import humanize
 import tiktoken
-from .filetype_utils import classify_simple
-from .subcat_utils import detect_subcategory
+from gittxt.utils.filetype_utils import classify_simple
+from gittxt.utils.subcat_utils import detect_subcategory
 
 def format_number_short(n: int) -> str:
     """

@@ -173,12 +173,22 @@ async def _process_one_repo(
     summary_data = await generate_summary(all_files)
     console.print(f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]")
 
-    def render_summary_table(summary_data: dict, repo_name: str):
+    def render_summary_table(summary_data: dict, repo_name: str, branch: str = None, subdir: str = None):
+        extra_line = ""
+        if branch or subdir:
+            parts = []
+            if branch:
+                parts.append(f"Branch: [bold blue]{branch}[/bold blue]")
+            if subdir:
+                parts.append(f"Subdir: [bold yellow]{subdir.strip('/')}[/bold yellow]")
+            extra_line = " " + " | ".join(parts)
+
         summary_table = Table(
-            title=f"📊 Gittxt Summary: {repo_name}",
+            title=f"📊 Gittxt Summary: {repo_name}\n{extra_line}",
             box=box.ROUNDED,
             border_style="cyan"
         )
+
         summary_table.add_column("Metric", style="bold magenta")
         summary_table.add_column("Value", justify="right", style="green")
 
@@ -218,7 +228,7 @@ async def _process_one_repo(
                 breakdown_table.add_row(subcat, files, tokens)
 
             console.print(breakdown_table)
-    render_summary_table(summary_data, repo_name)
+    render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
 
     if is_remote:
         cleanup_temp_folder(Path(repo_path))
