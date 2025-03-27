@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 from gittxt.core.logger import Logger
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 logger = Logger.get_logger(__name__)
 
@@ -32,3 +33,6 @@ def passes_all_filters(file_path: Path, exclude_dirs: List[str], size_limit: int
         return False
 
     return True
+
+def should_skip_dir(dirname: str, user_excludes: list = []) -> bool:
+    return dirname in EXCLUDED_DIRS_DEFAULT or dirname in user_excludes
