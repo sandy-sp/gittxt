@@ -43,15 +43,15 @@ class MarkdownFormatter:
                 # === Summary ===
                 await md.write("## 📊 Summary Report\n")
                 await md.write(f"- **Total Files**: `{summary_data['total_files']}`\n")
-                await md.write(f"- **Total Size**: `{summary_data['total_size']} bytes`\n")
-                await md.write(f"- **Estimated Tokens**: `{summary_data['estimated_tokens']}`\n\n")
+                await md.write(f"- **Total Size**: `{summary_data['formatted']['total_size']}`\n")
+                await md.write(f"- **Estimated Tokens**: `{summary_data['formatted']['estimated_tokens']}`\n\n")
 
                 if summary_data.get("file_type_breakdown"):
                     await md.write("### File Type Breakdown\n\n")
                     await md.write("| Subcategory | File Count | Token Estimate |\n")
                     await md.write("|-------------|-------------|----------------|\n")
                     for subcat, count in summary_data["file_type_breakdown"].items():
-                        tokens = summary_data["tokens_by_type"].get(subcat, 0)
+                        tokens = summary_data["formatted"]["tokens_by_type"].get(subcat, "0")
                         await md.write(f"| {subcat} | {count} | {tokens} |\n")
                     await md.write("\n")
 

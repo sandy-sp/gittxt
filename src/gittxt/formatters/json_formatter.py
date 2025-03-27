@@ -33,6 +33,7 @@ class JSONFormatter:
             },
             "directory_tree": self.tree_summary,
             "summary": summary_data,
+            "formatted": summary_data["formatted"],
             "files": [],
             "assets": []
         }

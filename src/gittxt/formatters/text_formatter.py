@@ -40,8 +40,8 @@ class TextFormatter:
                 # === SUMMARY ===
                 await txt_file.write("=== 📊 Summary Report ===\n")
                 await txt_file.write(f"Total Files: {summary_data['total_files']}\n")
-                await txt_file.write(f"Total Size: {summary_data['total_size']} bytes\n")
-                await txt_file.write(f"Estimated Tokens: {summary_data['estimated_tokens']}\n\n")
+                await txt_file.write(f"Total Size: {summary_data['formatted']['total_size']}\n")
+                await txt_file.write(f"Estimated Tokens: {summary_data['formatted']['estimated_tokens']}\n")
                 await txt_file.write("=== 📝 Extracted Textual Files ===\n")
             else:
                 await txt_file.write(f"Gittxt Lite Report - {self.repo_name}\n\n")
@@ -56,7 +56,7 @@ class TextFormatter:
                 content = raw if mode == "rich" else raw[:300]
 
                 if mode == "rich":
-                    token_count = summary_data.get("tokens_by_type", {}).get(subcat, 0)
+                    token_count = summary_data["formatted"]["tokens_by_type"].get(subcat, 0)
                     await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {file.stat().st_size} bytes | TOKENS: {token_count}\n---\n")
                 else:
                     await txt_file.write(f"\n--- {rel} ---\n")
