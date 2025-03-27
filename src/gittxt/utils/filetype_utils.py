@@ -36,13 +36,22 @@ class FiletypeConfigManager:
 
     @classmethod
     def add_textual_ext(cls, ext: str):
+        ext = ext.lower()
+        if not ext.startswith("."):
+            ext = f".{ext}"
+
+        # SAFEGUARD: Don't allow known non-textual extensions
+        if ext in DEFAULT_FILETYPE_CONFIG["non_textual_exts"]:
+            logger.warning(f"⚠️ Cannot add '{ext}' as textual: it's a known non-textual filetype.")
+            return
+
         config = cls.load_config()
         if ext not in config["textual_exts"]:
-            # remove from non_textual if needed
+            # remove from non_textual if present
             if ext in config["non_textual_exts"]:
                 config["non_textual_exts"].remove(ext)
             config["textual_exts"].append(ext)
-        cls.save_config(config)
+            cls.save_config(config)
 
     @classmethod
     def add_non_textual_ext(cls, ext: str):
