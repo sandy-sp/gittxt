@@ -53,7 +53,16 @@ class FiletypeConfigManager:
                 config["textual_exts"].remove(ext)
             config["non_textual_exts"].append(ext)
         cls.save_config(config)
-
+    
+    @classmethod
+    def is_known_textual_ext(cls, ext: str) -> bool:
+        """
+        Check if a given file extension is explicitly known as textual in the config.
+        Example: '.py' => True, '.mp4' => False
+        """
+        config = cls.load_config()
+        normalized = ext.lower() if ext.startswith('.') else f".{ext.lower()}"
+        return normalized in config.get("textual_exts", [])
 
 def _is_text_file_heuristic(file: Path) -> bool:
     """
