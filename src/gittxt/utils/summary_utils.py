@@ -45,10 +45,11 @@ async def generate_summary(file_paths: List[Path], estimate_tokens: bool = True)
     """
     Return a summary dict with:
       - total_files
-      - total_size
+      - total_size (raw bytes)
       - file_type_breakdown
-      - estimated_tokens
-      - tokens_by_type
+      - estimated_tokens (raw int)
+      - tokens_by_type (raw ints per subcat)
+      - formatted (human-readable versions for display)
     """
     summary = {
         "total_files": len(file_paths),
@@ -74,5 +75,15 @@ async def generate_summary(file_paths: List[Path], estimate_tokens: bool = True)
             summary["estimated_tokens"] += tokens
             summary["tokens_by_type"].setdefault(subcat, 0)
             summary["tokens_by_type"][subcat] += tokens
+
+    # Add human-readable formatting (does not affect downstream logic)
+    summary["formatted"] = {
+        "total_size": format_size_short(summary["total_size"]),
+        "estimated_tokens": format_number_short(summary["estimated_tokens"]),
+        "tokens_by_type": {
+            subcat: format_number_short(tokens)
+            for subcat, tokens in summary["tokens_by_type"].items()
+        },
+    }
 
     return summary
