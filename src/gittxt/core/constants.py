@@ -15,3 +15,10 @@ DEFAULT_EXCLUDE_DIRS = [
 
 # If you want a quick reference to all subdirectories that might be cleaned:
 OUTPUT_SUBDIRS = [TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR, TEMP_DIR]
+
+
+# Updated config keys to textual_exts / non_textual_exts 
+DEFAULT_FILETYPE_CONFIG = {
+    "textual_exts": [".py", ".md", ".txt", ".html", ".json", ".yml", ".yaml", ".csv"],
+    "non_textual_exts": [".zip", ".exe", ".bin", ".docx", ".xls", ".pdf"],
+}
