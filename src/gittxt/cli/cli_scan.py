@@ -13,7 +13,7 @@ from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.summary_utils import generate_summary
 from .cli_utils import config
 from rich.table import Table
-from rich.panel import Panel
+from rich.console import Console
 from rich import box
 
 logger = Logger.get_logger(__name__)
@@ -173,35 +173,51 @@ async def _process_one_repo(
     summary_data = await generate_summary(all_files)
     console.print(f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]")
 
-    def render_summary_table(summary_data, repo_name):
-        table = Table(title=f"📊 Gittxt Summary: {repo_name}", box=box.ROUNDED, border_style="cyan")
-        table.add_column("Metric", style="bold magenta")
-        table.add_column("Value", justify="right", style="green")
+    def render_summary_table(summary_data: dict, repo_name: str):
+        summary_table = Table(
+            title=f"📊 Gittxt Summary: {repo_name}",
+            box=box.ROUNDED,
+            border_style="cyan"
+        )
+        summary_table.add_column("Metric", style="bold magenta")
+        summary_table.add_column("Value", justify="right", style="green")
 
-        table.add_row("📄 Total Files", str(summary_data["total_files"]))
-        table.add_row("📦 Total Size", f'{summary_data["total_size"]:,} bytes')
-        table.add_row("🔢 Estimated Tokens", f'{summary_data["estimated_tokens"]:,}')
+        total_files = summary_data.get("total_files", 0)
+        total_size = summary_data.get("formatted", {}).get(
+            "total_size", f"{summary_data.get('total_size', 0):,} bytes"
+        )
+        est_tokens = summary_data.get("formatted", {}).get(
+            "estimated_tokens", f"{summary_data.get('estimated_tokens', 0):,}"
+        )
 
-        sub_table = Table.grid()
-        sub_table.add_column("Type", style="yellow")
-        sub_table.add_column("Files", justify="right")
-        sub_table.add_column("Tokens", justify="right")
+        summary_table.add_row("📄 Total Files", str(total_files))
+        summary_table.add_row("📦 Total Size", total_size)
+        summary_table.add_row("🔢 Estimated Tokens", est_tokens)
+
+        console.print(summary_table)
 
         breakdown = summary_data.get("file_type_breakdown", {})
-        token_data = summary_data.get("tokens_by_type", {})
+        token_data_raw = summary_data.get("tokens_by_type", {})
+        token_data_fmt = summary_data.get("formatted", {}).get("tokens_by_type", {})
 
-        for subcat in sorted(breakdown.keys()):
-            sub_table.add_row(
-                subcat,
-                str(breakdown[subcat]),
-                str(token_data.get(subcat, 0))
+        if breakdown:
+            breakdown_table = Table(
+                title="🧩 File Type Breakdown",
+                box=box.SIMPLE_HEAVY,
+                border_style="blue",
+                show_header=True,
+                header_style="bold white"
             )
+            breakdown_table.add_column("Type", style="yellow", no_wrap=True)
+            breakdown_table.add_column("Files", justify="right", style="cyan")
+            breakdown_table.add_column("Tokens", justify="right", style="magenta")
 
-        panel = Panel(sub_table, title="🧩 File Type Breakdown", border_style="blue")
-        
-        console.print(table)
-        console.print(panel)
+            for subcat in sorted(breakdown.keys()):
+                files = str(breakdown[subcat])
+                tokens = token_data_fmt.get(subcat) or f"{token_data_raw.get(subcat, 0):,}"
+                breakdown_table.add_row(subcat, files, tokens)
 
+            console.print(breakdown_table)
     render_summary_table(summary_data, repo_name)
 
     if is_remote:
