@@ -50,7 +50,7 @@ class MarkdownFormatter:
                 for file in ordered_files:
                     rel = file.relative_to(self.repo_path)
                     raw = await async_read_text(file) or ""
-                    await md.write(f"\n### `{rel}`\n")
+                    await md.write(f"\n### File: `{rel}`\n")
                     await md.write("```text\n")
                     await md.write(f"{raw.strip()}\n")
                     await md.write("```\n")
