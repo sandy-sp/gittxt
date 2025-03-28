@@ -35,6 +35,7 @@ class Scanner:
         self.batch_size = batch_size
         self.verbose = verbose
         self.accepted_files = []
+        self.skipped_files = []
 
     async def scan_directory(self) -> List[Path]:
         """
@@ -70,29 +71,28 @@ class Scanner:
     async def _process_single(self, path: Path):
         if not path.is_file():
             return
+
         if not pattern_utils.passes_all_filters(path, self.exclude_dirs, self.size_limit, self.verbose):
+            self.skipped_files.append((path, "filtered by size or dir"))
             return
 
-        # Skip excluded patterns
         if self.exclude_patterns and any(path.match(p) for p in self.exclude_patterns):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by exclude pattern: {path}")
+            self.skipped_files.append((path, "exclude pattern"))
             return
 
-        # Skip files not matching include patterns
         if self.include_patterns and not any(path.match(p) for p in self.include_patterns):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by not matching include pattern: {path}")
+            self.skipped_files.append((path, "not in include patterns"))
             return
 
-        # Validate file type
         label = filetype_utils.classify_file(path)
         if label != "TEXTUAL":
-            # Warn if included file is non-textual
             if self.include_patterns and any(path.match(p) for p in self.include_patterns):
                 logger.warning(f"⚠️ Skipped non-textual file matched by --include: {path}")
             if self.verbose:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
+            self.skipped_files.append((path, f"non-textual ({label})"))
             return
-
-        self.accepted_files.append(path)
