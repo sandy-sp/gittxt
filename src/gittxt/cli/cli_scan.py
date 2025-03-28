@@ -17,6 +17,7 @@ from .cli_utils import config
 from rich.table import Table
 from rich.console import Console
 from rich import box
+from collections import defaultdict
 
 logger = Logger.get_logger(__name__)
 console = Console()
@@ -159,6 +160,7 @@ async def _process_one_repo(
         progress=True
     )
     all_files = await scanner.scan_directory()
+    skipped_files = scanner.skipped_files
 
     if not all_files:
         console.print("[yellow]⚠️ No valid textual files found.[/yellow]")
@@ -184,6 +186,23 @@ async def _process_one_repo(
     console.print(f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]")
     console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
     console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
+    print_skipped_files(skipped_files)
+
+    def print_skipped_files(skipped_files):
+        if not skipped_files:
+            return
+
+        console.print("\n[bold red]⚠️ Skipped Files Summary[/bold red]")
+        reasons = defaultdict(list)
+        for path, reason in skipped_files:
+            reasons[reason].append(path)
+
+        for reason, paths in reasons.items():
+            console.print(f"[yellow]- {reason}[/yellow]: {len(paths)} files")
+            for p in paths[:5]:
+                console.print(f"  • {p}")
+            if len(paths) > 5:
+                console.print(f"  [dim]+ {len(paths) - 5} more...[/dim]")
 
     def render_summary_table(summary_data: dict, repo_name: str, branch: str = None, subdir: str = None):
         extra_line = ""
