@@ -10,6 +10,9 @@ lint:
 format:
 	black .
 
+test-repo:
+	python tests/generate_test_repo.py
+
 test:
 	poetry run pytest tests/
 
