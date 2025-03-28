@@ -5,6 +5,11 @@ from gittxt.utils.github_url_utils import build_github_url
 from gittxt.utils.subcat_utils import detect_subcategory
 from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.formatter_utils import sort_textual_files
+from gittxt.utils.summary_utils import (
+    estimate_tokens_from_file,
+    format_size_short,
+    format_number_short
+)
 
 
 class MarkdownFormatter:
@@ -66,15 +71,18 @@ class MarkdownFormatter:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
                 file_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
-                content = await async_read_text(file) or ""
-                content = content if mode == "rich" else content[:300]
+                raw = await async_read_text(file) or ""
+                content = raw if mode == "rich" else raw[:300]
+
                 size_bytes = file.stat().st_size
-                tokens = summary_data.get("tokens_by_type", {}).get(subcat, 0)
+                token_count = await estimate_tokens_from_file(file)
+                size_fmt = format_size_short(size_bytes)
+                tokens_fmt = format_number_short(token_count)
 
                 await md.write(f"\n### `{rel}` ({subcat})\n")
                 if mode == "rich":
-                    await md.write(f"- **Size**: `{size_bytes} bytes`\n")
-                    await md.write(f"- **Tokens (est.)**: `{tokens}`\n")
+                    await md.write(f"- **Size**: `{size_fmt}`\n")
+                    await md.write(f"- **Tokens (est.)**: `{tokens_fmt}`\n")
                     if file_url:
                         await md.write(f"- **URL**: [{file_url}]({file_url})\n")
                 await md.write("\n```text\n")
@@ -89,7 +97,9 @@ class MarkdownFormatter:
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
                     size_bytes = asset.stat().st_size
-                    await md.write(f"- `{rel}` ({subcat}) | **Size**: `{size_bytes} bytes`")
+                    size_fmt = format_size_short(size_bytes)
+
+                    await md.write(f"- `{rel}` ({subcat}) | **Size**: `{size_fmt}`")
                     if asset_url:
                         await md.write(f" | [URL]({asset_url})")
                     await md.write("\n")
