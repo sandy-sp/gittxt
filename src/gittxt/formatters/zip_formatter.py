@@ -62,12 +62,11 @@ class ZipFormatter:
         return zip_path
 
     async def _write_summary_json(self, path: Path):
-        # Minimal fallback summary — this can be extended to pull from actual summary_data
         summary_data = {
             "repo": self.repo_name,
             "url": self.repo_url,
             "generated_at": datetime.now(timezone.utc).isoformat() + " UTC",
-            "files": [f.name for f in self.output_files],
+            "files": [str(f.relative_to(self.output_dir)) for f in self.output_files],
             "non_textual_assets": [str(f.relative_to(self.repo_path)) for f in self.non_textual_files]
         }
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
