@@ -1,31 +1,43 @@
-import asyncio
 from pathlib import Path
+import asyncio
 from gittxt.core.logger import Logger
 from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR
 from gittxt.utils.tree_utils import generate_tree
+from gittxt.utils.summary_utils import generate_summary
+from gittxt.utils.filetype_utils import classify_file
 from gittxt.formatters.text_formatter import TextFormatter
 from gittxt.formatters.json_formatter import JSONFormatter
 from gittxt.formatters.markdown_formatter import MarkdownFormatter
 from gittxt.formatters.zip_formatter import ZipFormatter
-from gittxt.utils.filetype_utils import classify_file
-from gittxt.utils.summary_utils import generate_summary
 
 logger = Logger.get_logger(__name__)
 
+
 class OutputBuilder:
+    VALID_FORMATS = {"txt", "json", "md"}
+    VALID_MODES = {"rich", "lite"}
+
     FORMATTERS = {
         "txt": TextFormatter,
         "json": JSONFormatter,
         "md": MarkdownFormatter,
     }
 
-    def __init__(self, repo_name, output_dir, output_format="txt", repo_url=None, branch=None, subdir=None):
+    def __init__(self, repo_name, output_dir, output_format="txt", repo_url=None, branch=None, subdir=None, mode="rich"):
         self.repo_name = repo_name
         self.repo_url = repo_url
         self.branch = branch
         self.subdir = subdir
+        self.mode = mode.lower()
         self.output_dir = Path(output_dir).resolve()
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
+
+        # Validate mode and formats
+        if self.mode not in self.VALID_MODES:
+            raise ValueError(f"Invalid mode: '{self.mode}'. Must be one of: {', '.join(self.VALID_MODES)}")
+        for fmt in self.output_formats:
+            if fmt not in self.VALID_FORMATS:
+                raise ValueError(f"Unsupported output format: '{fmt}'. Allowed: {', '.join(self.VALID_FORMATS)}")
 
         self.directories = {
             "txt": self.output_dir / TEXT_DIR,
@@ -39,7 +51,6 @@ class OutputBuilder:
     async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"):
         tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
-        # Classify once
         textual_files, non_textual_files = [], []
         for f in all_files:
             if classify_file(f) == "TEXTUAL":
@@ -47,7 +58,6 @@ class OutputBuilder:
             else:
                 non_textual_files.append(f)
 
-        # Central summary (tokens, size, breakdowns, formatted)
         summary_data = await generate_summary(textual_files + non_textual_files)
 
         output_files = []
@@ -73,7 +83,7 @@ class OutputBuilder:
                 text_files=textual_files,
                 non_textual_files=non_textual_files,
                 summary_data=summary_data,
-                mode=mode
+                mode=self.mode
             ))
 
         results = await asyncio.gather(*tasks)
