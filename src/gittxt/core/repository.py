@@ -31,9 +31,6 @@ class RepositoryHandler:
         return temp_dir
 
     def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path):
-        """
-        Attempts a shallow clone (depth=1). If branch clone fails, tries default branch.
-        """
         try:
             logger.info(f"🚀 Cloning repository: {git_url} (branch={branch}) => {temp_dir}")
             clone_args = {"depth": 1}
@@ -41,8 +38,14 @@ class RepositoryHandler:
                 clone_args["branch"] = branch
             git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
         except git.GitCommandError as e:
-            logger.warning(f"⚠️ Clone failed with branch='{branch}'. Retrying without branch. Error: {e}")
-            git.Repo.clone_from(git_url, str(temp_dir), depth=1)
+            logger.warning(f"⚠️ Clone failed for '{git_url}' with branch='{branch}'. Retrying without branch. Error: {e}")
+            try:
+                git.Repo.clone_from(git_url, str(temp_dir), depth=1)
+            except Exception as fallback_error:
+                raise RuntimeError(
+                    f"❌ Failed to clone repository: {git_url} "
+                    f"(branch={branch}). Full error: {fallback_error}"
+                ) from fallback_error
 
     def get_local_path(self) -> tuple[str, str, bool, str, str]:
         """
@@ -73,7 +76,10 @@ class RepositoryHandler:
             # Local path
             path = Path(self.source).resolve()
             if not path.exists() or not path.is_dir():
-                raise ValueError(f"❌ Invalid local repo path: {self.source}")
+                raise FileNotFoundError(
+                    f"❌ Local path not found or not a directory: {path}. "
+                    f"Ensure the input is a valid local Git repository root."
+                )
             repo_name = path.name
             logger.info(f"✅ Using local repository: {path}")
             return (str(path), "", False, repo_name, None)
