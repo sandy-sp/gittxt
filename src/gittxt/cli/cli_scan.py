@@ -179,10 +179,11 @@ async def _process_one_repo(
 
     # Summary Output
     summary_data = await generate_summary(all_files)
+    render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
+    console.print()
     console.print(f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]")
-    console.print(f"[blue]📦 Output Format(s):[/blue] {output_formats}")
-    console.print(f"[blue]📁 Files saved to:[/blue] {final_output_dir.resolve()}")
-
+    console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
+    console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
 
     def render_summary_table(summary_data: dict, repo_name: str, branch: str = None, subdir: str = None):
         extra_line = ""
