@@ -5,6 +5,11 @@ from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.github_url_utils import build_github_url
 from gittxt.utils.formatter_utils import sort_textual_files
 from gittxt.utils.subcat_utils import detect_subcategory
+from gittxt.utils.summary_utils import (
+    estimate_tokens_from_file,
+    format_number_short,
+    format_size_short
+)
 
 
 class TextFormatter:
@@ -54,11 +59,14 @@ class TextFormatter:
                 asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
                 raw = await async_read_text(file) or ""
                 content = raw if mode == "rich" else raw[:300]
+
                 size_bytes = file.stat().st_size
-                tokens = summary_data.get("tokens_by_type", {}).get(subcat, 0)
+                token_count = await estimate_tokens_from_file(file)
+                size_fmt = format_size_short(size_bytes)
+                tokens_fmt = format_number_short(token_count)
 
                 if mode == "rich":
-                    await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {size_bytes} bytes | TOKENS: {tokens}\n---\n")
+                    await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {size_fmt} | TOKENS: {tokens_fmt}\n---\n")
                 else:
                     await txt_file.write(f"\n--- {rel} ---\n")
 
@@ -72,7 +80,9 @@ class TextFormatter:
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
                     size_bytes = asset.stat().st_size
-                    await txt_file.write(f"{rel} | TYPE: {subcat} | SIZE: {size_bytes} bytes")
+                    size_fmt = format_size_short(size_bytes)
+
+                    await txt_file.write(f"{rel} | TYPE: {subcat} | SIZE: {size_fmt}")
                     if asset_url:
                         await txt_file.write(f" | {asset_url}")
                     await txt_file.write("\n")
