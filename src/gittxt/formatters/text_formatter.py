@@ -38,10 +38,11 @@ class TextFormatter:
                 await txt_file.write(f"{self.tree_summary}\n\n")
 
                 # === SUMMARY ===
+                formatted = summary_data.get("formatted", {})
                 await txt_file.write("=== 📊 Summary Report ===\n")
-                await txt_file.write(f"Total Files: {summary_data['total_files']}\n")
-                await txt_file.write(f"Total Size: {summary_data['formatted']['total_size']}\n")
-                await txt_file.write(f"Estimated Tokens: {summary_data['formatted']['estimated_tokens']}\n")
+                await txt_file.write(f"Total Files: {summary_data.get('total_files')}\n")
+                await txt_file.write(f"Total Size: {formatted.get('total_size', summary_data.get('total_size'))}\n")
+                await txt_file.write(f"Estimated Tokens: {formatted.get('estimated_tokens', summary_data.get('estimated_tokens'))}\n\n")
                 await txt_file.write("=== 📝 Extracted Textual Files ===\n")
             else:
                 await txt_file.write(f"Gittxt Lite Report - {self.repo_name}\n\n")
@@ -51,13 +52,13 @@ class TextFormatter:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
                 asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
-
                 raw = await async_read_text(file) or ""
                 content = raw if mode == "rich" else raw[:300]
+                size_bytes = file.stat().st_size
+                tokens = summary_data.get("tokens_by_type", {}).get(subcat, 0)
 
                 if mode == "rich":
-                    token_count = summary_data["formatted"]["tokens_by_type"].get(subcat, 0)
-                    await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {file.stat().st_size} bytes | TOKENS: {token_count}\n---\n")
+                    await txt_file.write(f"\n---\nFILE: {rel} | TYPE: {subcat} | SIZE: {size_bytes} bytes | TOKENS: {tokens}\n---\n")
                 else:
                     await txt_file.write(f"\n--- {rel} ---\n")
 
@@ -70,6 +71,10 @@ class TextFormatter:
                     rel = asset.relative_to(self.repo_path)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
-                    await txt_file.write(f"{rel} | TYPE: {subcat} | SIZE: {asset.stat().st_size} bytes {asset_url}\n")
+                    size_bytes = asset.stat().st_size
+                    await txt_file.write(f"{rel} | TYPE: {subcat} | SIZE: {size_bytes} bytes")
+                    if asset_url:
+                        await txt_file.write(f" | {asset_url}")
+                    await txt_file.write("\n")
 
         return output_file
