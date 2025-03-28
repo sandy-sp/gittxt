@@ -37,11 +37,9 @@ class OutputBuilder:
             folder.mkdir(parents=True, exist_ok=True)
 
     async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"):
-        scan_root = Path(repo_path) / self.subdir if self.subdir else Path(repo_path)
-        tree_summary = generate_tree(scan_root, max_depth=tree_depth)
+        tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
 
-
-        # 1. Classify files
+        # Classify once
         textual_files, non_textual_files = [], []
         for f in all_files:
             if classify_file(f) == "TEXTUAL":
@@ -49,10 +47,9 @@ class OutputBuilder:
             else:
                 non_textual_files.append(f)
 
-        # 2. Generate summary once
+        # Central summary (tokens, size, breakdowns, formatted)
         summary_data = await generate_summary(textual_files + non_textual_files)
 
-        # 3. Formatters
         output_files = []
         tasks = []
 
@@ -86,7 +83,6 @@ class OutputBuilder:
                 output_files.append(result)
                 logger.info(f"📄 Output generated: {result}")
 
-        # 4. ZIP Bundle
         if create_zip:
             zip_formatter = ZipFormatter(
                 repo_name=self.repo_name,
