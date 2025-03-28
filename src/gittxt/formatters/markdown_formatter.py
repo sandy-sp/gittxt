@@ -41,17 +41,22 @@ class MarkdownFormatter:
                 await md.write("```\n\n")
 
                 # === Summary ===
+                formatted = summary_data.get("formatted", {})
                 await md.write("## 📊 Summary Report\n")
-                await md.write(f"- **Total Files**: `{summary_data['total_files']}`\n")
-                await md.write(f"- **Total Size**: `{summary_data['formatted']['total_size']}`\n")
-                await md.write(f"- **Estimated Tokens**: `{summary_data['formatted']['estimated_tokens']}`\n\n")
+                await md.write(f"- **Total Files**: `{summary_data.get('total_files')}`\n")
+                await md.write(f"- **Total Size**: `{formatted.get('total_size', summary_data.get('total_size'))}`\n")
+                await md.write(f"- **Estimated Tokens**: `{formatted.get('estimated_tokens', summary_data.get('estimated_tokens'))}`\n\n")
 
-                if summary_data.get("file_type_breakdown"):
+                # === Breakdown Table ===
+                breakdown = summary_data.get("file_type_breakdown", {})
+                tokens_by_type = formatted.get("tokens_by_type", {})
+                if breakdown:
                     await md.write("### File Type Breakdown\n\n")
                     await md.write("| Subcategory | File Count | Token Estimate |\n")
                     await md.write("|-------------|-------------|----------------|\n")
-                    for subcat, count in summary_data["file_type_breakdown"].items():
-                        tokens = summary_data["formatted"]["tokens_by_type"].get(subcat, "0")
+                    for subcat in sorted(breakdown):
+                        count = breakdown[subcat]
+                        tokens = tokens_by_type.get(subcat, summary_data.get("tokens_by_type", {}).get(subcat, 0))
                         await md.write(f"| {subcat} | {count} | {tokens} |\n")
                     await md.write("\n")
 
@@ -61,14 +66,15 @@ class MarkdownFormatter:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
                 file_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
-                raw = await async_read_text(file) or ""
-                content = raw if mode == "rich" else raw[:300]
-                token_est = summary_data.get("tokens_by_type", {}).get(subcat, 0)
+                content = await async_read_text(file) or ""
+                content = content if mode == "rich" else content[:300]
+                size_bytes = file.stat().st_size
+                tokens = summary_data.get("tokens_by_type", {}).get(subcat, 0)
 
                 await md.write(f"\n### `{rel}` ({subcat})\n")
                 if mode == "rich":
-                    await md.write(f"- **Size**: `{file.stat().st_size} bytes`\n")
-                    await md.write(f"- **Tokens (est.)**: `{token_est}`\n")
+                    await md.write(f"- **Size**: `{size_bytes} bytes`\n")
+                    await md.write(f"- **Tokens (est.)**: `{tokens}`\n")
                     if file_url:
                         await md.write(f"- **URL**: [{file_url}]({file_url})\n")
                 await md.write("\n```text\n")
@@ -82,7 +88,8 @@ class MarkdownFormatter:
                     rel = asset.relative_to(self.repo_path)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
-                    await md.write(f"- `{rel}` ({subcat}) | **Size**: `{asset.stat().st_size} bytes`")
+                    size_bytes = asset.stat().st_size
+                    await md.write(f"- `{rel}` ({subcat}) | **Size**: `{size_bytes} bytes`")
                     if asset_url:
                         await md.write(f" | [URL]({asset_url})")
                     await md.write("\n")
