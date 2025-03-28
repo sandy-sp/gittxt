@@ -2,8 +2,8 @@ import subprocess
 import pytest
 from pathlib import Path
 
-OUTPUT_DIR = Path("cli_test_outputs")
-REPO_DIR = Path("test_repo")
+TEST_REPO = Path("tests/test_repo")
+OUTPUT_DIR = Path("tests/cli_test_outputs")
 
 def test_cli_scan_lite_zip():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

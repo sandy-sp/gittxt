@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-def generate_test_repo(base_dir="test_repo"):
+def generate_test_repo(base_dir="tests/test_repo"):
     base = Path(base_dir)
     base.mkdir(parents=True, exist_ok=True)
 

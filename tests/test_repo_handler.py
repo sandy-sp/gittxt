@@ -4,7 +4,7 @@ from pathlib import Path
 
 def test_local_repo_path_resolution():
     handler = RepositoryHandler()
-    repo_path = handler.get_local_path("test_repo")
+    repo_path = handler.get_local_path("tests/test_repo")
     assert repo_path.exists()
     assert (repo_path / "README.md").exists()
 

@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from gittxt.core.scanner import Scanner
 
-TEST_REPO = Path("test_repo")
+TEST_REPO = Path("test/test_repo")
 
 def test_scanner_with_default_config():
     scanner = Scanner(root_path=TEST_REPO)

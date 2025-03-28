@@ -3,8 +3,8 @@ from pathlib import Path
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.core.scanner import Scanner
 
-TEST_REPO = Path("test_repo")
-OUTPUT_DIR = Path("test_outputs_lite")
+TEST_REPO = Path("tests/test_repo")
+OUTPUT_DIR = Path("tests/test_outputs_lite")
 
 @pytest.mark.asyncio
 async def test_lite_output_formatting():
