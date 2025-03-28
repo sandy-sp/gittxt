@@ -6,6 +6,11 @@ from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.formatter_utils import sort_textual_files
 from gittxt.utils.subcat_utils import detect_subcategory
 from gittxt.utils.github_url_utils import build_github_url
+from gittxt.utils.summary_utils import (
+    estimate_tokens_from_file,
+    format_number_short,
+    format_size_short
+)
 
 
 class JSONFormatter:
@@ -30,11 +35,18 @@ class JSONFormatter:
             raw_text = await async_read_text(file) or ""
             text = raw_text if mode == "rich" else raw_text[:300]
 
+            size_bytes = file.stat().st_size
+            token_count = await estimate_tokens_from_file(file)
+            size_fmt = format_size_short(size_bytes)
+            token_fmt = format_number_short(token_count)
+
             files_section.append({
                 "path": str(rel),
                 "subcategory": subcat,
-                "size_bytes": file.stat().st_size,
-                "tokens_estimate": summary_data.get("tokens_by_type", {}).get(subcat, 0),
+                "size_bytes": size_bytes,
+                "size_human": size_fmt,
+                "tokens_estimate": token_count,
+                "tokens_human": token_fmt,
                 "content": text.strip(),
                 "url": file_url
             })
@@ -44,10 +56,14 @@ class JSONFormatter:
             rel = asset.relative_to(self.repo_path)
             subcat = detect_subcategory(asset, "NON-TEXTUAL")
             asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
+            size_bytes = asset.stat().st_size
+            size_fmt = format_size_short(size_bytes)
+
             assets_section.append({
                 "path": str(rel),
                 "subcategory": subcat,
-                "size_bytes": asset.stat().st_size,
+                "size_bytes": size_bytes,
+                "size_human": size_fmt,
                 "url": asset_url
             })
 
