@@ -47,7 +47,7 @@ class TextFormatter:
                 for file in ordered_files:
                     rel = file.relative_to(self.repo_path)
                     raw = await async_read_text(file) or ""
-                    await txt_file.write(f"{rel}\n")
+                    await txt_file.write(f"--- File: {rel} ---\n")
                     await txt_file.write(f"{raw.strip()}\n\n")
                 return output_file
 
