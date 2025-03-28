@@ -2,10 +2,10 @@ from pathlib import Path
 import aiofiles
 import json
 from datetime import datetime, timezone
-from gittxt.utils.github_url_utils import build_github_url
+from gittxt.utils.file_utils import async_read_text
 from gittxt.utils.formatter_utils import sort_textual_files
 from gittxt.utils.subcat_utils import detect_subcategory
-from gittxt.utils.file_utils import async_read_text
+from gittxt.utils.github_url_utils import build_github_url
 
 
 class JSONFormatter:
@@ -18,60 +18,61 @@ class JSONFormatter:
         self.branch = branch
         self.subdir = subdir
 
-    async def generate(self, text_files, non_textual_files, summary_data: dict, mode: str = "rich"):
+    async def generate(self, text_files, non_textual_files, summary_data: dict, mode="rich"):
         output_file = self.output_dir / f"{self.repo_name}.json"
         ordered_files = sort_textual_files(text_files)
 
-        output_data = {
-            "repository": {
-                "name": self.repo_name,
-                "branch": self.branch,
-                "subdir": self.subdir.strip("/") if self.subdir else None,
-                "repo_url": self.repo_url,
-                "generated_at": datetime.now(timezone.utc).isoformat() + "Z",
-                "format": "json"
-            },
-            "directory_tree": self.tree_summary,
-            "summary": summary_data,
-            "formatted": summary_data["formatted"],
-            "files": [],
-            "assets": []
-        }
-
-        # TEXTUAL FILES
+        files_section = []
         for file in ordered_files:
             rel = file.relative_to(self.repo_path)
             subcat = detect_subcategory(file, "TEXTUAL")
             file_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
-            raw = await async_read_text(file) or ""
-            content = raw if mode == "rich" else raw[:300]
+            raw_text = await async_read_text(file) or ""
+            text = raw_text if mode == "rich" else raw_text[:300]
 
-            file_obj = {
+            files_section.append({
                 "path": str(rel),
-                "type": subcat,
+                "subcategory": subcat,
                 "size_bytes": file.stat().st_size,
-                "url": file_url,
-                "tokens_est": summary_data.get("tokens_by_type", {}).get(subcat, 0),
-                "content": content.strip()
-            }
-            output_data["files"].append(file_obj)
+                "tokens_estimate": summary_data.get("tokens_by_type", {}).get(subcat, 0),
+                "content": text.strip(),
+                "url": file_url
+            })
 
-        # NON-TEXTUAL FILES
+        assets_section = []
         for asset in non_textual_files:
             rel = asset.relative_to(self.repo_path)
             subcat = detect_subcategory(asset, "NON-TEXTUAL")
             asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
-
-            asset_obj = {
+            assets_section.append({
                 "path": str(rel),
-                "type": subcat,
+                "subcategory": subcat,
                 "size_bytes": asset.stat().st_size,
                 "url": asset_url
-            }
-            output_data["assets"].append(asset_obj)
+            })
 
-        # Write to file
-        async with aiofiles.open(output_file, "w", encoding="utf-8") as json_file:
-            await json_file.write(json.dumps(output_data, indent=4, ensure_ascii=False))
+        output = {
+            "repository": {
+                "name": self.repo_name,
+                "url": self.repo_url,
+                "branch": self.branch,
+                "subdir": self.subdir,
+                "tree_summary": self.tree_summary,
+                "generated_at": datetime.now(timezone.utc).isoformat() + " UTC"
+            },
+            "summary": {
+                "total_files": summary_data.get("total_files"),
+                "total_size_bytes": summary_data.get("total_size"),
+                "estimated_tokens": summary_data.get("estimated_tokens"),
+                "formatted": summary_data.get("formatted"),
+                "file_type_breakdown": summary_data.get("file_type_breakdown"),
+                "tokens_by_type": summary_data.get("tokens_by_type"),
+            },
+            "files": files_section,
+            "assets": assets_section
+        }
+
+        async with aiofiles.open(output_file, "w", encoding="utf-8") as jf:
+            await jf.write(json.dumps(output, indent=2))
 
         return output_file
