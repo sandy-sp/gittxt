@@ -86,10 +86,12 @@ class OutputBuilder:
                 mode=self.mode
             ))
 
-        results = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in results:
-            if result:
+            if isinstance(result, Exception):
+                logger.error(f"❌ Formatter failed: {result}")
+            elif result:
                 output_files.append(result)
                 logger.info(f"📄 Output generated: {result}")
 
