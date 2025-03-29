@@ -49,7 +49,7 @@ class OutputBuilder:
             folder.mkdir(parents=True, exist_ok=True)
 
     async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"):
-        tree_summary = generate_tree(Path(repo_path), max_depth=tree_depth)
+        tree_summary = generate_tree(Path(repo_path) / self.subdir if self.subdir else Path(repo_path), max_depth=tree_depth)
 
         textual_files, non_textual_files = [], []
         for f in all_files:
