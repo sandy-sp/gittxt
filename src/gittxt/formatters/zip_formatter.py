@@ -66,7 +66,7 @@ class ZipFormatter:
             "repo": self.repo_name,
             "url": self.repo_url,
             "generated_at": datetime.now(timezone.utc).isoformat() + " UTC",
-            "files": [str(f.relative_to(self.output_dir)) for f in self.output_files],
+            "files": [str(f.relative_to(self.output_dir)) if self.output_dir in f.parents else str(f.name) for f in self.output_files],
             "non_textual_assets": [str(f.relative_to(self.repo_path)) for f in self.non_textual_files]
         }
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
