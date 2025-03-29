@@ -8,6 +8,11 @@ def generate_tree(path: Path, prefix: str = "", max_depth: int = None, current_d
     if exclude_dirs is None:
         exclude_dirs = [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"]
 
+    path = Path(path).resolve()
+
+    if not path.exists() or not path.is_dir():
+        return ""
+
     if max_depth is not None and current_depth >= max_depth:
         return prefix.rstrip() + "└── ..."
 
@@ -15,7 +20,6 @@ def generate_tree(path: Path, prefix: str = "", max_depth: int = None, current_d
     try:
         with os.scandir(path) as entries:
             entries_list = sorted(entries, key=lambda e: (not e.is_dir(), e.name.lower()))
-            # Filter out excluded directories
             entries_list = [e for e in entries_list if e.name not in exclude_dirs]
 
             pointers = ["├── "] * (len(entries_list) - 1) + ["└── "] if entries_list else []
