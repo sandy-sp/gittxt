@@ -24,19 +24,20 @@ def test_cli_scan_lite_zip():
     print("STDOUT:\n", result.stdout)
     print("STDERR:\n", result.stderr)
 
-    # Accept either a clean success or a no-text warning
-    assert result.returncode == 0, f"CLI failed with exit code {result.returncode}"
+    # Accept a clean success or no-text warning
+    assert result.returncode == 0, f"CLI failed with code {result.returncode}"
 
-    # Allow this warning to be valid output if nothing was included
     assert (
         "✅ Scan complete" in result.stdout
         or "📄 Output generated" in result.stdout
         or "⚠️ No valid textual files found." in result.stdout
-    ), "Expected scan success or warning in CLI output"
+    ), "Expected scan success or valid warning"
 
-    # These may not exist if no files were processed — soft check
+    # Soft file check: files may be skipped by .gittxtignore
     txt_files = list(OUTPUT_DIR.rglob("*.txt"))
     json_files = list(OUTPUT_DIR.rglob("*.json"))
     zip_files = list(OUTPUT_DIR.rglob("*.zip"))
 
     assert zip_files, "Expected .zip output not found"
+    assert any(f.name.endswith(".txt") for f in txt_files), "Expected .txt output missing"
+    assert any(f.name.endswith(".json") for f in json_files), "Expected .json output missing"
