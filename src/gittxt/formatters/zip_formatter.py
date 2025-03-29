@@ -14,7 +14,7 @@ class ZipFormatter:
         self.output_dir = output_dir
         self.output_files = output_files
         self.non_textual_files = non_textual_files
-        self.repo_path = repo_path
+        self.repo_path = Path(repo_path).resolve()
         self.repo_url = repo_url
 
     async def generate(self):

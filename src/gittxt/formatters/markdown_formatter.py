@@ -16,7 +16,7 @@ class MarkdownFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None, branch: str = None, subdir: str = None):
         self.repo_name = repo_name
         self.output_dir = output_dir
-        self.repo_path = repo_path
+        self.repo_path = Path(repo_path).resolve()
         self.tree_summary = tree_summary
         self.repo_url = repo_url
         self.branch = branch
