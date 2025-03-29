@@ -5,7 +5,7 @@ import shutil
 import json
 from pathlib import Path
 from datetime import datetime, timezone
-from gittxt.utils.summary_utils import format_size_short, format_number_short
+from gittxt.utils.summary_utils import format_size_short
 
 
 class ZipFormatter:
@@ -16,6 +16,7 @@ class ZipFormatter:
         self.non_textual_files = non_textual_files
         self.repo_path = Path(repo_path).resolve()
         self.repo_url = repo_url
+        self.flatten_zip = False 
 
     async def generate(self):
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -28,17 +29,19 @@ class ZipFormatter:
             outputs_dir = tempdir / "outputs"
             outputs_dir.mkdir(parents=True, exist_ok=True)
 
-            for file in self.output_files:
-                if file.exists():
-                    shutil.copy(file, outputs_dir / file.name)
+            for f in self.output_files:
+                if f.exists():
+                    arcname = f.name if self.flatten_zip else f.relative_to(self.output_dir)
+                    target = outputs_dir / arcname
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy(f, target)
 
             # === Copy Assets ===
             if self.non_textual_files:
                 assets_dir = tempdir / "assets"
                 assets_dir.mkdir(parents=True, exist_ok=True)
                 for asset in self.non_textual_files:
-                    repo_root = Path(self.repo_path).resolve()
-                    rel = asset.resolve().relative_to(repo_root)
+                    rel = asset.resolve().relative_to(self.repo_path)
                     target = assets_dir / rel
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy(asset, target)
