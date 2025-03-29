@@ -12,6 +12,7 @@ from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
 from gittxt.utils import pattern_utils, filetype_utils
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
+from gittxt.utils.ignore_utils import parse_ignore_file 
 
 logger = Logger.get_logger(__name__)
 
@@ -32,6 +33,7 @@ class Scanner:
         progress: bool = False,
         batch_size: int = 50,
         verbose: bool = False,
+        use_ignore_file: bool = False
     ):
         self.root_path = root_path.resolve()
         self.exclude_dirs = exclude_dirs or []
@@ -43,6 +45,14 @@ class Scanner:
         self.verbose = verbose
         self.accepted_files = []
         self.skipped_files = []
+        self.exclude_patterns = list(exclude_patterns) if exclude_patterns else []
+        if use_ignore_file:
+            ignore_file = self.root_path / ".gittxtignore"
+            if ignore_file.exists():
+                from gittxt.utils.ignore_utils import parse_ignore_file
+                patterns = parse_ignore_file(ignore_file)
+                self.exclude_patterns.extend(patterns)
+                logger.debug(f"📁 Merged {len(patterns)} patterns from .gittxtignore")
 
     async def scan_directory(self) -> List[Path]:
         """
