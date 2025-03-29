@@ -37,7 +37,7 @@ class ZipFormatter:
                 assets_dir = tempdir / "assets"
                 assets_dir.mkdir(parents=True, exist_ok=True)
                 for asset in self.non_textual_files:
-                    rel = asset.relative_to(self.repo_path)
+                    rel = file.resolve().relative_to(self.repo_path.resolve())
                     target = assets_dir / rel
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy(asset, target)
@@ -87,7 +87,7 @@ class ZipFormatter:
 
         for f in self.non_textual_files:
             if f.exists():
-                rel = f.relative_to(self.repo_path)
+                rel = file.resolve().relative_to(self.repo_path.resolve())
                 size = f.stat().st_size
                 entries.append({
                     "type": "asset",

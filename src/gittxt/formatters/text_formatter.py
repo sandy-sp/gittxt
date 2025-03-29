@@ -87,7 +87,7 @@ class TextFormatter:
             if non_textual_files:
                 await txt_file.write("\n=== 🎨 Non-Textual Assets ===\n")
                 for asset in non_textual_files:
-                    rel = asset.relative_to(self.repo_path)
+                    rel = file.resolve().relative_to(self.repo_path.resolve())
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                     size_fmt = format_size_short(asset.stat().st_size)
