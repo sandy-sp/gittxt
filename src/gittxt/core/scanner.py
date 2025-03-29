@@ -1,7 +1,13 @@
 import asyncio
 from pathlib import Path
 from typing import List, Optional
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+
+try:
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+    USE_RICH = True
+except ImportError:
+    USE_RICH = False
+
 from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
 from gittxt.utils import pattern_utils, filetype_utils
@@ -9,9 +15,10 @@ from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 logger = Logger.get_logger(__name__)
 
+
 class Scanner:
     """
-    Scans directories for textual files, ignoring non-textual.
+    Scans directories for textual files, ignoring non-textual ones.
     Applies folder and size excludes. Optionally merges .gitignore.
     """
 
@@ -48,25 +55,39 @@ class Scanner:
         concurrency = config.get("scan_concurrency", 200)
         semaphore = asyncio.Semaphore(concurrency)
 
-        # Setup progress bar if needed
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TimeElapsedColumn(),
-            transient=True
-        ) as progress_bar:
-            task_id = progress_bar.add_task("Scanning repository files...", total=len(all_items))
-
-            async def process_path(path: Path):
-                async with semaphore:
+        async def process_path(path: Path):
+            async with semaphore:
+                try:
                     await self._process_single(path)
-                    progress_bar.update(task_id, advance=1)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
+                    logger.error(f"❌ Error processing file {path}: {e}")
+                    self.skipped_files.append((path, f"processing error: {e}"))
 
+        if self.progress and USE_RICH:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeElapsedColumn(),
+                transient=True
+            ) as progress_bar:
+                task_id = progress_bar.add_task("Scanning repository files...", total=len(all_items))
+                wrapped = [
+                    self._with_progress(process_path(p), progress_bar, task_id)
+                    for p in all_items
+                ]
+                await asyncio.gather(*wrapped)
+        else:
+            logger.info("⏳ Scanning files... (no rich progress available)")
             await asyncio.gather(*[process_path(p) for p in all_items])
-            progress_bar.update(task_id, completed=len(all_items))
 
         return self.accepted_files
+
+    async def _with_progress(self, coro, progress_bar, task_id):
+        await coro
+        progress_bar.update(task_id, advance=1)
 
     async def _process_single(self, path: Path):
         if not path.is_file():
@@ -96,3 +117,5 @@ class Scanner:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
             self.skipped_files.append((path, f"non-textual ({label})"))
             return
+
+        self.accepted_files.append(path)
