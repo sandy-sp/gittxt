@@ -31,7 +31,8 @@ class JSONFormatter:
             # === Lite mode: minimal file list and content ===
             files = []
             for file in ordered_files:
-                rel = file.resolve().relative_to(self.repo_path.resolve())
+                repo_root = Path(self.repo_path).resolve()
+                rel = file.resolve().relative_to(repo_root)
                 raw_text = await async_read_text(file) or "[no content]"
                 files.append({
                     "path": str(rel),
@@ -54,7 +55,8 @@ class JSONFormatter:
             # === Rich mode: detailed file metadata ===
             files_section = []
             for file in ordered_files:
-                rel = file.resolve().relative_to(self.repo_path.resolve())
+                repo_root = Path(self.repo_path).resolve()
+                rel = file.resolve().relative_to(repo_root)
                 subcat = detect_subcategory(file, "TEXTUAL")
                 file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                 raw_text = await async_read_text(file) or "[no content]"
@@ -77,7 +79,8 @@ class JSONFormatter:
 
             assets_section = []
             for asset in non_textual_files:
-                rel = file.resolve().relative_to(self.repo_path.resolve())
+                repo_root = Path(self.repo_path).resolve()
+                rel = file.resolve().relative_to(repo_root)
                 subcat = detect_subcategory(asset, "NON-TEXTUAL")
                 asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                 size_bytes = asset.stat().st_size
