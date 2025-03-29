@@ -48,7 +48,7 @@ class MarkdownFormatter:
                 # === Textual Files Section ===
                 await md.write("## 📝 Textual Files\n")
                 for file in ordered_files:
-                    rel = file.relative_to(self.repo_path)
+                    rel = file.resolve().relative_to(self.repo_path.resolve())
                     raw = await async_read_text(file) or ""
                     await md.write(f"\n### File: `{rel}`\n")
                     await md.write("```text\n")
@@ -92,7 +92,7 @@ class MarkdownFormatter:
 
             await md.write("## 📝 Extracted Textual Files\n")
             for file in ordered_files:
-                rel = file.relative_to(self.repo_path)
+                rel = file.resolve().relative_to(self.repo_path.resolve())
                 subcat = detect_subcategory(file, "TEXTUAL")
                 file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                 raw = await async_read_text(file) or ""

@@ -45,7 +45,7 @@ class TextFormatter:
                 # === TEXTUAL FILES SECTION ===
                 await txt_file.write("=== Textual Files ===\n")
                 for file in ordered_files:
-                    rel = file.relative_to(self.repo_path)
+                    rel = file.resolve().relative_to(self.repo_path.resolve())
                     raw = await async_read_text(file) or "[no content]"
                     await txt_file.write(f"--- File: {rel} ---\n")
                     await txt_file.write(f"{raw.strip()}\n\n")
@@ -72,7 +72,7 @@ class TextFormatter:
 
             await txt_file.write("=== 📝 Extracted Textual Files ===\n")
             for file in ordered_files:
-                rel = file.relative_to(self.repo_path)
+                rel = file.resolve().relative_to(self.repo_path.resolve())
                 subcat = detect_subcategory(file, "TEXTUAL")
                 asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                 raw = await async_read_text(file) or "[no content]"
