@@ -45,7 +45,8 @@ class TextFormatter:
                 # === TEXTUAL FILES SECTION ===
                 await txt_file.write("=== Textual Files ===\n")
                 for file in ordered_files:
-                    rel = file.resolve().relative_to(self.repo_path.resolve())
+                    repo_root = Path(self.repo_path).resolve()
+                    rel = file.resolve().relative_to(repo_root)
                     raw = await async_read_text(file) or "[no content]"
                     await txt_file.write(f"--- File: {rel} ---\n")
                     await txt_file.write(f"{raw.strip()}\n\n")
@@ -72,7 +73,8 @@ class TextFormatter:
 
             await txt_file.write("=== 📝 Extracted Textual Files ===\n")
             for file in ordered_files:
-                rel = file.resolve().relative_to(self.repo_path.resolve())
+                repo_root = Path(self.repo_path).resolve()
+                rel = file.resolve().relative_to(repo_root)
                 subcat = detect_subcategory(file, "TEXTUAL")
                 asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                 raw = await async_read_text(file) or "[no content]"
@@ -87,7 +89,8 @@ class TextFormatter:
             if non_textual_files:
                 await txt_file.write("\n=== 🎨 Non-Textual Assets ===\n")
                 for asset in non_textual_files:
-                    rel = file.resolve().relative_to(self.repo_path.resolve())
+                    repo_root = Path(self.repo_path).resolve()
+                    rel = file.resolve().relative_to(repo_root)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                     size_fmt = format_size_short(asset.stat().st_size)
