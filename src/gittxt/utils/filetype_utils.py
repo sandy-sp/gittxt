@@ -1,6 +1,5 @@
 from pathlib import Path
 import mimetypes
-from binaryornot.check import is_binary
 from gittxt.core.logger import Logger
 import json
 from gittxt.core.constants import DEFAULT_FILETYPE_CONFIG
@@ -8,9 +7,6 @@ from gittxt.core.constants import DEFAULT_FILETYPE_CONFIG
 logger = Logger.get_logger(__name__)
 
 class FiletypeConfigManager:
-    """
-    Manages textual_exts and non_textual_exts in a config file (was formerly whitelist/blacklist).
-    """
     CONFIG_FILE = Path(__file__).parent.parent / "config" / "filetype_config.json"
 
     @classmethod
@@ -58,41 +54,50 @@ class FiletypeConfigManager:
     def add_non_textual_ext(cls, ext: str):
         config = cls.load_config()
         if ext not in config["non_textual_exts"]:
-            # remove from textual if needed
             if ext in config["textual_exts"]:
                 config["textual_exts"].remove(ext)
             config["non_textual_exts"].append(ext)
         cls.save_config(config)
-    
+
     @classmethod
     def is_known_textual_ext(cls, ext: str) -> bool:
-        """
-        Check if a given file extension is explicitly known as textual in the config.
-        Example: '.py' => True, '.mp4' => False
-        """
         config = cls.load_config()
         normalized = ext.lower() if ext.startswith('.') else f".{ext.lower()}"
         return normalized in config.get("textual_exts", [])
 
-def _is_text_file_heuristic(file: Path) -> bool:
+
+def is_binary(path: Path, chunk_size: int = 1024) -> bool:
     """
-    Basic textual check using binaryornot and MIME type.
+    Returns True if file appears to be binary, using null-byte scan.
     """
     try:
-        if is_binary(str(file)):
+        with open(path, 'rb') as f:
+            chunk = f.read(chunk_size)
+            if b'\0' in chunk:
+                return True
+    except Exception:
+        return True  # Conservative fallback
+    return False
+
+
+def guess_mime(path: Path) -> str:
+    mime, _ = mimetypes.guess_type(path.name)
+    return mime or "application/octet-stream"
+
+
+def _is_text_file_heuristic(file: Path) -> bool:
+    try:
+        if is_binary(file):
             return False
-        mime_type, _ = mimetypes.guess_type(str(file))
-        if mime_type and mime_type.startswith(("image/", "audio/", "video/")):
+        mime_type = guess_mime(file)
+        if mime_type.startswith(("image/", "audio/", "video/", "application/pdf")):
             return False
         return True
     except Exception:
         return False
 
+
 def classify_simple(file: Path) -> tuple[str, str]:
-    """
-    Returns ("TEXTUAL" or "NON-TEXTUAL", reason).
-    Reason: "user_config" if matched by config, or "heuristic" otherwise.
-    """
     ext = file.suffix.lower()
     config = FiletypeConfigManager.load_config()
     textual_exts = config.get("textual_exts", [])
@@ -103,14 +108,11 @@ def classify_simple(file: Path) -> tuple[str, str]:
     if ext in non_textual_exts:
         return ("NON-TEXTUAL", "user_config")
 
-    # Fallback to heuristic
     if _is_text_file_heuristic(file):
         return ("TEXTUAL", "heuristic")
     return ("NON-TEXTUAL", "heuristic")
 
+
 def classify_file(file: Path) -> str:
-    """
-    Returns 'TEXTUAL' or 'NON-TEXTUAL' only, skipping the reason.
-    """
-    primary, _reason = classify_simple(file)
+    primary, _ = classify_simple(file)
     return primary
