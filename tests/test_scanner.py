@@ -1,12 +1,13 @@
 import pytest
 from pathlib import Path
 from gittxt.core.scanner import Scanner
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 TEST_REPO = Path("tests/test_repo")
 
 @pytest.mark.asyncio
 async def test_scanner_with_default_config():
-    scanner = Scanner(root_path=TEST_REPO, verbose=True, use_ignore_file=True, size_limit=5 * 1024 * 1024)
+    scanner = Scanner(root_path=TEST_REPO, exclude_dirs=EXCLUDED_DIRS_DEFAULT, verbose=True, use_ignore_file=True, size_limit=5 * 1024 * 1024)
     included = await scanner.scan_directory()
 
     print("INCLUDED FILES:", [str(f) for f in included])
@@ -19,7 +20,7 @@ async def test_scanner_with_default_config():
 
 @pytest.mark.asyncio
 async def test_scanner_skipped_reasons():
-    scanner = Scanner(root_path=TEST_REPO, verbose=True, use_ignore_file=True, size_limit=5 * 1024 * 1024)
+    scanner = Scanner(root_path=TEST_REPO, exclude_dirs=EXCLUDED_DIRS_DEFAULT, verbose=True, use_ignore_file=True, size_limit=5 * 1024 * 1024)
     _ = await scanner.scan_directory()
     skipped = scanner.skipped_files
 
@@ -31,7 +32,7 @@ async def test_scanner_skipped_reasons():
 
 @pytest.mark.asyncio
 async def test_scanner_with_include_pattern():
-    scanner = Scanner(root_path=TEST_REPO, include_patterns=["*.txt"], verbose=True)
+    scanner = Scanner(root_path=TEST_REPO, exclude_dirs=EXCLUDED_DIRS_DEFAULT, include_patterns=["*.txt"], verbose=True)
     included = await scanner.scan_directory()
 
     print("INCLUDED FILES:", [str(f) for f in included])
@@ -41,7 +42,7 @@ async def test_scanner_with_include_pattern():
 
 @pytest.mark.asyncio
 async def test_scanner_with_exclude_pattern():
-    scanner = Scanner(root_path=TEST_REPO, exclude_patterns=["*.csv", "*.min.js"], verbose=True)
+    scanner = Scanner(root_path=TEST_REPO, exclude_dirs=EXCLUDED_DIRS_DEFAULT, exclude_patterns=["*.csv", "*.min.js"], verbose=True)
     included = await scanner.scan_directory()
 
     print("INCLUDED FILES:", [str(f) for f in included])
