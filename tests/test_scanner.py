@@ -6,7 +6,7 @@ TEST_REPO = Path("tests/test_repo")
 
 @pytest.mark.asyncio
 async def test_scanner_with_default_config():
-    scanner = Scanner(root_path=TEST_REPO, verbose=True, size_limit=5 * 1024 * 1024)
+    scanner = Scanner(root_path=TEST_REPO, verbose=True, use_ignore_file=True, size_limit=5 * 1024 * 1024)
     included = await scanner.scan_directory()
 
     print("INCLUDED FILES:", [str(f) for f in included])
@@ -19,7 +19,7 @@ async def test_scanner_with_default_config():
 
 @pytest.mark.asyncio
 async def test_scanner_skipped_reasons():
-    scanner = Scanner(root_path=TEST_REPO, verbose=True, size_limit=5 * 1024 * 1024)
+    scanner = Scanner(root_path=TEST_REPO, verbose=True, use_ignore_file=True, size_limit=5 * 1024 * 1024)
     _ = await scanner.scan_directory()
     skipped = scanner.skipped_files
 
