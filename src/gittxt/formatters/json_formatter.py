@@ -12,12 +12,12 @@ from gittxt.utils.summary_utils import (
     format_size_short
 )
 
-
 class JSONFormatter:
     def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None, branch: str = None, subdir: str = None):
         self.repo_name = repo_name
         self.output_dir = output_dir
         self.repo_path = Path(repo_path).resolve()
+        self.repo_root = self.repo_path
         self.tree_summary = tree_summary
         self.repo_url = repo_url
         self.branch = branch
@@ -25,17 +25,15 @@ class JSONFormatter:
 
     async def generate(self, text_files, non_textual_files, summary_data: dict, mode="rich"):
         output_file = self.output_dir / f"{self.repo_name}.json"
-        ordered_files = sort_textual_files(text_files, base_path=self.repo_path)
+        ordered_files = sort_textual_files(text_files, base_path=self.repo_root)
 
         if mode == "lite":
-            # === Lite mode: minimal file list and content ===
             files = []
-            for file in ordered_files:
-                repo_root = Path(self.repo_path).resolve()
-                rel = file.resolve().relative_to(repo_root)
-                raw_text = await async_read_text(file) or "[no content]"
+            for text_file in ordered_files:
+                rel_path = text_file.resolve().relative_to(self.repo_root)
+                raw_text = await async_read_text(text_file) or "[no content]"
                 files.append({
-                    "path": str(rel),
+                    "path": str(rel_path),
                     "content": raw_text.strip()
                 })
 
@@ -51,23 +49,22 @@ class JSONFormatter:
                 "tree_summary": self.tree_summary,
                 "files": files
             }
-        else:
-            # === Rich mode: detailed file metadata ===
-            files_section = []
-            for file in ordered_files:
-                repo_root = Path(self.repo_path).resolve()
-                rel = file.resolve().relative_to(repo_root)
-                subcat = detect_subcategory(file, "TEXTUAL")
-                file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
-                raw_text = await async_read_text(file) or "[no content]"
 
-                size_bytes = file.stat().st_size
-                token_count = await estimate_tokens_from_file(file)
+        else:
+            files_section = []
+            for text_file in ordered_files:
+                rel_path = text_file.resolve().relative_to(self.repo_root)
+                subcat = detect_subcategory(text_file, "TEXTUAL")
+                file_url = build_github_url(self.repo_url, rel_path, self.branch, self.subdir) if self.repo_url else ""
+                raw_text = await async_read_text(text_file) or "[no content]"
+
+                size_bytes = text_file.stat().st_size
+                token_count = await estimate_tokens_from_file(text_file)
                 size_fmt = format_size_short(size_bytes)
                 token_fmt = format_number_short(token_count)
 
                 files_section.append({
-                    "path": str(rel),
+                    "path": str(rel_path),
                     "subcategory": subcat,
                     "size_bytes": size_bytes,
                     "size_human": size_fmt,
@@ -79,17 +76,15 @@ class JSONFormatter:
 
             assets_section = []
             for asset in non_textual_files:
-                repo_root = Path(self.repo_path).resolve()
-                rel = asset.resolve().relative_to(repo_root)
+                rel_path = asset.resolve().relative_to(self.repo_root)
                 subcat = detect_subcategory(asset, "NON-TEXTUAL")
-                asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
-                size_bytes = asset.stat().st_size
-                size_fmt = format_size_short(size_bytes)
+                asset_url = build_github_url(self.repo_url, rel_path, self.branch, self.subdir) if self.repo_url else ""
+                size_fmt = format_size_short(asset.stat().st_size)
 
                 assets_section.append({
-                    "path": str(rel),
+                    "path": str(rel_path),
                     "subcategory": subcat,
-                    "size_bytes": size_bytes,
+                    "size_bytes": asset.stat().st_size,
                     "size_human": size_fmt,
                     "url": asset_url
                 })
