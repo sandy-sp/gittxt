@@ -86,6 +86,80 @@ def scan(
         )
     )
 
+
+def print_skipped_files(skipped_files):
+    if not skipped_files:
+        return
+
+    console.print("\n[bold red]⚠️ Skipped Files Summary[/bold red]")
+    reasons = defaultdict(list)
+    for path, reason in skipped_files:
+        reasons[reason].append(path)
+
+    for reason, paths in reasons.items():
+        console.print(f"[yellow]- {reason}[/yellow]: {len(paths)} files")
+        for p in paths[:5]:
+            console.print(f"  • {p}")
+        if len(paths) > 5:
+            console.print(f"  [dim]+ {len(paths) - 5} more...[/dim]")
+
+
+def render_summary_table(summary_data: dict, repo_name: str, branch: str = None, subdir: str = None):
+    extra_line = ""
+    if branch or subdir:
+        parts = []
+        if branch:
+            parts.append(f"Branch: [bold blue]{branch}[/bold blue]")
+        if subdir:
+            parts.append(f"Subdir: [bold yellow]{subdir.strip('/')}[/bold yellow]")
+        extra_line = " " + " ".join(parts)
+
+    summary_table = Table(
+        title=f"📊 Gittxt Summary: {repo_name}\n{extra_line}",
+        box=box.ROUNDED,
+        border_style="cyan"
+    )
+
+    summary_table.add_column("Metric", style="bold magenta")
+    summary_table.add_column("Value", justify="right", style="green")
+
+    total_files = summary_data.get("total_files", 0)
+    total_size = summary_data.get("formatted", {}).get(
+        "total_size", f"{summary_data.get('total_size', 0):,} bytes"
+    )
+    est_tokens = summary_data.get("formatted", {}).get(
+        "estimated_tokens", f"{summary_data.get('estimated_tokens', 0):,}"
+    )
+
+    summary_table.add_row("📄 Total Files", str(total_files))
+    summary_table.add_row("📦 Total Size", total_size)
+    summary_table.add_row("🔢 Estimated Tokens", est_tokens)
+
+    console.print(summary_table)
+
+    breakdown = summary_data.get("file_type_breakdown", {})
+    token_data_raw = summary_data.get("tokens_by_type", {})
+    token_data_fmt = summary_data.get("formatted", {}).get("tokens_by_type", {})
+
+    if breakdown:
+        breakdown_table = Table(
+            title="🧩 File Type Breakdown",
+            box=box.SIMPLE_HEAVY,
+            border_style="blue",
+            show_header=True,
+            header_style="bold white"
+        )
+        breakdown_table.add_column("Type", style="yellow", no_wrap=True)
+        breakdown_table.add_column("Files", justify="right", style="cyan")
+        breakdown_table.add_column("Tokens", justify="right", style="magenta")
+
+        for subcat in sorted(breakdown.keys()):
+            files = str(breakdown[subcat])
+            tokens = token_data_fmt.get(subcat) or f"{token_data_raw.get(subcat, 0):,}"
+            breakdown_table.add_row(subcat, files, tokens)
+
+        console.print(breakdown_table)
+
 async def _handle_repos(
     repos,
     sync,
@@ -187,78 +261,6 @@ async def _process_one_repo(
     console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
     console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
     print_skipped_files(skipped_files)
-
-    def print_skipped_files(skipped_files):
-        if not skipped_files:
-            return
-
-        console.print("\n[bold red]⚠️ Skipped Files Summary[/bold red]")
-        reasons = defaultdict(list)
-        for path, reason in skipped_files:
-            reasons[reason].append(path)
-
-        for reason, paths in reasons.items():
-            console.print(f"[yellow]- {reason}[/yellow]: {len(paths)} files")
-            for p in paths[:5]:
-                console.print(f"  • {p}")
-            if len(paths) > 5:
-                console.print(f"  [dim]+ {len(paths) - 5} more...[/dim]")
-
-    def render_summary_table(summary_data: dict, repo_name: str, branch: str = None, subdir: str = None):
-        extra_line = ""
-        if branch or subdir:
-            parts = []
-            if branch:
-                parts.append(f"Branch: [bold blue]{branch}[/bold blue]")
-            if subdir:
-                parts.append(f"Subdir: [bold yellow]{subdir.strip('/')}[/bold yellow]")
-            extra_line = " " + " ".join(parts)
-
-        summary_table = Table(
-            title=f"📊 Gittxt Summary: {repo_name}\n{extra_line}",
-            box=box.ROUNDED,
-            border_style="cyan"
-        )
-
-        summary_table.add_column("Metric", style="bold magenta")
-        summary_table.add_column("Value", justify="right", style="green")
-
-        total_files = summary_data.get("total_files", 0)
-        total_size = summary_data.get("formatted", {}).get(
-            "total_size", f"{summary_data.get('total_size', 0):,} bytes"
-        )
-        est_tokens = summary_data.get("formatted", {}).get(
-            "estimated_tokens", f"{summary_data.get('estimated_tokens', 0):,}"
-        )
-
-        summary_table.add_row("📄 Total Files", str(total_files))
-        summary_table.add_row("📦 Total Size", total_size)
-        summary_table.add_row("🔢 Estimated Tokens", est_tokens)
-
-        console.print(summary_table)
-
-        breakdown = summary_data.get("file_type_breakdown", {})
-        token_data_raw = summary_data.get("tokens_by_type", {})
-        token_data_fmt = summary_data.get("formatted", {}).get("tokens_by_type", {})
-
-        if breakdown:
-            breakdown_table = Table(
-                title="🧩 File Type Breakdown",
-                box=box.SIMPLE_HEAVY,
-                border_style="blue",
-                show_header=True,
-                header_style="bold white"
-            )
-            breakdown_table.add_column("Type", style="yellow", no_wrap=True)
-            breakdown_table.add_column("Files", justify="right", style="cyan")
-            breakdown_table.add_column("Tokens", justify="right", style="magenta")
-
-            for subcat in sorted(breakdown.keys()):
-                files = str(breakdown[subcat])
-                tokens = token_data_fmt.get(subcat) or f"{token_data_raw.get(subcat, 0):,}"
-                breakdown_table.add_row(subcat, files, tokens)
-
-            console.print(breakdown_table)
     render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
 
     if is_remote:
