@@ -76,21 +76,25 @@ class ZipFormatter:
         entries = []
 
         for f in self.output_files:
-            entries.append({
-                "type": "output",
-                "name": f.name,
-                "size_bytes": f.stat().st_size,
-                "size_human": format_size_short(f.stat().st_size)
-            })
+            if f.exists():
+                size = f.stat().st_size
+                entries.append({
+                    "type": "output",
+                    "name": f.name,
+                    "size_bytes": size,
+                    "size_human": format_size_short(size)
+                })
 
         for f in self.non_textual_files:
-            rel = f.relative_to(self.repo_path)
-            entries.append({
-                "type": "asset",
-                "path": str(rel),
-                "size_bytes": f.stat().st_size,
-                "size_human": format_size_short(f.stat().st_size)
-            })
+            if f.exists():
+                rel = f.relative_to(self.repo_path)
+                size = f.stat().st_size
+                entries.append({
+                    "type": "asset",
+                    "path": str(rel),
+                    "size_bytes": size,
+                    "size_human": format_size_short(size)
+                })
 
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
             await f.write(json.dumps(entries, indent=2))
@@ -111,6 +115,6 @@ class ZipFormatter:
             "- `manifest.json`: Full list of included files and sizes",
             "- `README.md`: This file",
         ]
-
+        lines.append("\nExported with ❤️ by Gittxt.")
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
             await f.write("\n".join(lines))
