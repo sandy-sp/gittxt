@@ -30,12 +30,17 @@ async def test_zip_bundle_contents():
 
     zip_files = [f for f in outputs if f.suffix == ".zip"]
     assert zip_files, "No ZIP output generated"
+
     zip_path = zip_files[0]
+    assert zip_path.exists(), "ZIP file does not exist"
 
     with zipfile.ZipFile(zip_path, "r") as zf:
         names = zf.namelist()
-        assert "README.md" in names
-        assert "summary.json" in names
-        assert "manifest.json" in names
-        assert any(n.startswith("outputs/") and n.endswith(".txt") for n in names)
-        assert any(n.startswith("outputs/") and n.endswith(".json") for n in names)
+        print("📦 ZIP Contents:", names)
+
+        assert "README.md" in names, "README.md missing from ZIP"
+        assert "summary.json" in names, "summary.json missing from ZIP"
+        assert "manifest.json" in names, "manifest.json missing from ZIP"
+        assert any(n.startswith("outputs/") and n.endswith(".txt") for n in names), ".txt output missing"
+        assert any(n.startswith("outputs/") and n.endswith(".json") for n in names), ".json output missing"
+        assert any(n.startswith("outputs/") and n.endswith(".md") for n in names), ".md output missing"
