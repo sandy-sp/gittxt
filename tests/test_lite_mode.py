@@ -24,10 +24,15 @@ async def test_lite_output_formatting():
     outputs = await builder.generate_output(all_files, repo_path=TEST_REPO)
 
     for out in outputs:
+        assert out.exists(), f"Expected output file not found: {out}"
         text = out.read_text(encoding="utf-8")
+
+        # Lite mode should exclude metadata sections
         assert "Summary" not in text
         assert "Tokens" not in text
         assert "Assets" not in text
+
+        # Validate presence of actual file content
         assert "script.py" in text or "README.md" in text
 
         if out.suffix == ".md":
