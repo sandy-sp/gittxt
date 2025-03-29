@@ -6,6 +6,10 @@ from gittxt.utils.filetype_utils import FiletypeConfigManager
 
 console = Console()
 
+def normalize_ext(ext: str) -> str:
+    ext = ext.strip().lower()
+    return ext if ext.startswith(".") else f".{ext}"
+
 class FiletypesGroup(click.Group):
     def list_commands(self, ctx):
         return ["list", "add-textual", "add-non-textual", "clear"]
@@ -40,7 +44,7 @@ def add_textual(exts):
         all_exts.extend([e.strip() for e in raw.split(",") if e.strip()])
 
     for ext in all_exts:
-        normalized = ext if ext.startswith('.') else f".{ext.lower()}"
+        normalized = normalize_ext(ext)
         result = FiletypeConfigManager.add_textual_ext(normalized)
         if result is True:
             console.print(f"[green]➕ Added '{normalized}' to textual list.[/green]")
@@ -55,7 +59,7 @@ def add_non_textual(exts):
         all_exts.extend([e.strip() for e in raw.split(",") if e.strip()])
         
     for ext in exts:
-        normalized = ext if ext.startswith('.') else f".{ext.lower()}"
+        normalized = normalize_ext(ext)
         FiletypeConfigManager.add_non_textual_ext(normalized)
         console.print(f"[green]Added '{normalized}' to [red]non-textual[/red] list.[/green]")
 
