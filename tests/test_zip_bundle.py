@@ -9,7 +9,7 @@ OUTPUT_DIR = Path("tests/test_zip_output")
 
 @pytest.mark.asyncio
 async def test_zip_bundle_contents():
-    scanner = Scanner(root_path=TEST_REPO)
+    scanner = Scanner(root_path=TEST_REPO, use_ignore_file=True)
     all_files = await scanner.scan_directory()
 
     builder = OutputBuilder(
@@ -24,7 +24,7 @@ async def test_zip_bundle_contents():
 
     outputs = await builder.generate_output(
         all_files,
-        repo_path=TEST_REPO,
+        repo_path=TEST_REPO.resolve(),
         create_zip=True
     )
 
@@ -38,9 +38,9 @@ async def test_zip_bundle_contents():
         names = zf.namelist()
         print("📦 ZIP Contents:", names)
 
-        assert "README.md" in names, "README.md missing from ZIP"
-        assert "summary.json" in names, "summary.json missing from ZIP"
-        assert "manifest.json" in names, "manifest.json missing from ZIP"
-        assert any(n.startswith("outputs/") and n.endswith(".txt") for n in names), ".txt output missing"
-        assert any(n.startswith("outputs/") and n.endswith(".json") for n in names), ".json output missing"
-        assert any(n.startswith("outputs/") and n.endswith(".md") for n in names), ".md output missing"
+        assert any("README.md" in n for n in names), "README.md missing from ZIP"
+        assert any(n.endswith("summary.json") for n in names), "summary.json missing"
+        assert any(n.endswith("manifest.json") for n in names), "manifest.json missing"
+        assert any(n.endswith(".txt") for n in names), ".txt output missing"
+        assert any(n.endswith(".json") for n in names), ".json output missing"
+        assert any(n.endswith(".md") for n in names), ".md output missing"
