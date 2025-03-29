@@ -13,11 +13,31 @@ class RepositoryHandler:
     Extracts subdir and branch if specified in the URL or in the constructor.
     """
 
-    def __init__(self, source: str, branch: str = None):
-        self.source = source
-        self.branch_override = branch
-        self.is_remote = self._is_remote_repo(source)
-        self.config = ConfigManager.load_config()
+    def __init__(
+        self,
+        source: str | Path,
+        branch: str = None,
+        subdir: str = "",
+        cache_dir: Path = None
+    ):
+        if isinstance(source, Path):
+            self.repo_path = source.resolve()
+            self.is_remote = False
+        elif isinstance(source, str) and ("github.com" in source or source.startswith("git@")):
+            self.repo_url = source
+            self.is_remote = True
+        else:
+            raise ValueError(f"Unsupported repository source: {source}")
+
+        self.branch = branch or "main"
+        self.subdir = subdir
+        self.cache_dir = cache_dir
+    
+    async def resolve(self):
+        if self.is_remote:
+            return await self._clone_and_resolve()
+        else:
+            return self.repo_path
 
     def _is_remote_repo(self, source: str) -> bool:
         return "github.com" in source or source.startswith("git@")
