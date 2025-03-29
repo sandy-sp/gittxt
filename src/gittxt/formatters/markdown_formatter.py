@@ -94,7 +94,7 @@ class MarkdownFormatter:
             for file in ordered_files:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
-                file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
+                file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                 raw = await async_read_text(file) or ""
                 token_count = await estimate_tokens_from_file(file)
                 size_fmt = format_size_short(file.stat().st_size)
@@ -110,15 +110,15 @@ class MarkdownFormatter:
                 await md.write("\n```\n")
 
             if non_textual_files:
-                await md.write("\n## 🎨 Non-Textual Assets\n")
+                await md.write("\n## 🎨 Non-Textual Assets\n\n")
+                await md.write("| Path | Type | Size | URL |\n")
+                await md.write("|------|------|------|-----|\n")
                 for asset in non_textual_files:
                     rel = asset.relative_to(self.repo_path)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
-                    asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                     size_fmt = format_size_short(asset.stat().st_size)
-                    await md.write(f"- `{rel}` ({subcat}) | **Size**: `{size_fmt}`")
-                    if asset_url:
-                        await md.write(f" | [URL]({asset_url})")
-                    await md.write("\n")
+                    asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
+                    url_md = f"[link]({asset_url})" if asset_url else "—"
+                    await md.write(f"| `{rel}` | {subcat} | {size_fmt} | {url_md} |\n")
 
         return output_file
