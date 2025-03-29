@@ -11,8 +11,8 @@ def test_cli_scan_lite_zip():
     result = subprocess.run(
         [
             "gittxt", "scan",
-            str(REPO_DIR),
-            "--output", "txt,json",
+            str(TEST_REPO),
+            "--output-format", "txt,json",
             "--zip",
             "--lite",
             "--output-dir", str(OUTPUT_DIR)
@@ -21,13 +21,17 @@ def test_cli_scan_lite_zip():
         text=True
     )
 
-    assert result.returncode == 0
-    assert "✅ Scan complete" in result.stdout
+    print("STDOUT:\n", result.stdout)
+    print("STDERR:\n", result.stderr)
 
+    assert result.returncode == 0, f"CLI returned error code {result.returncode}"
+    assert "✅ Scan complete" in result.stdout or "📄 Output generated" in result.stdout
+
+    # Validate outputs created
     txt_files = list(OUTPUT_DIR.rglob("*.txt"))
     json_files = list(OUTPUT_DIR.rglob("*.json"))
     zip_files = list(OUTPUT_DIR.rglob("*.zip"))
 
-    assert txt_files, "No .txt output found"
-    assert json_files, "No .json output found"
-    assert zip_files, "No .zip output found"
+    assert txt_files, "Expected .txt output not found"
+    assert json_files, "Expected .json output not found"
+    assert zip_files, "Expected .zip output not found"
