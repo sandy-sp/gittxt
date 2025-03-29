@@ -10,7 +10,8 @@ logger = Logger.get_logger(__name__)
 
 class RepositoryHandler:
     """
-    Handles local or remote GitHub repo resolution, including subdir and branch parsing.
+    Handles local path usage or remote GitHub cloning for scanning.
+    Extracts subdir and branch if specified in the URL or in the constructor.
     """
 
     def __init__(
@@ -97,4 +98,4 @@ class RepositoryHandler:
                     f"❌ Local path not found or not a directory: {path}. "
                     f"Ensure the input is a valid local Git repository root."
                 )
-            return (str(path), self.subdir, False, path.name, self.branch)
+            return (str(path), self.subdir, False, path.name, self.branch) 
