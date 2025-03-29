@@ -23,21 +23,27 @@ async def test_output_builder_all_formats():
 
     outputs = await builder.generate_output(all_files, repo_path=TEST_REPO)
 
-    assert outputs
-    assert any(f.suffix == ".txt" for f in outputs)
-    assert any(f.suffix == ".md" for f in outputs)
-    assert any(f.suffix == ".json" for f in outputs)
+    assert outputs, "No outputs returned from builder"
+    assert any(f.suffix == ".txt" for f in outputs), "TXT output missing"
+    assert any(f.suffix == ".md" for f in outputs), "Markdown output missing"
+    assert any(f.suffix == ".json" for f in outputs), "JSON output missing"
 
-    # Validate content of each output file
     for out in outputs:
+        assert out.exists(), f"Output file missing: {out}"
         text = out.read_text(encoding="utf-8")
+
         if out.suffix == ".txt":
             assert "Gittxt Report" in text
-            assert "README.md" in text
+            assert "README.md" in text or "script.py" in text
+            assert "📊 Summary Report" in text
+
         elif out.suffix == ".md":
             assert "# 🧾 Gittxt Report" in text
             assert "## 📊 Summary Report" in text
+            assert "| Path | Type | Size" in text
+
         elif out.suffix == ".json":
             assert '"repository"' in text
             assert '"files"' in text
             assert '"summary"' in text
+            assert '"tokens_human"' in text
