@@ -62,7 +62,15 @@ class Logger:
         stream = sys.stdout if force_stdout else sys.stderr
         console_handler = logging.StreamHandler(stream)
         console_handler.setLevel(log_level)
-        console_handler.setFormatter(Logger._get_formatter(mode=log_format_style))
+
+        if log_format_style == "plain" or not colorama:
+            if not colorama and log_format_style != "plain":
+                print("⚠️ colorama not installed — falling back to plain logging format.")
+            formatter = logging.Formatter("%(levelname)s - %(message)s")
+        else:
+            formatter = Logger._get_formatter(mode=log_format_style)
+
+        console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
 
         rotating_file_handler = RotatingFileHandler(Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8")
