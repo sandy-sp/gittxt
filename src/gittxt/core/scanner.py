@@ -7,7 +7,7 @@ try:
     USE_RICH = True
 except ImportError:
     USE_RICH = False
-
+from gittxt.utils import pattern_utils
 from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
 from gittxt.utils import pattern_utils, filetype_utils
@@ -36,7 +36,7 @@ class Scanner:
         use_ignore_file: bool = False
     ):
         self.root_path = root_path.resolve()
-        self.exclude_dirs = exclude_dirs or []
+        self.exclude_dirs = list(exclude_dirs or [])
         self.size_limit = size_limit
         self.include_patterns = list(include_patterns) if include_patterns else []
         self.exclude_patterns = list(exclude_patterns) if exclude_patterns else []
@@ -100,6 +100,11 @@ class Scanner:
         progress_bar.update(task_id, advance=1)
 
     async def _process_single(self, path: Path):
+        ext = path.suffix.lower() if path.suffix else ""
+        if not isinstance(ext, str):
+            self.skipped_files.append((path, "invalid extension"))
+            return
+        
         if not path.is_file():
             return
 

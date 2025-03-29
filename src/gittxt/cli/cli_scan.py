@@ -100,8 +100,10 @@ def print_skipped_files(skipped_files):
         console.print(f"[yellow]- {reason}[/yellow]: {len(paths)} files")
         for p in paths[:5]:
             console.print(f"  • {p}")
+            print(f"  • {p}", flush=True)
         if len(paths) > 5:
             console.print(f"  [dim]+ {len(paths) - 5} more...[/dim]")
+            print(f"  [dim]+ {len(paths) - 5} more...[/dim]", flush=True)
 
 
 def render_summary_table(summary_data: dict, repo_name: str, branch: str = None, subdir: str = None):
