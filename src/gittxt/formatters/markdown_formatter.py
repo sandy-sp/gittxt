@@ -21,6 +21,7 @@ class MarkdownFormatter:
         self.repo_url = repo_url
         self.branch = branch
         self.subdir = subdir
+        self.repo_root = Path(repo_path).resolve()
 
     async def generate(self, text_files, non_textual_files, summary_data: dict, mode="rich"):
         output_file = self.output_dir / f"{self.repo_name}.md"
@@ -48,8 +49,7 @@ class MarkdownFormatter:
                 # === Textual Files Section ===
                 await md.write("## 📝 Textual Files\n")
                 for file in ordered_files:
-                    repo_root = Path(self.repo_path).resolve()
-                    rel = file.resolve().relative_to(repo_root)
+                    rel = file.resolve().relative_to(self.repo_root)
                     raw = await async_read_text(file) or ""
                     await md.write(f"\n### File: `{rel}`\n")
                     await md.write("```text\n")
@@ -93,8 +93,7 @@ class MarkdownFormatter:
 
             await md.write("## 📝 Extracted Textual Files\n")
             for file in ordered_files:
-                repo_root = Path(self.repo_path).resolve()
-                rel = file.resolve().relative_to(repo_root)
+                rel = file.resolve().relative_to(self.repo_root)
                 subcat = detect_subcategory(file, "TEXTUAL")
                 file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                 raw = await async_read_text(file) or ""
@@ -116,14 +115,13 @@ class MarkdownFormatter:
             await md.write("|------|------|------|-----|\n")
             
             if non_textual_files:
-                repo_root = Path(self.repo_path).resolve()
                 for asset in non_textual_files:
-                    rel = asset.resolve().relative_to(repo_root)
+                    rel = asset.resolve().relative_to(self.repo_root)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     size = format_size_short(asset.stat().st_size)
                     asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                     url_md = f"[link]({asset_url})" if asset_url else "—"
-                    await md.write(f"| `{rel}` | {subcat} | {self.file_types.get(asset, 'N/A')} | {size} | [Link]({url_md}) |\n")
+                    await md.write(f"| `{rel}` | {subcat} | {size} | [Link]({url_md}) |\n")
             else:
                 await md.write("_No non-textual assets found._\n")
 
