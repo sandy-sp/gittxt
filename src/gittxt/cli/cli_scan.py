@@ -59,11 +59,17 @@ def scan(
         console.print("[bold red]❌ No repositories specified.[/bold red]")
         sys.exit(1)
 
+    # Warn if --branch used with local path
+    if branch:
+        for r in repos:
+            if Path(r).exists():
+                console.print(f"[yellow]⚠️ --branch is ignored for local path: {r}[/yellow]")
+
     # Validate output formats
-    allowed_formats = {"txt", "json", "md"}
+    VALID_OUTPUT_FORMATS = {"txt", "json", "md"}
     requested = {fmt.strip() for fmt in output_format.split(",")}
-    if not requested.issubset(allowed_formats):
-        console.print(f"[red]Invalid format. Allowed: {allowed_formats}[/red]")
+    if not requested.issubset(VALID_OUTPUT_FORMATS):
+        console.print(f"[red]Invalid format. Allowed: {VALID_OUTPUT_FORMATS}[/red]")
         sys.exit(1)
 
     mode = "lite" if lite else "rich"
