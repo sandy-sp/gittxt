@@ -38,13 +38,17 @@ class RepositoryHandler:
                 clone_args["branch"] = branch
             git.Repo.clone_from(git_url, str(temp_dir), **clone_args)
         except git.GitCommandError as e:
-            logger.warning(f"⚠️ Clone failed for '{git_url}' with branch='{branch}'. Retrying without branch. Error: {e}")
+            logger.warning(f"⚠️ Initial clone failed for '{git_url}' with branch='{branch}': {e}")
+            logger.info("🔁 Retrying without branch specification...")
             try:
                 git.Repo.clone_from(git_url, str(temp_dir), depth=1)
             except Exception as fallback_error:
                 raise RuntimeError(
-                    f"❌ Failed to clone repository: {git_url} "
-                    f"(branch={branch}). Full error: {fallback_error}"
+                    f"❌ Both clone attempts failed.\n"
+                    f"Git URL: {git_url}\n"
+                    f"Branch attempted: {branch}\n"
+                    f"Original error: {e}\n"
+                    f"Fallback error: {fallback_error}"
                 ) from fallback_error
 
     def get_local_path(self) -> tuple[str, str, bool, str, str]:
