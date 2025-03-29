@@ -12,7 +12,6 @@ from gittxt.formatters.zip_formatter import ZipFormatter
 
 logger = Logger.get_logger(__name__)
 
-
 class OutputBuilder:
     VALID_FORMATS = {"txt", "json", "md"}
     VALID_MODES = {"rich", "lite"}
@@ -25,12 +24,13 @@ class OutputBuilder:
 
     def __init__(self, repo_name, output_dir, output_format="txt", repo_url=None, branch=None, subdir=None, mode="rich"):
         self.repo_name = repo_name
-        self.repo_url = repo_url
+        self.repo_url = repo_url or ""
         self.branch = branch
         self.subdir = subdir
         self.mode = mode.lower()
         self.output_dir = Path(output_dir).resolve()
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
+        self.repo_path = None  # Will be assigned during output generation
 
         # Validate mode and formats
         if self.mode not in self.VALID_MODES:
@@ -49,7 +49,9 @@ class OutputBuilder:
             folder.mkdir(parents=True, exist_ok=True)
 
     async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"):
-        tree_summary = generate_tree(Path(repo_path) / self.subdir if self.subdir else Path(repo_path), max_depth=tree_depth)
+        self.repo_path = Path(repo_path).resolve()
+        root_for_tree = self.repo_path / self.subdir if self.subdir else self.repo_path
+        tree_summary = generate_tree(root_for_tree, max_depth=tree_depth)
 
         textual_files, non_textual_files = [], []
         for f in all_files:
@@ -72,7 +74,7 @@ class OutputBuilder:
             formatter = FormatterClass(
                 repo_name=self.repo_name,
                 output_dir=self.directories[fmt],
-                repo_path=repo_path,
+                repo_path=self.repo_path,
                 tree_summary=tree_summary,
                 repo_url=self.repo_url,
                 branch=self.branch,
@@ -101,7 +103,7 @@ class OutputBuilder:
                 output_dir=self.directories["zip"],
                 output_files=output_files,
                 non_textual_files=non_textual_files,
-                repo_path=repo_path,
+                repo_path=self.repo_path,
                 repo_url=self.repo_url
             )
             zip_path = await zip_formatter.generate()
