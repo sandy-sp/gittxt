@@ -28,7 +28,7 @@ async def test_scanner_skipped_reasons():
 
     assert any("script_large.py" in str(p) for p, _ in skipped), "Expected script_large.py to be skipped"
     assert any("binary.dat" in str(p) for p, _ in skipped), "Expected binary.dat to be skipped"
-    assert any("node_modules" in str(p) for p, _ in skipped), "Expected node_modules to be skipped"
+    assert any("archive.zip" in str(p) for p, _ in skipped), "Expected archive.zip to be skipped"
 
 @pytest.mark.asyncio
 async def test_scanner_with_include_pattern():
