@@ -25,14 +25,14 @@ class JSONFormatter:
 
     async def generate(self, text_files, non_textual_files, summary_data: dict, mode="rich"):
         output_file = self.output_dir / f"{self.repo_name}.json"
-        ordered_files = sort_textual_files(text_files)
+        ordered_files = sort_textual_files(text_files, base_path=self.repo_path)
 
         if mode == "lite":
             # === Lite mode: minimal file list and content ===
             files = []
             for file in ordered_files:
                 rel = file.relative_to(self.repo_path)
-                raw_text = await async_read_text(file) or ""
+                raw_text = await async_read_text(file) or "[no content]"
                 files.append({
                     "path": str(rel),
                     "content": raw_text.strip()
@@ -57,7 +57,7 @@ class JSONFormatter:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
                 file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
-                raw_text = await async_read_text(file) or ""
+                raw_text = await async_read_text(file) or "[no content]"
 
                 size_bytes = file.stat().st_size
                 token_count = await estimate_tokens_from_file(file)
