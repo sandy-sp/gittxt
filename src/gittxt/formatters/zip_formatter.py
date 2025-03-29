@@ -31,7 +31,10 @@ class ZipFormatter:
 
             for f in self.output_files:
                 if f.exists():
-                    arcname = f.name if self.flatten_zip else f.relative_to(self.output_dir)
+                    try:
+                        arcname = f.relative_to(self.output_dir) if not self.flatten_zip else f.name
+                    except ValueError:
+                        arcname = f.name  # fallback to flat if outside output_dir
                     target = outputs_dir / arcname
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy(f, target)
