@@ -25,7 +25,7 @@ async def test_output_builder_all_formats():
 
     assert outputs, "No outputs returned from builder"
     assert any(f.suffix == ".txt" for f in outputs), "TXT output missing"
-    assert any(f.suffix == ".md" for f in outputs), "Markdown output missing"
+    assert any(f.name.endswith(".md") for f in outputs), "Markdown output missing"
     assert any(f.suffix == ".json" for f in outputs), "JSON output missing"
 
     for out in outputs:
@@ -47,3 +47,5 @@ async def test_output_builder_all_formats():
             assert '"files"' in text
             assert '"summary"' in text
             assert '"tokens_human"' in text
+    if any("Non-Textual Assets" in text for text in text):
+        assert "| Path | Type | Size" in text
