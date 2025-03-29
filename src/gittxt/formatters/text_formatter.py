@@ -74,7 +74,7 @@ class TextFormatter:
             for file in ordered_files:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
-                asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
+                asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                 raw = await async_read_text(file) or ""
                 size_bytes = file.stat().st_size
                 token_count = await estimate_tokens_from_file(file)
@@ -89,7 +89,7 @@ class TextFormatter:
                 for asset in non_textual_files:
                     rel = asset.relative_to(self.repo_path)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
-                    asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
+                    asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                     size_fmt = format_size_short(asset.stat().st_size)
                     await txt_file.write(f"{rel} | TYPE: {subcat} | SIZE: {size_fmt}")
                     if asset_url:

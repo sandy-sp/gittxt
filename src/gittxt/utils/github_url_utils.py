@@ -2,11 +2,10 @@ from urllib.parse import urlparse
 import re
 from pathlib import Path
 
-def build_github_url(repo_url: str, rel_path: Path) -> str:
+def build_github_url(repo_url: str, rel_path: Path, branch: str = "main", subdir: str = None) -> str:
     """
-    Build a direct GitHub file URL for a file in a given repo + path.
-    Assumes that the repo_url may already contain a /tree/<branch>/<subdir> path.
-    Appends only the relative file path to the existing base URL.
+    Build a direct GitHub file URL in the format:
+    https://github.com/user/repo/blob/branch/path/to/file
     """
     if not repo_url or not rel_path:
         return ""
@@ -14,12 +13,19 @@ def build_github_url(repo_url: str, rel_path: Path) -> str:
     # Normalize SSH to HTTPS
     repo_url = repo_url.replace("git@github.com:", "https://github.com/")
     repo_url = repo_url.replace(".git", "")
+    repo_url = repo_url.rstrip("/")
 
-    # Ensure trailing slash
-    base = repo_url.rstrip("/") + "/"
+    # Extract base URL (no /tree/ or /blob/)
+    if "/tree/" in repo_url:
+        repo_url = repo_url.split("/tree/")[0]
+    elif "/blob/" in repo_url:
+        repo_url = repo_url.split("/blob/")[0]
+
     rel = rel_path.as_posix()
+    subdir_path = f"{subdir.strip('/')}/" if subdir else ""
 
-    return base + rel
+    return f"{repo_url}/blob/{branch}/{subdir_path}{rel}"
+
 
 def build_github_repo_url(repo_url: str) -> str:
     """

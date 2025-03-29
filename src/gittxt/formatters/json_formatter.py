@@ -56,7 +56,7 @@ class JSONFormatter:
             for file in ordered_files:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
-                file_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
+                file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                 raw_text = await async_read_text(file) or ""
 
                 size_bytes = file.stat().st_size
@@ -79,7 +79,7 @@ class JSONFormatter:
             for asset in non_textual_files:
                 rel = asset.relative_to(self.repo_path)
                 subcat = detect_subcategory(asset, "NON-TEXTUAL")
-                asset_url = build_github_url(self.repo_url, rel) if self.repo_url else ""
+                asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                 size_bytes = asset.stat().st_size
                 size_fmt = format_size_short(size_bytes)
 
