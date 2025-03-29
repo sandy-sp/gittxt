@@ -24,7 +24,7 @@ class TextFormatter:
 
     async def generate(self, text_files, non_textual_files, summary_data: dict, mode="rich"):
         output_file = self.output_dir / f"{self.repo_name}.txt"
-        ordered_files = sort_textual_files(text_files)
+        ordered_files = sort_textual_files(text_files, base_path=self.repo_path)
 
         async with aiofiles.open(output_file, "w", encoding="utf-8") as txt_file:
             if mode == "lite":
@@ -46,7 +46,7 @@ class TextFormatter:
                 await txt_file.write("=== Textual Files ===\n")
                 for file in ordered_files:
                     rel = file.relative_to(self.repo_path)
-                    raw = await async_read_text(file) or ""
+                    raw = await async_read_text(file) or "[no content]"
                     await txt_file.write(f"--- File: {rel} ---\n")
                     await txt_file.write(f"{raw.strip()}\n\n")
                 return output_file
@@ -74,8 +74,8 @@ class TextFormatter:
             for file in ordered_files:
                 rel = file.relative_to(self.repo_path)
                 subcat = detect_subcategory(file, "TEXTUAL")
-                asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
-                raw = await async_read_text(file) or ""
+                asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
+                raw = await async_read_text(file) or "[no content]"
                 size_bytes = file.stat().st_size
                 token_count = await estimate_tokens_from_file(file)
                 size_fmt = format_size_short(size_bytes)
@@ -89,7 +89,7 @@ class TextFormatter:
                 for asset in non_textual_files:
                     rel = asset.relative_to(self.repo_path)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
-                    asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
+                    asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
                     size_fmt = format_size_short(asset.stat().st_size)
                     await txt_file.write(f"{rel} | TYPE: {subcat} | SIZE: {size_fmt}")
                     if asset_url:
