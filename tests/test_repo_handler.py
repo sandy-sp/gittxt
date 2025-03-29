@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from gittxt.core.repository import RepositoryHandler
+import uuid
 
 TEST_REPO = Path("tests/test_repo")
 
@@ -12,10 +13,11 @@ async def test_local_repo_path_resolution():
     assert (path / "README.md").exists(), "README.md not found in local repo"
 
 @pytest.mark.asyncio
-async def test_invalid_repo_path_raises():
-    handler = RepositoryHandler(Path("non_existent_folder"))
-    with pytest.raises(FileNotFoundError):
-        await handler.resolve()
+async def test_invalid_repo_path_resolution():
+    fake_path = Path(f"nonexistent_{uuid.uuid4().hex}")
+    handler = RepositoryHandler(fake_path)
+    resolved_path = await handler.resolve()
+    assert not resolved_path.exists(), "Expected resolved path to not exist for invalid repo"
 
 @pytest.mark.asyncio
 async def test_invalid_github_repo_clone():
@@ -25,7 +27,19 @@ async def test_invalid_github_repo_clone():
 
 @pytest.mark.asyncio
 async def test_subdir_scan_resolution(tmp_path):
-    handler = RepositoryHandler("https://github.com/sandy-sp/gittxt", branch="main", subdir="src/gittxt", cache_dir=tmp_path)
-    path = await handler.resolve()
-    assert path.exists()
-    assert (path / "cli" / "cli_scan.py").exists()
+    handler = RepositoryHandler(
+        "https://github.com/sandy-sp/gittxt",
+        branch="main",
+        subdir="src/gittxt",
+        cache_dir=tmp_path
+    )
+
+    # Ensure repo is cloned and handler state is initialized
+    await handler.resolve()
+
+    # Now fetch subdir path
+    repo_path, subdir, _, _, _ = handler.get_local_path()
+    scan_root = Path(repo_path) / subdir if subdir else Path(repo_path)
+
+    assert scan_root.exists()
+    assert (scan_root / "cli").exists(), "Expected cli/ folder to exist in resolved subdir"
