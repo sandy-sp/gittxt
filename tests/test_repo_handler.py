@@ -34,3 +34,4 @@ async def test_subdir_scan_resolution(tmp_path):
         cache_dir=tmp_path
     )
     assert path.exists(), "Resolved subdir path does not exist"
+    assert (path / "cli" / "cli_scan.py").exists(), "Expected CLI file not found in subdir"
