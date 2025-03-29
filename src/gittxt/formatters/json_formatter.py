@@ -80,7 +80,7 @@ class JSONFormatter:
             assets_section = []
             for asset in non_textual_files:
                 repo_root = Path(self.repo_path).resolve()
-                rel = file.resolve().relative_to(repo_root)
+                rel = asset.resolve().relative_to(repo_root)
                 subcat = detect_subcategory(asset, "NON-TEXTUAL")
                 asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
                 size_bytes = asset.stat().st_size
