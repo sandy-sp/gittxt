@@ -45,7 +45,7 @@ class Scanner:
         self.verbose = verbose
         self.accepted_files = []
         self.skipped_files = []
-        self.exclude_patterns = list(exclude_patterns) if exclude_patterns else []
+
         if use_ignore_file:
             ignore_file = self.root_path / ".gittxtignore"
             if ignore_file.exists():
