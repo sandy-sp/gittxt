@@ -78,11 +78,11 @@ async def generate_summary(file_paths: List[Path], estimate_tokens: bool = True)
 
     # Add human-readable formatting (does not affect downstream logic)
     summary["formatted"] = {
-        "total_size": format_size_short(summary["total_size"]),
-        "estimated_tokens": format_number_short(summary["estimated_tokens"]),
+        "total_size": format_size_short(summary.get("total_size", 0)),
+        "estimated_tokens": format_number_short(summary.get("estimated_tokens", 0)),
         "tokens_by_type": {
             subcat: format_number_short(tokens)
-            for subcat, tokens in summary["tokens_by_type"].items()
+            for subcat, tokens in summary.get("tokens_by_type", {}).items()
         },
     }
 
