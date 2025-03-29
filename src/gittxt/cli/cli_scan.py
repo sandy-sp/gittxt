@@ -232,7 +232,7 @@ async def _process_one_repo(
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         progress=True,
-        use_ignore_file=args.sync
+        use_ignore_file=sync
     )
     all_files = await scanner.scan_directory()
     skipped_files = scanner.skipped_files
