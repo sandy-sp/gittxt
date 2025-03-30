@@ -1,6 +1,6 @@
 > 🚀 **LLM Dataset Extractor from GitHub Repos** | AI & NLP-ready text pipelines
 
-# 📝 Gittxt: Get text from Git repositories in AI-ready formats.
+# 📝 Gittxt: Get text from Git repositories in AI-ready formats
 
 [![Python Version](https://img.shields.io/badge/python-≥3.8-blue)](pyproject.toml)
 [![PyPI version](https://badge.fury.io/py/gittxt.svg)](https://pypi.org/project/gittxt/)
@@ -30,13 +30,14 @@ Built with speed, flexibility, and modularity in mind, Gittxt is ideal for:
 
 ## 🚀 Features
 
-- ✅ **Dynamic File-Type Filtering** (`--file-types=code,docs,images,csv,media,all`)
-- ✅ **Automatic Tree Generation** with clean filtering (excludes `.git/`, `__pycache__`, etc.)
-- ✅ **Multiple Output Formats**: TXT, JSON, Markdown
-- ✅ **Optional ZIP Packaging** for non-text assets
-- ✅ **CLI-friendly Progress Bars**
-- ✅ **Built-in Summary Reports** (`--summary`)
-- ✅ **Interactive & CI-ready Modes** (`--non-interactive`)
+- ✅ **Dynamic File-Type Filtering** (based on extension + MIME + content heuristics)
+- ✅ **Smart Directory Tree Summaries** with configurable depth and excludes
+- ✅ **Multiple Output Formats**: `.txt`, `.json`, `.md`, `.zip`
+- ✅ **Lite Mode** (`--lite`) for fast, minimal reports
+- ✅ **ZIP Bundling** with `--zip` including `summary.json` and assets
+- ✅ **Rich Summary Tables** with size, tokens, and file breakdowns
+- ✅ **.gittxtignore** support for per-repo custom exclusion
+- ✅ **Async I/O and CLI Progress Bars** for performance and UX
 
 ---
 
@@ -60,14 +61,15 @@ pip install gittxt
 ## ⚙️ Quickstart Example
 
 ```bash
-gittxt scan https://github.com/sandy-sp/gittxt.git --output-format txt,json --file-types code,docs --summary
+gittxt scan https://github.com/sandy-sp/gittxt.git --output-format txt,json --zip --lite
 ```
 
 👉 This will:
-- Scan a GitHub repository
-- Extract code & docs files
-- Output `.txt` + `.json` summaries
-- Show a summary report
+- Scan the repository root
+- Output `.txt` + `.json` summary files
+- Bundle them in a ZIP
+
+For more real-world usage: [Usage Examples →](docs/USAGE_EXAMPLES.md)
 
 ---
 
@@ -75,59 +77,72 @@ gittxt scan https://github.com/sandy-sp/gittxt.git --output-format txt,json --fi
 
 ```bash
 gittxt scan [REPOS]... [OPTIONS]
-
-Options:
-  --include TEXT        Include patterns (e.g., *.py)
-  --exclude TEXT        Exclude patterns (e.g., tests/, node_modules)
-  --size-limit INTEGER  Max file size in bytes
-  --branch TEXT         Specify branch (for GitHub URLs)
-  --file-types TEXT     code, docs, images, csv, media, all
-  --output-format TEXT  txt, json, md, or comma-separated list
-  --output-dir PATH     Custom output directory
-  --summary             Show post-scan summary
-  --non-interactive     Skip prompts for CI/CD workflows
-  --progress            Enable scan progress bars
-  --debug               Enable debug logs
-  --help                Show this message and exit
 ```
+
+### Common Flags
+| Option | Description |
+|--------|-------------|
+| `--include-patterns` | Glob to include (e.g., `*.py`, `docs/**/*.md`) |
+| `--exclude-patterns` | Glob to exclude (e.g., `tests/`, `*.zip`) |
+| `--size-limit`       | Skip files larger than N bytes |
+| `--branch`           | Use a specific branch for remote repos |
+| `--zip`              | Create a bundled ZIP archive |
+| `--lite`             | Minimal output without full content |
+| `--output-dir`       | Where to write outputs |
+| `--output-format`    | txt, json, md, or comma-separated list |
+
+Run `gittxt scan --help` for the full CLI reference.
 
 ---
 
-## 📂 Output Structure
+## 📦 Output Formats
 
-```
+Each scan produces structured outputs:
+
+```text
 <output_dir>/
-├── text/
-│   └── repo-name.txt
-├── json/
-│   └── repo-name.json
-├── md/
-│   └── repo-name.md
-└── zips/
-    └── repo-name_bundle.zip  # Optional ZIP for assets (images, csv, etc.)
+├── text/              # .txt
+├── json/              # .json
+├── md/                # .md
+└── zips/              # .zip (optional)
 ```
+
+See [Formats Guide →](docs/FORMATS.md)
 
 ---
 
 ## 🛠 How It Works
 
-1. 🔗 Clone GitHub/local repo (supports branch/subdir URLs)
-2. 🌳 Dynamically generate directory tree (excluding `.git`, `__pycache__`, etc.)
-3. 🗂️ Filter files based on type (code, docs, csv, media)
-4. 📝 Generate formatted outputs (TXT, JSON, MD)
-5. 📦 Package assets (optional ZIP for non-text)
-6. 🧹 Cleanup temporary files (cache-free design)
+1. 🔗 Clone repo (supports GitHub, local, subdirs)
+2. 🌲 Walk files with exclusion rules and MIME checks
+3. 📑 Classify files as TEXTUAL or NON-TEXTUAL
+4. 📄 Format text files to `.txt`, `.json`, `.md`
+5. 📦 Zip outputs and assets (optional)
+6. 🧹 Remove temp files (stateless design)
 
 ---
 
-## 📊 Example Summary Output
+## 🧪 Running Tests
 
+```bash
+make test
 ```
-📊 Summary Report:
- - Total files processed: 45
- - Output formats: txt, json
- - File type breakdown: {'code': 31, 'docs': 14}
-```
+
+- Generates a test repo with multiple edge cases
+- Runs full suite with Pytest
+- Cleans up outputs
+
+Test docs → [tests/README.md](tests/README.md)
+
+---
+
+## 📄 Configuration
+
+- Override via CLI flags
+- Or set env vars like `GITTXT_OUTPUT_DIR`
+- `.gittxtignore` works like `.gitignore`
+
+Advanced setup → [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
 
 ---
 
@@ -146,10 +161,12 @@ We welcome community contributions!
 ---
 
 ## 🛣️ Roadmap
-- FastAPI-powered web UI
-- AI-powered summaries (GPT/OpenAI integration)
-- Support YAML/CSV as additional output formats
-- Async file scanning (speed boost)
+- ✅ Async file scanning
+- ✅ ZIP archive export with manifest
+- ✅ Lite mode output
+- ⏳ AI-powered summaries (GPT, Claude)
+- ⏳ YAML + CSV output support
+- ⏳ Web UI via FastAPI
 
 ---
 
@@ -158,6 +175,4 @@ MIT License © [Sandeep Paidipati](https://github.com/sandy-sp)
 
 ---
 
-Gittxt — **“Gittxt: Get text from Git repositories in AI-ready formats.”**
-
----
+Gittxt — **Get text from Git repositories in AI-ready formats.**
