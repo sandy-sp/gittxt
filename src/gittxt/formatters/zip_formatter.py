@@ -46,7 +46,7 @@ class ZipFormatter:
                             else f.name
                         )
                     except ValueError:
-                        arcname = f.name  # fallback if outside output_dir
+                        arcname = f.name
                     target = outputs_dir / arcname
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy(f, target)
@@ -57,10 +57,15 @@ class ZipFormatter:
                 assets_dir.mkdir(parents=True, exist_ok=True)
                 for asset in self.non_textual_files:
                     try:
-                        rel = asset.resolve().relative_to(self.repo_path)
+                        try:
+                            rel = asset.resolve().relative_to(self.repo_path)
+                        except ValueError:
+                            rel = Path("unknown") / asset.name
                         target = assets_dir / rel
                         target.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy(asset, target)
+                        print(f"✅ Included asset: {target}")
+                        print(f"⚠️ Asset outside repo: {asset} -> stored as {target}")
                     except Exception as e:
                         print(f"⚠️ Failed to include asset: {asset} ({e})")
 
@@ -77,9 +82,20 @@ class ZipFormatter:
             await self._write_readme(readme_path)
 
             # === Create ZIP ===
-            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-                for file in tempdir.rglob("*"):
-                    zf.write(file, file.relative_to(tempdir))
+            try:
+                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for file in sorted(tempdir.rglob("*")):
+                        if file.is_file():
+                            try:
+                                zf.write(file, file.relative_to(tempdir))
+                            except Exception as e:
+                                print(f"⚠️ Failed to add {file} to ZIP: {e}")
+            except Exception as e:
+                raise RuntimeError(f"❌ ZIP creation failed: {e}")
+
+        # Confirm ZIP exists
+        if not zip_path.exists():
+            raise RuntimeError(f"❌ ZIP bundle creation failed: {zip_path} not found")
 
         return zip_path
 
