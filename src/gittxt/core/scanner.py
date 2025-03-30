@@ -119,12 +119,6 @@ class Scanner:
             return
 
         if not path.is_file():
-            self.skipped_files.append((path, "not a regular file"))
-            return
-
-        ext = path.suffix.lower() if path.suffix else ""
-        if not isinstance(ext, str):
-            self.skipped_files.append((path, "invalid extension"))
             return
         
         label = filetype_utils.classify_file(path)
