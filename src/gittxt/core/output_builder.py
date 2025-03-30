@@ -116,10 +116,35 @@ class OutputBuilder:
                 logger.info(f"📄 Output generated: {result}")
 
         if create_zip:
+            # === ALWAYS generate all 3 formats for ZIP ===
+            full_output_files = []
+            for fmt in ["txt", "md", "json"]:
+                FormatterClass = self.FORMATTERS[fmt]
+                formatter = FormatterClass(
+                    repo_name=self.repo_name,
+                    output_dir=self.directories[fmt],
+                    repo_path=self.repo_path,
+                    tree_summary=tree_summary,
+                    repo_url=self.repo_url,
+                    branch=self.branch,
+                    subdir=self.subdir,
+                    mode=self.mode
+                )
+                try:
+                    result = await formatter.generate(
+                        text_files=textual_files,
+                        non_textual_files=non_textual_files,
+                        summary_data=summary_data,
+                    )
+                    if result:
+                        full_output_files.append(result)
+                except Exception as e:
+                    logger.error(f"❌ Formatter {fmt} failed for ZIP bundle: {e}")
+
             zip_formatter = ZipFormatter(
                 repo_name=self.repo_name,
                 output_dir=self.directories["zip"],
-                output_files=output_files,
+                output_files=full_output_files,
                 non_textual_files=non_textual_files,
                 repo_path=self.repo_path,
                 repo_url=self.repo_url,
