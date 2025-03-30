@@ -61,60 +61,61 @@ class TextFormatter:
                     await txt_file.write(f"--- File: {rel_path} ---\n")
                     await txt_file.write(f"{raw.strip()}\n\n")
                 return output_file
-
-            # === Rich Mode ===
-            await txt_file.write("=== Gittxt Report ===\n")
-            await txt_file.write(f"Repo: {self.repo_name}\n")
-            await txt_file.write(
-                f"Generated: {datetime.now(timezone.utc).isoformat()} UTC\n"
-            )
-            if self.branch:
-                await txt_file.write(f"Branch: {self.branch}\n")
-            if self.subdir:
-                await txt_file.write(f"Subdir: {self.subdir.strip('/')}\n")
-            await txt_file.write("\n=== Directory Tree ===\n")
-            await txt_file.write(f"{self.tree_summary}\n\n")
-
-            formatted = summary_data.get("formatted", {})
-            await txt_file.write("=== 📊 Summary Report ===\n")
-            await txt_file.write(f"Total Files: {summary_data.get('total_files')}\n")
-            await txt_file.write(f"Total Size: {formatted.get('total_size')}\n")
-            await txt_file.write(
-                f"Estimated Tokens: {formatted.get('estimated_tokens')}\n\n"
-            )
-
-            await txt_file.write("=== 📝 Extracted Textual Files ===\n")
-            for text_file in ordered_files:
-                rel_path = text_file.resolve().relative_to(self.repo_root)
-                subcat = detect_subcategory(text_file, "TEXTUAL")
-                asset_url = build_github_url(
-                    self.repo_url, rel_path, self.branch, self.subdir
-                )
-                raw = await async_read_text(text_file) or "[no content]"
-                size_fmt = format_size_short(text_file.stat().st_size)
-                tokens_fmt = format_number_short(
-                    await estimate_tokens_from_file(text_file)
-                )
-
+            
+            else:
+                # === Rich Mode ===
+                await txt_file.write("=== Gittxt Report ===\n")
+                await txt_file.write(f"Repo: {self.repo_name}\n")
                 await txt_file.write(
-                    f"\n---\nFILE: {rel_path} | TYPE: {subcat} | SIZE: {size_fmt} | TOKENS: {tokens_fmt}\n---\n"
+                    f"Generated: {datetime.now(timezone.utc).isoformat()} UTC\n"
                 )
-                await txt_file.write(f"{raw.strip()}\n")
+                if self.branch:
+                    await txt_file.write(f"Branch: {self.branch}\n")
+                if self.subdir:
+                    await txt_file.write(f"Subdir: {self.subdir.strip('/')}\n")
+                await txt_file.write("\n=== Directory Tree ===\n")
+                await txt_file.write(f"{self.tree_summary}\n\n")
 
-            if non_textual_files:
-                await txt_file.write("\n=== 🎨 Non-Textual Assets ===\n")
-                for asset in non_textual_files:
-                    rel_path = asset.resolve().relative_to(self.repo_root)
-                    subcat = detect_subcategory(asset, "NON-TEXTUAL")
+                formatted = summary_data.get("formatted", {})
+                await txt_file.write("=== 📊 Summary Report ===\n")
+                await txt_file.write(f"Total Files: {summary_data.get('total_files')}\n")
+                await txt_file.write(f"Total Size: {formatted.get('total_size')}\n")
+                await txt_file.write(
+                    f"Estimated Tokens: {formatted.get('estimated_tokens')}\n\n"
+                )
+
+                await txt_file.write("=== 📝 Extracted Textual Files ===\n")
+                for text_file in ordered_files:
+                    rel_path = text_file.resolve().relative_to(self.repo_root)
+                    subcat = detect_subcategory(text_file, "TEXTUAL")
                     asset_url = build_github_url(
                         self.repo_url, rel_path, self.branch, self.subdir
                     )
-                    size_fmt = format_size_short(asset.stat().st_size)
-                    await txt_file.write(
-                        f"{rel_path} | TYPE: {subcat} | SIZE: {size_fmt}"
+                    raw = await async_read_text(text_file) or "[no content]"
+                    size_fmt = format_size_short(text_file.stat().st_size)
+                    tokens_fmt = format_number_short(
+                        await estimate_tokens_from_file(text_file)
                     )
-                    if asset_url:
-                        await txt_file.write(f" | {asset_url}")
-                    await txt_file.write("\n")
 
-        return output_file
+                    await txt_file.write(
+                        f"\n---\nFILE: {rel_path} | TYPE: {subcat} | SIZE: {size_fmt} | TOKENS: {tokens_fmt}\n---\n"
+                    )
+                    await txt_file.write(f"{raw.strip()}\n")
+
+                if non_textual_files:
+                    await txt_file.write("\n=== 🎨 Non-Textual Assets ===\n")
+                    for asset in non_textual_files:
+                        rel_path = asset.resolve().relative_to(self.repo_root)
+                        subcat = detect_subcategory(asset, "NON-TEXTUAL")
+                        asset_url = build_github_url(
+                            self.repo_url, rel_path, self.branch, self.subdir
+                        )
+                        size_fmt = format_size_short(asset.stat().st_size)
+                        await txt_file.write(
+                            f"{rel_path} | TYPE: {subcat} | SIZE: {size_fmt}"
+                        )
+                        if asset_url:
+                            await txt_file.write(f" | {asset_url}")
+                        await txt_file.write("\n")
+
+            return output_file

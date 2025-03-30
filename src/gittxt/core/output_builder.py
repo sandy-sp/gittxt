@@ -40,7 +40,7 @@ class OutputBuilder:
         self.mode = mode.lower()
         self.output_dir = Path(output_dir).resolve()
         self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
-        self.repo_path = None  # Will be assigned during output generation
+        self.repo_path = None 
 
         # Validate mode and formats
         if self.mode not in self.VALID_MODES:
@@ -63,7 +63,7 @@ class OutputBuilder:
             folder.mkdir(parents=True, exist_ok=True)
 
     async def generate_output(
-        self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"
+        self, all_files, repo_path, create_zip=False, tree_depth=None
     ):
         self.repo_path = Path(repo_path).resolve()
         root_for_tree = self.repo_path / self.subdir if self.subdir else self.repo_path
@@ -95,7 +95,6 @@ class OutputBuilder:
                 repo_url=self.repo_url,
                 branch=self.branch,
                 subdir=self.subdir,
-                mode=self.mode
             )
 
             tasks.append(
@@ -103,7 +102,6 @@ class OutputBuilder:
                     text_files=textual_files,
                     non_textual_files=non_textual_files,
                     summary_data=summary_data,
-                    mode=self.mode,
                 )
             )
 
