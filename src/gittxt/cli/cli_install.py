@@ -9,13 +9,19 @@ from .cli_utils import config
 logger = Logger.get_logger(__name__)
 console = Console()
 
+
 @click.command(help="⚙️  Run the interactive installer to configure Gittxt.")
 def install():
     run_interactive_install()
 
+
 @click.command(help="🔄 Remove previous scan outputs (including text/json/md/zips).")
 @click.option("--output-dir", "-o", type=click.Path(), default=None)
 def clean(output_dir):
-    target_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
+    target_dir = (
+        Path(output_dir).resolve()
+        if output_dir
+        else Path(config.get("output_dir")).resolve()
+    )
     cleanup_old_outputs(target_dir)
     console.print(f"[bold green]Cleaned output directory: {target_dir}")

@@ -3,16 +3,21 @@ from pathlib import Path
 from typing import List, Optional
 
 try:
-    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+    from rich.progress import (
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        BarColumn,
+        TimeElapsedColumn,
+    )
+
     USE_RICH = True
 except ImportError:
     USE_RICH = False
 from gittxt.utils import pattern_utils
 from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
-from gittxt.utils import pattern_utils, filetype_utils
-from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
-from gittxt.utils.ignore_utils import parse_ignore_file 
+from gittxt.utils import filetype_utils
 
 logger = Logger.get_logger(__name__)
 
@@ -33,7 +38,7 @@ class Scanner:
         progress: bool = False,
         batch_size: int = 50,
         verbose: bool = False,
-        use_ignore_file: bool = False
+        use_ignore_file: bool = False,
     ):
         self.root_path = root_path.resolve()
         self.exclude_dirs = list(exclude_dirs or [])
@@ -50,6 +55,7 @@ class Scanner:
             ignore_file = self.root_path / ".gittxtignore"
             if ignore_file.exists():
                 from gittxt.utils.ignore_utils import parse_ignore_file
+
                 patterns = parse_ignore_file(ignore_file)
                 self.exclude_patterns.extend(patterns)
                 logger.debug(f"📁 Merged {len(patterns)} patterns from .gittxtignore")
@@ -59,7 +65,11 @@ class Scanner:
         Async-friendly method to gather textual files under root_path,
         skipping excluded directories and large files.
         """
-        all_items = [p for p in self.root_path.rglob("*") if not pattern_utils.match_exclude_dir(p, self.exclude_dirs)]
+        all_items = [
+            p
+            for p in self.root_path.rglob("*")
+            if not pattern_utils.match_exclude_dir(p, self.exclude_dirs)
+        ]
         logger.debug(f"📂 Found {len(all_items)} items after exclude_dir filtering.")
         config = ConfigManager.load_config()
         concurrency = config.get("scan_concurrency", 200)
@@ -81,9 +91,11 @@ class Scanner:
                 TextColumn("[progress.description]{task.description}"),
                 BarColumn(),
                 TimeElapsedColumn(),
-                transient=True
+                transient=True,
             ) as progress_bar:
-                task_id = progress_bar.add_task("Scanning repository files...", total=len(all_items))
+                task_id = progress_bar.add_task(
+                    "Scanning repository files...", total=len(all_items)
+                )
                 wrapped = [
                     self._with_progress(process_path(p), progress_bar, task_id)
                     for p in all_items
@@ -104,11 +116,13 @@ class Scanner:
         if not isinstance(ext, str):
             self.skipped_files.append((path, "invalid extension"))
             return
-        
+
         if not path.is_file():
             return
 
-        if not pattern_utils.passes_all_filters(path, self.exclude_dirs, self.size_limit, self.verbose):
+        if not pattern_utils.passes_all_filters(
+            path, self.exclude_dirs, self.size_limit, self.verbose
+        ):
             self.skipped_files.append((path, "filtered by size or dir"))
             return
 
@@ -118,7 +132,9 @@ class Scanner:
             self.skipped_files.append((path, "exclude pattern"))
             return
 
-        if self.include_patterns and not any(path.match(p) for p in self.include_patterns):
+        if self.include_patterns and not any(
+            path.match(p) for p in self.include_patterns
+        ):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by not matching include pattern: {path}")
             self.skipped_files.append((path, "not in include patterns"))
@@ -126,8 +142,12 @@ class Scanner:
 
         label = filetype_utils.classify_file(path)
         if label != "TEXTUAL":
-            if self.include_patterns and any(path.match(p) for p in self.include_patterns):
-                logger.warning(f"⚠️ Skipped non-textual file matched by --include: {path}")
+            if self.include_patterns and any(
+                path.match(p) for p in self.include_patterns
+            ):
+                logger.warning(
+                    f"⚠️ Skipped non-textual file matched by --include: {path}"
+                )
             if self.verbose:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
             self.skipped_files.append((path, f"non-textual ({label})"))

@@ -1,7 +1,10 @@
 from pathlib import Path
 from typing import Dict
 
-def resolve_artifact_paths(scan_id: str, output_dir: Path, repo_name: str) -> Dict[str, Path]:
+
+def resolve_artifact_paths(
+    scan_id: str, output_dir: Path, repo_name: str
+) -> Dict[str, Path]:
     """
     Centralizes artifact path resolution logic.
     """
@@ -12,7 +15,10 @@ def resolve_artifact_paths(scan_id: str, output_dir: Path, repo_name: str) -> Di
         "zip": output_dir / "zips" / f"{repo_name}_bundle.zip",
     }
 
-def available_artifacts(scan_id: str, output_dir: Path, repo_name: str) -> Dict[str, str]:
+
+def available_artifacts(
+    scan_id: str, output_dir: Path, repo_name: str
+) -> Dict[str, str]:
     """
     Returns a dictionary of available artifact URLs based on existing files.
     """

@@ -15,27 +15,43 @@ from gittxt.utils.filetype_utils import FiletypeConfigManager
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from .cli_utils import config
 from rich.table import Table
-from rich.console import Console
 from rich import box
 from collections import defaultdict
 
 logger = Logger.get_logger(__name__)
 console = Console()
 
+
 @click.command(help="📦 Scan directories or GitHub repos (textual only).")
 @click.argument("repos", nargs=-1)
 @click.option("--sync", is_flag=True, default=False, help="Opt-in to .gitignore usage.")
-@click.option("--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths.")
-@click.option("--output-dir", "-o", type=click.Path(), default=None, help="Custom output directory.")
-@click.option("--output-format", "-f", default="txt,json", help="Comma-separated: txt, json, md.")
-@click.option("--include-patterns", "-i", multiple=True, help="Glob to include (only textual).")
+@click.option(
+    "--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths."
+)
+@click.option(
+    "--output-dir",
+    "-o",
+    type=click.Path(),
+    default=None,
+    help="Custom output directory.",
+)
+@click.option(
+    "--output-format", "-f", default="txt,json", help="Comma-separated: txt, json, md."
+)
+@click.option(
+    "--include-patterns", "-i", multiple=True, help="Glob to include (only textual)."
+)
 @click.option("--exclude-patterns", "-e", multiple=True, help="Glob to exclude.")
 @click.option("--size-limit", type=int, help="Max file size in bytes.")
 @click.option("--branch", type=str, help="Git branch for remote repos.")
-@click.option("--tree-depth", type=int, default=None, help="Limit tree output to N levels.")
+@click.option(
+    "--tree-depth", type=int, default=None, help="Limit tree output to N levels."
+)
 @click.option("--debug", is_flag=True, help="Enable debug logging.")
 @click.option("--zip", "create_zip", is_flag=True, help="Create a ZIP bundle.")
-@click.option("--lite", is_flag=True, help="Generate minimal output instead of full content.")
+@click.option(
+    "--lite", is_flag=True, help="Generate minimal output instead of full content."
+)
 def scan(
     repos,
     sync,
@@ -49,7 +65,7 @@ def scan(
     create_zip,
     include_patterns,
     exclude_patterns,
-    lite
+    lite,
 ):
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -63,7 +79,9 @@ def scan(
     if branch:
         for r in repos:
             if Path(r).exists():
-                console.print(f"[yellow]⚠️ --branch is ignored for local path: {r}[/yellow]")
+                console.print(
+                    f"[yellow]⚠️ --branch is ignored for local path: {r}[/yellow]"
+                )
 
     # Validate output formats
     VALID_OUTPUT_FORMATS = {"txt", "json", "md"}
@@ -73,7 +91,11 @@ def scan(
         sys.exit(1)
 
     mode = "lite" if lite else "rich"
-    final_output_dir = Path(output_dir).resolve() if output_dir else Path(config.get("output_dir")).resolve()
+    final_output_dir = (
+        Path(output_dir).resolve()
+        if output_dir
+        else Path(config.get("output_dir")).resolve()
+    )
 
     asyncio.run(
         _handle_repos(
@@ -88,7 +110,7 @@ def scan(
             create_zip,
             include_patterns,
             exclude_patterns,
-            mode
+            mode,
         )
     )
 
@@ -112,7 +134,9 @@ def print_skipped_files(skipped_files):
             print(f"  [dim]+ {len(paths) - 5} more...[/dim]", flush=True)
 
 
-def render_summary_table(summary_data: dict, repo_name: str, branch: str = None, subdir: str = None):
+def render_summary_table(
+    summary_data: dict, repo_name: str, branch: str = None, subdir: str = None
+):
     extra_line = ""
     if branch or subdir:
         parts = []
@@ -125,7 +149,7 @@ def render_summary_table(summary_data: dict, repo_name: str, branch: str = None,
     summary_table = Table(
         title=f"📊 Gittxt Summary: {repo_name}\n{extra_line}",
         box=box.ROUNDED,
-        border_style="cyan"
+        border_style="cyan",
     )
 
     summary_table.add_column("Metric", style="bold magenta")
@@ -155,7 +179,7 @@ def render_summary_table(summary_data: dict, repo_name: str, branch: str = None,
             box=box.SIMPLE_HEAVY,
             border_style="blue",
             show_header=True,
-            header_style="bold white"
+            header_style="bold white",
         )
         breakdown_table.add_column("Type", style="yellow", no_wrap=True)
         breakdown_table.add_column("Files", justify="right", style="cyan")
@@ -167,6 +191,7 @@ def render_summary_table(summary_data: dict, repo_name: str, branch: str = None,
             breakdown_table.add_row(subcat, files, tokens)
 
         console.print(breakdown_table)
+
 
 async def _handle_repos(
     repos,
@@ -180,7 +205,7 @@ async def _handle_repos(
     create_zip,
     include_patterns,
     exclude_patterns,
-    mode
+    mode,
 ):
     for repo_source in repos:
         try:
@@ -196,11 +221,12 @@ async def _handle_repos(
                 create_zip,
                 include_patterns,
                 exclude_patterns,
-                mode
+                mode,
             )
         except Exception as e:
             logger.error(f"❌ Failed processing {repo_source}: {e}")
             console.print(f"[red]❌ {repo_source} => {e}[/red]")
+
 
 async def _process_one_repo(
     repo_source,
@@ -214,7 +240,7 @@ async def _process_one_repo(
     create_zip,
     include_patterns,
     exclude_patterns,
-    mode
+    mode,
 ):
     # Decide local vs. remote
     handler = RepositoryHandler(repo_source, branch=branch)
@@ -225,14 +251,18 @@ async def _process_one_repo(
 
     # Optionally load .gittxtignore if --sync
     dynamic_ignores = load_gittxtignore(scan_root) if sync else []
-    merged_exclude_dirs = list(set(exclude_dirs) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT))
+    merged_exclude_dirs = list(
+        set(exclude_dirs) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT)
+    )
 
     # Warn user if --include-patterns has known non-textual extensions
     for pattern in include_patterns:
         ext = Path(pattern).suffix.lower()
         if ext and not FiletypeConfigManager.is_known_textual_ext(ext):
-            console.print(f"[yellow]⚠️ Warning: Include pattern '{pattern}' targets non-textual file types. These will be skipped.[/yellow]")
-    
+            console.print(
+                f"[yellow]⚠️ Warning: Include pattern '{pattern}' targets non-textual file types. These will be skipped.[/yellow]"
+            )
+
     scanner = Scanner(
         root_path=scan_root,
         exclude_dirs=merged_exclude_dirs,
@@ -240,7 +270,7 @@ async def _process_one_repo(
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         progress=True,
-        use_ignore_file=sync
+        use_ignore_file=sync,
     )
     all_files = await scanner.scan_directory()
     skipped_files = scanner.skipped_files
@@ -257,16 +287,20 @@ async def _process_one_repo(
         output_format=",".join(output_formats),
         repo_url=repo_source if is_remote else None,
         branch=used_branch,
-        subdir=subdir
+        subdir=subdir,
     )
 
-    await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth, mode=mode)
+    await builder.generate_output(
+        all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth, mode=mode
+    )
 
     # Summary Output
     summary_data = await generate_summary(all_files)
     render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
     console.print()
-    console.print(f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]")
+    console.print(
+        f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]"
+    )
     console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
     console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
     print_skipped_files(skipped_files)

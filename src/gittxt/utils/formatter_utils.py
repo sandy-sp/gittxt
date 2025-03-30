@@ -3,6 +3,7 @@ from pygments.lexers import get_lexer_for_filename
 from pygments.util import ClassNotFound
 from .subcat_utils import _detect_textual_subcat
 
+
 def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
     """
     Smart sort:

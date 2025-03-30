@@ -12,6 +12,7 @@ from gittxt.formatters.zip_formatter import ZipFormatter
 
 logger = Logger.get_logger(__name__)
 
+
 class OutputBuilder:
     VALID_FORMATS = {"txt", "json", "md"}
     VALID_MODES = {"rich", "lite"}
@@ -22,7 +23,16 @@ class OutputBuilder:
         "md": MarkdownFormatter,
     }
 
-    def __init__(self, repo_name, output_dir, output_format="txt", repo_url=None, branch=None, subdir=None, mode="rich"):
+    def __init__(
+        self,
+        repo_name,
+        output_dir,
+        output_format="txt",
+        repo_url=None,
+        branch=None,
+        subdir=None,
+        mode="rich",
+    ):
         self.repo_name = repo_name
         self.repo_url = repo_url or ""
         self.branch = branch
@@ -34,10 +44,14 @@ class OutputBuilder:
 
         # Validate mode and formats
         if self.mode not in self.VALID_MODES:
-            raise ValueError(f"Invalid mode: '{self.mode}'. Must be one of: {', '.join(self.VALID_MODES)}")
+            raise ValueError(
+                f"Invalid mode: '{self.mode}'. Must be one of: {', '.join(self.VALID_MODES)}"
+            )
         for fmt in self.output_formats:
             if fmt not in self.VALID_FORMATS:
-                raise ValueError(f"Unsupported output format: '{fmt}'. Allowed: {', '.join(self.VALID_FORMATS)}")
+                raise ValueError(
+                    f"Unsupported output format: '{fmt}'. Allowed: {', '.join(self.VALID_FORMATS)}"
+                )
 
         self.directories = {
             "txt": self.output_dir / TEXT_DIR,
@@ -48,7 +62,9 @@ class OutputBuilder:
         for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
 
-    async def generate_output(self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"):
+    async def generate_output(
+        self, all_files, repo_path, create_zip=False, tree_depth=None, mode="rich"
+    ):
         self.repo_path = Path(repo_path).resolve()
         root_for_tree = self.repo_path / self.subdir if self.subdir else self.repo_path
         tree_summary = generate_tree(root_for_tree, max_depth=tree_depth)
@@ -78,15 +94,17 @@ class OutputBuilder:
                 tree_summary=tree_summary,
                 repo_url=self.repo_url,
                 branch=self.branch,
-                subdir=self.subdir
+                subdir=self.subdir,
             )
 
-            tasks.append(formatter.generate(
-                text_files=textual_files,
-                non_textual_files=non_textual_files,
-                summary_data=summary_data,
-                mode=self.mode
-            ))
+            tasks.append(
+                formatter.generate(
+                    text_files=textual_files,
+                    non_textual_files=non_textual_files,
+                    summary_data=summary_data,
+                    mode=self.mode,
+                )
+            )
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -104,7 +122,7 @@ class OutputBuilder:
                 output_files=output_files,
                 non_textual_files=non_textual_files,
                 repo_path=self.repo_path,
-                repo_url=self.repo_url
+                repo_url=self.repo_url,
             )
             zip_path = await zip_formatter.generate()
             if zip_path:

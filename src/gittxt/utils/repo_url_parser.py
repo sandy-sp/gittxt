@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 import re
 import os
 
+
 def parse_github_url(url: str) -> dict:
     """
     Parse GitHub.com URLs: https://github.com/user/repo(.git)/tree/branch/subdir

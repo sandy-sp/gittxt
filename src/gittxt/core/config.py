@@ -11,6 +11,7 @@ logger = logging.getLogger("gittxt.config")
 # Load .env if present
 load_dotenv()
 
+
 class ConfigManager:
     """
     Manages main Gittxt configuration from:
@@ -42,8 +43,14 @@ class ConfigManager:
         "log_format": "plain",
         "auto_zip": False,
         # If you want to store tree excludes separately:
-        "tree_exclude_dirs": [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode"],
-        "scan_concurrency": 200
+        "tree_exclude_dirs": [
+            ".git",
+            "__pycache__",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".vscode",
+        ],
+        "scan_concurrency": 200,
     }
 
     @classmethod
@@ -62,8 +69,12 @@ class ConfigManager:
 
         # Step 2: environment overrides
         config["output_dir"] = os.getenv("GITTXT_OUTPUT_DIR", config["output_dir"])
-        config["output_format"] = os.getenv("GITTXT_OUTPUT_FORMAT", config["output_format"])
-        config["logging_level"] = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
+        config["output_format"] = os.getenv(
+            "GITTXT_OUTPUT_FORMAT", config["output_format"]
+        )
+        config["logging_level"] = os.getenv(
+            "GITTXT_LOGGING_LEVEL", config["logging_level"]
+        )
         config["log_format"] = os.getenv("GITTXT_LOG_FORMAT", config["log_format"])
 
         # Convert size limit to int or None
@@ -76,7 +87,7 @@ class ConfigManager:
         # Auto-zip env
         auto_zip_val = os.getenv("GITTXT_AUTO_ZIP")
         if auto_zip_val is not None:
-            config["auto_zip"] = (auto_zip_val.lower() == "true")
+            config["auto_zip"] = auto_zip_val.lower() == "true"
 
         # Path normalization
         config["output_dir"] = str(Path(config["output_dir"]).resolve())
@@ -98,7 +109,7 @@ class ConfigManager:
     @classmethod
     def save_config_updates(cls, updated_config: dict):
         """
-        Persist changes to gittxt-config.json. 
+        Persist changes to gittxt-config.json.
         """
         try:
             with cls.CONFIG_FILE.open("w", encoding="utf-8") as f:

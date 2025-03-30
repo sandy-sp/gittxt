@@ -4,6 +4,7 @@ from gittxt.config import ConfigManager
 
 router = APIRouter()
 
+
 @router.get("/")
 def get_config():
     """
@@ -17,7 +18,7 @@ def get_config():
             "logging_level": config.get("logging_level"),
             "output_format": config.get("output_format"),
             "file_types": config.get("file_types"),
-            "auto_zip": config.get("auto_zip")
+            "auto_zip": config.get("auto_zip"),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to load config: {e}")

@@ -13,16 +13,12 @@ test:
 	rm -rf tests/cli_test_outputs
 	rm -rf tests/test_zip_output
 
-check lint:
-	poetry run ruff check .
-
-check format:
-	poetry run black . --check
-
 lint:
+	poetry run ruff check .
 	poetry run ruff check . --fix
 
 format:
+	poetry run black . --check
 	poetry run black .
 
 build:

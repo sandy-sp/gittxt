@@ -6,6 +6,7 @@ from gittxt_api.api.scans_endpoints import router as scans_router
 from gittxt_api.api.artifacts_endpoints import router as artifacts_router
 from gittxt_api.api.ws_progress_endpoints import router as ws_router
 
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Gittxt FastAPI Backend",
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
     app.include_router(ws_router, prefix="/wsprogress", tags=["WebSocket"])
 
     return app
+
 
 app = create_app()
 

@@ -27,7 +27,7 @@ for directory in [
     OUTPUT_JSON_DIR,
     OUTPUT_MD_DIR,
     OUTPUT_ZIP_DIR,
-    OUTPUT_TEMP_DIR
+    OUTPUT_TEMP_DIR,
 ]:
     try:
         directory.mkdir(parents=True, exist_ok=True)

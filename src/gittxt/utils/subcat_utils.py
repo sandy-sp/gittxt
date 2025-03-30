@@ -3,6 +3,7 @@ from pygments.lexers import get_lexer_for_filename
 from pygments.util import ClassNotFound
 import mimetypes
 
+
 def detect_subcategory(file: Path, primary: str) -> str:
     """
     Return a sub-category string based on the top-level 'primary' category:
@@ -12,6 +13,7 @@ def detect_subcategory(file: Path, primary: str) -> str:
     if primary == "NON-TEXTUAL":
         return _detect_non_textual_subcat(file)
     return _detect_textual_subcat(file)
+
 
 def _detect_textual_subcat(file: Path) -> str:
     """
@@ -43,6 +45,7 @@ def _detect_textual_subcat(file: Path) -> str:
         if key in lexer_name:
             return subcat
     return "other"
+
 
 def _detect_non_textual_subcat(file: Path) -> str:
     """

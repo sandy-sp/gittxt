@@ -13,6 +13,7 @@ SEM = asyncio.Semaphore(MAX_CONCURRENT_SCANS)
 
 logger = Logger.get_logger(__name__)
 
+
 async def run_scan_task(
     scan_id: str,
     repo_url: str,
@@ -24,7 +25,7 @@ async def run_scan_task(
     size_limit: Optional[int],
     branch: Optional[str],
     tree_depth: Optional[int],
-    create_zip: Optional[bool]
+    create_zip: Optional[bool],
 ):
     async with SEM:
         SCANS[scan_id]["status"] = "running"
@@ -45,7 +46,7 @@ async def run_scan_task(
                 exclude_patterns=exclude_patterns,
                 size_limit=size_limit,
                 file_types=file_types,
-                progress=False
+                progress=False,
             )
 
             all_files, _ = scanner.scan_directory()
@@ -53,15 +54,23 @@ async def run_scan_task(
 
             # Progress callback
             for idx, path in enumerate(all_files):
-                _emit(scan_id, idx, total_count, f"Accepted {path.name}", progress_callback)
+                _emit(
+                    scan_id,
+                    idx,
+                    total_count,
+                    f"Accepted {path.name}",
+                    progress_callback,
+                )
                 await asyncio.sleep(0)
 
             if not all_files:
-                SCANS[scan_id].update({
-                    "status": "done",
-                    "file_count": 0,
-                    "message": "No valid files found."
-                })
+                SCANS[scan_id].update(
+                    {
+                        "status": "done",
+                        "file_count": 0,
+                        "message": "No valid files found.",
+                    }
+                )
                 return
 
             output_dir = Path.cwd() / f"scan_{scan_id}_outputs"
@@ -69,21 +78,31 @@ async def run_scan_task(
                 repo_name=repo_name,
                 output_dir=output_dir,
                 output_format=output_format,
-                repo_url=repo_url if is_remote else None
+                repo_url=repo_url if is_remote else None,
             )
 
-            _emit(scan_id, total_count, total_count, "Generating outputs...", progress_callback)
+            _emit(
+                scan_id,
+                total_count,
+                total_count,
+                "Generating outputs...",
+                progress_callback,
+            )
 
             # Call new generate_output with unified file list
-            await builder.generate_output(all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth)
+            await builder.generate_output(
+                all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
+            )
 
-            SCANS[scan_id].update({
-                "status": "done",
-                "message": "Scan complete",
-                "file_count": len(all_files),
-                "output_dir": str(output_dir),
-                "repo_name": repo_name
-            })
+            SCANS[scan_id].update(
+                {
+                    "status": "done",
+                    "message": "Scan complete",
+                    "file_count": len(all_files),
+                    "output_dir": str(output_dir),
+                    "repo_name": repo_name,
+                }
+            )
             logger.info(f"Scan {scan_id} completed -> {output_dir}")
 
         except Exception as e:
@@ -95,12 +114,14 @@ async def run_scan_task(
             if is_remote:
                 cleanup_temp_folder(Path(repo_path))
 
+
 def _emit(scan_id, current, total, msg, cb):
     if scan_id in SCANS:
         progress = round((current / total) * 100, 2) if total else 0
         SCANS[scan_id]["progress"] = progress
         SCANS[scan_id]["current_file"] = msg
         cb(scan_id, current, total, msg)
+
 
 def update_scan_progress(scan_id: str, current: int, total: int, msg: str):
     logger.debug(f"[{scan_id}] Progress: {msg} ({current}/{total})")

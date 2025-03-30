@@ -8,12 +8,21 @@ from gittxt.utils.formatter_utils import sort_textual_files
 from gittxt.utils.summary_utils import (
     estimate_tokens_from_file,
     format_size_short,
-    format_number_short
+    format_number_short,
 )
 
 
 class MarkdownFormatter:
-    def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None, branch: str = None, subdir: str = None):
+    def __init__(
+        self,
+        repo_name,
+        output_dir: Path,
+        repo_path: Path,
+        tree_summary: str,
+        repo_url: str = None,
+        branch: str = None,
+        subdir: str = None,
+    ):
         self.repo_name = repo_name
         self.output_dir = output_dir
         self.repo_path = Path(repo_path).resolve()
@@ -23,7 +32,9 @@ class MarkdownFormatter:
         self.subdir = subdir
         self.repo_root = Path(repo_path).resolve()
 
-    async def generate(self, text_files, non_textual_files, summary_data: dict, mode="rich"):
+    async def generate(
+        self, text_files, non_textual_files, summary_data: dict, mode="rich"
+    ):
         output_file = self.output_dir / f"{self.repo_name}.md"
         ordered_files = sort_textual_files(text_files)
 
@@ -35,7 +46,9 @@ class MarkdownFormatter:
                 if self.repo_url:
                     owner = self.repo_url.rstrip("/").split("/")[-2]
                     await md.write(f"- **Owner**: `{owner}`\n")
-                    await md.write(f"- **Repo URL**: [{self.repo_url}]({self.repo_url})\n")
+                    await md.write(
+                        f"- **Repo URL**: [{self.repo_url}]({self.repo_url})\n"
+                    )
                 if self.branch:
                     await md.write(f"- **Branch**: `{self.branch}`\n")
                 if self.subdir:
@@ -59,14 +72,18 @@ class MarkdownFormatter:
 
             # === RICH HEADER ===
             await md.write(f"# 🧾 Gittxt Report for `{self.repo_name}`\n\n")
-            await md.write(f"- **Generated**: `{datetime.now(timezone.utc).isoformat()} UTC`\n")
+            await md.write(
+                f"- **Generated**: `{datetime.now(timezone.utc).isoformat()} UTC`\n"
+            )
             if self.branch:
                 await md.write(f"- **Branch**: `{self.branch}`\n")
             if self.subdir:
                 await md.write(f"- **Subdir**: `{self.subdir.strip('/')}`\n")
             if self.repo_url:
-                await md.write(f"- **Repository**: [{self.repo_url}]({self.repo_url})\n")
-            await md.write(f"- **Format**: `markdown`\n\n")
+                await md.write(
+                    f"- **Repository**: [{self.repo_url}]({self.repo_url})\n"
+                )
+            await md.write("- **Format**: `markdown`\n\n")
 
             await md.write("## 📂 Directory Tree\n")
             await md.write("```text\n")
@@ -77,7 +94,9 @@ class MarkdownFormatter:
             await md.write("## 📊 Summary Report\n")
             await md.write(f"- **Total Files**: `{summary_data.get('total_files')}`\n")
             await md.write(f"- **Total Size**: `{formatted.get('total_size')}`\n")
-            await md.write(f"- **Estimated Tokens**: `{formatted.get('estimated_tokens')}`\n\n")
+            await md.write(
+                f"- **Estimated Tokens**: `{formatted.get('estimated_tokens')}`\n\n"
+            )
 
             breakdown = summary_data.get("file_type_breakdown", {})
             tokens_by_type = formatted.get("tokens_by_type", {})
@@ -87,7 +106,9 @@ class MarkdownFormatter:
                 await md.write("|-------------|-------------|----------------|\n")
                 for subcat in sorted(breakdown):
                     count = breakdown[subcat]
-                    tokens = tokens_by_type.get(subcat, summary_data.get("tokens_by_type", {}).get(subcat, 0))
+                    tokens = tokens_by_type.get(
+                        subcat, summary_data.get("tokens_by_type", {}).get(subcat, 0)
+                    )
                     await md.write(f"| {subcat} | {count} | {tokens} |\n")
                 await md.write("\n")
 
@@ -95,7 +116,9 @@ class MarkdownFormatter:
             for file in ordered_files:
                 rel = file.resolve().relative_to(self.repo_root)
                 subcat = detect_subcategory(file, "TEXTUAL")
-                file_url = build_github_url(self.repo_url, rel, self.branch, self.subdir)
+                file_url = build_github_url(
+                    self.repo_url, rel, self.branch, self.subdir
+                )
                 raw = await async_read_text(file) or ""
                 token_count = await estimate_tokens_from_file(file)
                 size_fmt = format_size_short(file.stat().st_size)
@@ -109,19 +132,25 @@ class MarkdownFormatter:
                 await md.write("\n```text\n")
                 await md.write(raw.strip())
                 await md.write("\n```\n")
-            
+
             await md.write("\n## 🎨 Non-Textual Assets\n\n")
             await md.write("| Path | Type | Size | URL |\n")
             await md.write("|------|------|------|-----|\n")
-            
+
             if non_textual_files:
                 for asset in non_textual_files:
                     rel = asset.resolve().relative_to(self.repo_root)
                     subcat = detect_subcategory(asset, "NON-TEXTUAL")
                     size = format_size_short(asset.stat().st_size)
-                    asset_url = build_github_url(self.repo_url, rel, self.branch, self.subdir) if self.repo_url else ""
+                    asset_url = (
+                        build_github_url(self.repo_url, rel, self.branch, self.subdir)
+                        if self.repo_url
+                        else ""
+                    )
                     url_md = f"[link]({asset_url})" if asset_url else "—"
-                    await md.write(f"| `{rel}` | {subcat} | {size} | [Link]({url_md}) |\n")
+                    await md.write(
+                        f"| `{rel}` | {subcat} | {size} | [Link]({url_md}) |\n"
+                    )
             else:
                 await md.write("_No non-textual assets found._\n")
 

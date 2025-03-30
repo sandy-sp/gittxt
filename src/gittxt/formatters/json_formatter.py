@@ -9,11 +9,21 @@ from gittxt.utils.github_url_utils import build_github_url
 from gittxt.utils.summary_utils import (
     estimate_tokens_from_file,
     format_number_short,
-    format_size_short
+    format_size_short,
 )
 
+
 class JSONFormatter:
-    def __init__(self, repo_name, output_dir: Path, repo_path: Path, tree_summary: str, repo_url: str = None, branch: str = None, subdir: str = None):
+    def __init__(
+        self,
+        repo_name,
+        output_dir: Path,
+        repo_path: Path,
+        tree_summary: str,
+        repo_url: str = None,
+        branch: str = None,
+        subdir: str = None,
+    ):
         self.repo_name = repo_name
         self.output_dir = output_dir
         self.repo_path = Path(repo_path).resolve()
@@ -23,7 +33,9 @@ class JSONFormatter:
         self.branch = branch
         self.subdir = subdir
 
-    async def generate(self, text_files, non_textual_files, summary_data: dict, mode="rich"):
+    async def generate(
+        self, text_files, non_textual_files, summary_data: dict, mode="rich"
+    ):
         output_file = self.output_dir / f"{self.repo_name}.json"
         ordered_files = sort_textual_files(text_files, base_path=self.repo_root)
 
@@ -32,10 +44,7 @@ class JSONFormatter:
             for text_file in ordered_files:
                 rel_path = text_file.resolve().relative_to(self.repo_root)
                 raw_text = await async_read_text(text_file) or "[no content]"
-                files.append({
-                    "path": str(rel_path),
-                    "content": raw_text.strip()
-                })
+                files.append({"path": str(rel_path), "content": raw_text.strip()})
 
             owner = self.repo_url.rstrip("/").split("/")[-2] if self.repo_url else ""
 
@@ -47,7 +56,7 @@ class JSONFormatter:
                     "subdir": self.subdir,
                 },
                 "tree_summary": self.tree_summary,
-                "files": files
+                "files": files,
             }
 
         else:
@@ -55,7 +64,11 @@ class JSONFormatter:
             for text_file in ordered_files:
                 rel_path = text_file.resolve().relative_to(self.repo_root)
                 subcat = detect_subcategory(text_file, "TEXTUAL")
-                file_url = build_github_url(self.repo_url, rel_path, self.branch, self.subdir) if self.repo_url else ""
+                file_url = (
+                    build_github_url(self.repo_url, rel_path, self.branch, self.subdir)
+                    if self.repo_url
+                    else ""
+                )
                 raw_text = await async_read_text(text_file) or "[no content]"
 
                 size_bytes = text_file.stat().st_size
@@ -63,31 +76,39 @@ class JSONFormatter:
                 size_fmt = format_size_short(size_bytes)
                 token_fmt = format_number_short(token_count)
 
-                files_section.append({
-                    "path": str(rel_path),
-                    "subcategory": subcat,
-                    "size_bytes": size_bytes,
-                    "size_human": size_fmt,
-                    "tokens_estimate": token_count,
-                    "tokens_human": token_fmt,
-                    "content": raw_text.strip(),
-                    "url": file_url
-                })
+                files_section.append(
+                    {
+                        "path": str(rel_path),
+                        "subcategory": subcat,
+                        "size_bytes": size_bytes,
+                        "size_human": size_fmt,
+                        "tokens_estimate": token_count,
+                        "tokens_human": token_fmt,
+                        "content": raw_text.strip(),
+                        "url": file_url,
+                    }
+                )
 
             assets_section = []
             for asset in non_textual_files:
                 rel_path = asset.resolve().relative_to(self.repo_root)
                 subcat = detect_subcategory(asset, "NON-TEXTUAL")
-                asset_url = build_github_url(self.repo_url, rel_path, self.branch, self.subdir) if self.repo_url else ""
+                asset_url = (
+                    build_github_url(self.repo_url, rel_path, self.branch, self.subdir)
+                    if self.repo_url
+                    else ""
+                )
                 size_fmt = format_size_short(asset.stat().st_size)
 
-                assets_section.append({
-                    "path": str(rel_path),
-                    "subcategory": subcat,
-                    "size_bytes": asset.stat().st_size,
-                    "size_human": size_fmt,
-                    "url": asset_url
-                })
+                assets_section.append(
+                    {
+                        "path": str(rel_path),
+                        "subcategory": subcat,
+                        "size_bytes": asset.stat().st_size,
+                        "size_human": size_fmt,
+                        "url": asset_url,
+                    }
+                )
 
             output = {
                 "repository": {
@@ -96,7 +117,7 @@ class JSONFormatter:
                     "branch": self.branch,
                     "subdir": self.subdir,
                     "tree_summary": self.tree_summary,
-                    "generated_at": datetime.now(timezone.utc).isoformat() + " UTC"
+                    "generated_at": datetime.now(timezone.utc).isoformat() + " UTC",
                 },
                 "summary": {
                     "total_files": summary_data.get("total_files"),
@@ -107,7 +128,7 @@ class JSONFormatter:
                     "tokens_by_type": summary_data.get("tokens_by_type"),
                 },
                 "files": files_section,
-                "assets": assets_section
+                "assets": assets_section,
             }
 
         async with aiofiles.open(output_file, "w", encoding="utf-8") as jf:

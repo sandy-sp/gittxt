@@ -6,6 +6,7 @@ import tiktoken
 from gittxt.utils.filetype_utils import classify_simple
 from gittxt.utils.subcat_utils import detect_subcategory
 
+
 def format_number_short(n: int) -> str:
     """
     Return a short string for large numbers:
@@ -18,6 +19,7 @@ def format_number_short(n: int) -> str:
         return f"{n / 1_000:.1f}k"
     return str(n)
 
+
 def format_size_short(n: int) -> str:
     """
     Use humanize.naturalsize to produce a more readable size,
@@ -25,7 +27,10 @@ def format_size_short(n: int) -> str:
     """
     return humanize.naturalsize(n, binary=False)
 
-async def estimate_tokens_from_file(file: Path, encoding_name: str = "cl100k_base", use_fallback: bool = True) -> int:
+
+async def estimate_tokens_from_file(
+    file: Path, encoding_name: str = "cl100k_base", use_fallback: bool = True
+) -> int:
     """
     Estimate the number of tokens by reading the file and using tiktoken.
     Fallback is length/4 if tiktoken fails or not installed.
@@ -41,7 +46,10 @@ async def estimate_tokens_from_file(file: Path, encoding_name: str = "cl100k_bas
     except Exception:
         return 0
 
-async def generate_summary(file_paths: List[Path], estimate_tokens: bool = True) -> Dict:
+
+async def generate_summary(
+    file_paths: List[Path], estimate_tokens: bool = True
+) -> Dict:
     """
     Return a summary dict with:
       - total_files

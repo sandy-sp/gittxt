@@ -1,22 +1,27 @@
 import click
-from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from gittxt.utils.filetype_utils import FiletypeConfigManager
 
 console = Console()
 
+
 def normalize_ext(ext: str) -> str:
     ext = ext.strip().lower()
     return ext if ext.startswith(".") else f".{ext}"
 
+
 class FiletypesGroup(click.Group):
     def list_commands(self, ctx):
         return ["list", "add-textual", "add-non-textual", "clear"]
-    
-@click.group(cls=FiletypesGroup, help="🗂 Manage default textual or non-textual extensions.")
+
+
+@click.group(
+    cls=FiletypesGroup, help="🗂 Manage default textual or non-textual extensions."
+)
 def filetypes():
     pass
+
 
 @filetypes.command("list", help="🔍 Show current textual vs non-textual extensions.")
 def list_types():
@@ -36,6 +41,7 @@ def list_types():
 
     console.print(table)
 
+
 @filetypes.command(help="➕ Add extensions to the textual list.")
 @click.argument("exts", nargs=-1)
 def add_textual(exts):
@@ -49,7 +55,10 @@ def add_textual(exts):
         if result is True:
             console.print(f"[green]➕ Added '{normalized}' to textual list.[/green]")
         else:
-            console.print(f"[yellow]⚠️ Skipped '{normalized}': not a valid textual filetype.[/yellow]")
+            console.print(
+                f"[yellow]⚠️ Skipped '{normalized}': not a valid textual filetype.[/yellow]"
+            )
+
 
 @filetypes.command(help="🚫 Add extensions to the non-textual list.")
 @click.argument("exts", nargs=-1)
@@ -57,11 +66,14 @@ def add_non_textual(exts):
     all_exts = []
     for raw in exts:
         all_exts.extend([e.strip() for e in raw.split(",") if e.strip()])
-        
+
     for ext in exts:
         normalized = normalize_ext(ext)
         FiletypeConfigManager.add_non_textual_ext(normalized)
-        console.print(f"[green]Added '{normalized}' to [red]non-textual[/red] list.[/green]")
+        console.print(
+            f"[green]Added '{normalized}' to [red]non-textual[/red] list.[/green]"
+        )
+
 
 @filetypes.command(help="🧹 Clear both textual and non-textual extension lists.")
 def clear():

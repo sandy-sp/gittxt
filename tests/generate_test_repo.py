@@ -1,14 +1,18 @@
-import os
 from pathlib import Path
+
 
 def generate_test_repo(base_dir="tests/test_repo"):
     base = Path(base_dir).resolve()
     base.mkdir(parents=True, exist_ok=True)
 
     # ─── Textual Files ─────────────────────
-    (base / "README.md").write_text("# Sample README\nThis is a test file.\n", encoding="utf-8")
+    (base / "README.md").write_text(
+        "# Sample README\nThis is a test file.\n", encoding="utf-8"
+    )
     (base / "script.py").write_text("print('Hello, world!')\n", encoding="utf-8")
-    (base / "included.txt").write_text("This file should be included by include pattern.\n", encoding="utf-8")
+    (base / "included.txt").write_text(
+        "This file should be included by include pattern.\n", encoding="utf-8"
+    )
     (base / "script.min.js").write_text("var a=1;" * 5000, encoding="utf-8")  # Minified
 
     # ─── Large File (>5MB) ─────────────────
@@ -22,7 +26,9 @@ def generate_test_repo(base_dir="tests/test_repo"):
     (base / "image.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 
     # ─── Text Without Extension ────────────
-    (base / "no_extension").write_text("No extension but still text.\n", encoding="utf-8")
+    (base / "no_extension").write_text(
+        "No extension but still text.\n", encoding="utf-8"
+    )
     (base / ".hidden").write_text("Hidden file.\n", encoding="utf-8")
     (base / "data.csv").write_text("id,name\n1,Alice\n2,Bob\n", encoding="utf-8")
 
@@ -33,7 +39,9 @@ def generate_test_repo(base_dir="tests/test_repo"):
 
     # ─── Ignored Directories ───────────────
     (base / "node_modules").mkdir(parents=True, exist_ok=True)
-    (base / "node_modules/lib.js").write_text("console.log('should be excluded');", encoding="utf-8")
+    (base / "node_modules/lib.js").write_text(
+        "console.log('should be excluded');", encoding="utf-8"
+    )
 
     (base / "dist").mkdir(parents=True, exist_ok=True)
     (base / "dist/bundle.js").write_text("// built file\n", encoding="utf-8")
@@ -48,6 +56,7 @@ def generate_test_repo(base_dir="tests/test_repo"):
     (deep / "file.md").write_text("# Deep file\nSome deep content\n", encoding="utf-8")
 
     print(f"✅ Test repo created at: {base}")
+
 
 if __name__ == "__main__":
     generate_test_repo()

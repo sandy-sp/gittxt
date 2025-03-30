@@ -6,6 +6,7 @@ from gittxt.core.scanner import Scanner
 TEST_REPO = Path("tests/test_repo")
 OUTPUT_DIR = Path("tests/test_outputs")
 
+
 @pytest.mark.asyncio
 async def test_output_builder_all_formats():
     scanner = Scanner(root_path=TEST_REPO)
@@ -18,7 +19,7 @@ async def test_output_builder_all_formats():
         repo_url="https://github.com/test-user/test_repo",
         branch="main",
         subdir="",
-        mode="rich"
+        mode="rich",
     )
 
     outputs = await builder.generate_output(all_files, repo_path=TEST_REPO)

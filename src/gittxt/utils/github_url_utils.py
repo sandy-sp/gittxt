@@ -2,7 +2,10 @@ from urllib.parse import urlparse
 import re
 from pathlib import Path
 
-def build_github_url(repo_url: str, rel_path: Path, branch: str = "main", subdir: str = None) -> str:
+
+def build_github_url(
+    repo_url: str, rel_path: Path, branch: str = "main", subdir: str = None
+) -> str:
     """
     Build a direct GitHub file URL in the format:
     https://github.com/user/repo/blob/branch/path/to/file

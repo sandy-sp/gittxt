@@ -1,14 +1,10 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from gittxt_api.schemas.scan_schemas import ScanRequest, TreeRequest
-from gittxt_api.core.scanning_service import (
-    SCANS,
-    run_scan_task,
-    update_scan_progress
-)
+from gittxt_api.core.scanning_service import SCANS, run_scan_task, update_scan_progress
 from gittxt_api.services.tree_service import (
     build_directory_tree,
     gather_file_extensions,
-    remove_ephemeral_outputs
+    remove_ephemeral_outputs,
 )
 from gittxt.repository import RepositoryHandler
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
@@ -16,6 +12,7 @@ from pathlib import Path
 import uuid
 
 router = APIRouter()
+
 
 @router.post("/tree")
 async def get_repo_tree(req: TreeRequest):
@@ -51,11 +48,17 @@ async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
     VALID_FORMATS = {"txt", "json", "md"}
 
     if not req.file_types or any(ft not in VALID_TYPES for ft in req.file_types):
-        raise HTTPException(status_code=400, detail=f"Invalid file_types. Valid: {', '.join(VALID_TYPES)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file_types. Valid: {', '.join(VALID_TYPES)}",
+        )
 
     requested_formats = [f.strip() for f in req.output_format.split(",")]
     if any(fmt not in VALID_FORMATS for fmt in requested_formats):
-        raise HTTPException(status_code=400, detail=f"Invalid output_format. Valid: {', '.join(VALID_FORMATS)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid output_format. Valid: {', '.join(VALID_FORMATS)}",
+        )
 
     # ✅ Validate repo URL up front
     try:
@@ -84,7 +87,7 @@ async def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
         req.size_limit,
         req.branch,
         req.tree_depth,
-        req.create_zip
+        req.create_zip,
     )
 
     return {"scan_id": scan_id, "status": "queued", "message": "Scan scheduled."}
@@ -103,7 +106,7 @@ def get_scan_info(scan_id: str):
             "txt": f"/artifacts/{scan_id}/txt",
             "json": f"/artifacts/{scan_id}/json",
             "md": f"/artifacts/{scan_id}/md",
-            "zip": f"/artifacts/{scan_id}/zip"
+            "zip": f"/artifacts/{scan_id}/zip",
         }
 
     return response
@@ -113,7 +116,9 @@ def get_scan_info(scan_id: str):
 def close_scan_session(scan_id: str):
     info = SCANS.get(scan_id)
     if not info:
-        raise HTTPException(status_code=404, detail="Scan not found or already removed.")
+        raise HTTPException(
+            status_code=404, detail="Scan not found or already removed."
+        )
 
     output_dir = info.get("output_dir")
     if output_dir:

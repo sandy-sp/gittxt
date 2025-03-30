@@ -5,6 +5,7 @@ from gittxt.core.config import ConfigManager
 config = ConfigManager.load_config()
 console = Console()
 
+
 def _print_summary(repo_name, summary_data, final_output_dir, output_format):
     table = Table(title=f"Scan Summary: {repo_name}")
     table.add_column("Metric", style="cyan")
@@ -17,6 +18,8 @@ def _print_summary(repo_name, summary_data, final_output_dir, output_format):
     try:
         (final_output_dir / repo_name).mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        console.print(f"[red]❌ Cannot create output directory {final_output_dir / repo_name}: {e}")
+        console.print(
+            f"[red]❌ Cannot create output directory {final_output_dir / repo_name}: {e}"
+        )
     console.print(f"[bold yellow]Output directory:[/] {final_output_dir / repo_name}")
     pass

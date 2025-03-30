@@ -4,9 +4,13 @@ from typing import Literal
 from gittxt_api.core.scanning_service import SCANS
 from pathlib import Path
 import json
-from gittxt_api.services.artifact_service import resolve_artifact_paths, available_artifacts
+from gittxt_api.services.artifact_service import (
+    resolve_artifact_paths,
+    available_artifacts,
+)
 
 router = APIRouter()
+
 
 @router.get("/{scan_id}/{artifact}")
 def download_artifact(scan_id: str, artifact: Literal["txt", "json", "md", "zip"]):
@@ -16,7 +20,7 @@ def download_artifact(scan_id: str, artifact: Literal["txt", "json", "md", "zip"
     info = SCANS.get(scan_id)
     if not info or "output_dir" not in info:
         raise HTTPException(404, "Scan not found or incomplete.")
-    
+
     if info.get("status") != "done":
         raise HTTPException(404, "Scan is not completed yet.")
 

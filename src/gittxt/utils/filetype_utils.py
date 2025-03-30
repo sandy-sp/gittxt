@@ -6,6 +6,7 @@ from gittxt.core.constants import DEFAULT_FILETYPE_CONFIG
 
 logger = Logger.get_logger(__name__)
 
+
 class FiletypeConfigManager:
     CONFIG_FILE = Path(__file__).parent.parent / "config" / "filetype_config.json"
 
@@ -16,7 +17,9 @@ class FiletypeConfigManager:
                 with cls.CONFIG_FILE.open("r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
-                logger.warning(f"⚠️ Could not load filetype config: {e}. Using defaults.")
+                logger.warning(
+                    f"⚠️ Could not load filetype config: {e}. Using defaults."
+                )
                 return DEFAULT_FILETYPE_CONFIG.copy()
         else:
             return DEFAULT_FILETYPE_CONFIG.copy()
@@ -37,7 +40,9 @@ class FiletypeConfigManager:
             ext = f".{ext}"
 
         if ext in DEFAULT_FILETYPE_CONFIG["non_textual_exts"]:
-            logger.warning(f"⚠️ Cannot add '{ext}' as textual: it's a known non-textual filetype.")
+            logger.warning(
+                f"⚠️ Cannot add '{ext}' as textual: it's a known non-textual filetype."
+            )
             return False
 
         config = cls.load_config()
@@ -62,7 +67,7 @@ class FiletypeConfigManager:
     @classmethod
     def is_known_textual_ext(cls, ext: str) -> bool:
         config = cls.load_config()
-        normalized = ext.lower() if ext.startswith('.') else f".{ext.lower()}"
+        normalized = ext.lower() if ext.startswith(".") else f".{ext.lower()}"
         return normalized in config.get("textual_exts", [])
 
 
@@ -71,9 +76,9 @@ def is_binary(path: Path, chunk_size: int = 1024) -> bool:
     Returns True if file appears to be binary, using null-byte scan.
     """
     try:
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             chunk = f.read(chunk_size)
-            if b'\0' in chunk:
+            if b"\0" in chunk:
                 return True
     except Exception:
         return True  # Conservative fallback

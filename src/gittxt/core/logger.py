@@ -7,11 +7,13 @@ from logging.handlers import RotatingFileHandler
 
 try:
     import colorama
+
     colorama.init()
 except ImportError:
     colorama = None
 
 from gittxt.core.config import ConfigManager
+
 
 class Logger:
     """
@@ -65,7 +67,9 @@ class Logger:
 
         if log_format_style == "plain" or not colorama:
             if not colorama and log_format_style != "plain":
-                print("⚠️ colorama not installed — falling back to plain logging format.")
+                print(
+                    "⚠️ colorama not installed — falling back to plain logging format."
+                )
             formatter = logging.Formatter("%(levelname)s - %(message)s")
         else:
             formatter = Logger._get_formatter(mode=log_format_style)
@@ -73,14 +77,19 @@ class Logger:
         console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
 
-        rotating_file_handler = RotatingFileHandler(Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8")
+        rotating_file_handler = RotatingFileHandler(
+            Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
+        )
         rotating_file_handler.setLevel(log_level)
-        rotating_file_handler.setFormatter(Logger._get_formatter(mode="plain"))  # always plain file logs
+        rotating_file_handler.setFormatter(
+            Logger._get_formatter(mode="plain")
+        )  # always plain file logs
         root_logger.addHandler(rotating_file_handler)
 
     @staticmethod
     def _get_formatter(mode="plain"):
         if mode == "json":
+
             class JSONFormatter(logging.Formatter):
                 def format(self, record):
                     log_record = {
@@ -90,17 +99,21 @@ class Logger:
                         "logger": record.name,
                     }
                     return json.dumps(log_record)
+
             return JSONFormatter("%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
         else:
+
             class ColoredFormatter(logging.Formatter):
                 def format(self, record):
                     msg = super().format(record)
                     return Logger._colorize(record.levelname, msg)
+
             return ColoredFormatter("%(levelname)s - %(message)s")
 
     @staticmethod
     def get_logger(name):
         return logging.getLogger(name)
+
 
 # Initialize at import
 Logger.setup_logger()
@@ -142,5 +155,5 @@ if "-sp" in sys.argv:
                                   666669                                                            
                                   66                                                                                                                                       
         """
-        )
+    )
     sys.exit(0)

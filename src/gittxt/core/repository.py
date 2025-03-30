@@ -3,10 +3,10 @@ import tempfile
 from pathlib import Path
 from gittxt.core.logger import Logger
 from gittxt.utils.repo_url_parser import parse_github_url
-from gittxt.core.config import ConfigManager
 from gittxt.utils.cleanup_utils import delete_directory
 
 logger = Logger.get_logger(__name__)
+
 
 class RepositoryHandler:
     """
@@ -19,17 +19,21 @@ class RepositoryHandler:
         source: str | Path,
         branch: str = None,
         subdir: str = "",
-        cache_dir: Path = None
+        cache_dir: Path = None,
     ):
         self.source = str(source)
         self.subdir = subdir
         self.branch = branch or "main"
         self.cache_dir = cache_dir or Path(tempfile.mkdtemp(prefix="gittxt_"))
 
-        if isinstance(source, Path) or (isinstance(source, str) and Path(source).exists()):
+        if isinstance(source, Path) or (
+            isinstance(source, str) and Path(source).exists()
+        ):
             self.repo_path = Path(source).resolve()
             self.is_remote = False
-        elif isinstance(source, str) and ("github.com" in source or source.startswith("git@")):
+        elif isinstance(source, str) and (
+            "github.com" in source or source.startswith("git@")
+        ):
             self.repo_url = source
             self.is_remote = True
         else:
@@ -60,7 +64,9 @@ class RepositoryHandler:
         self.subdir = subdir
         self.branch = branch
 
-        logger.info(f"🔄 Remote repo cloned: {repo_name}, subdir={subdir}, branch={branch}")
+        logger.info(
+            f"🔄 Remote repo cloned: {repo_name}, subdir={subdir}, branch={branch}"
+        )
         return temp_dir
 
     def _prepare_temp_dir(self, repo_name: str) -> Path:
@@ -72,7 +78,9 @@ class RepositoryHandler:
 
     def _clone_remote_repo(self, git_url: str, branch: str, temp_dir: Path):
         try:
-            logger.info(f"🚀 Cloning repository: {git_url} (branch={branch}) => {temp_dir}")
+            logger.info(
+                f"🚀 Cloning repository: {git_url} (branch={branch}) => {temp_dir}"
+            )
             git.Repo.clone_from(git_url, str(temp_dir), depth=1, branch=branch)
         except git.GitCommandError as e:
             logger.warning(f"⚠️ Initial clone failed: {e}")
@@ -90,7 +98,13 @@ class RepositoryHandler:
         Return (repo_path, subdir, is_remote, repo_name, used_branch)
         """
         if self.is_remote:
-            return (str(self.repo_path), self.subdir, True, self.repo_path.name, self.branch)
+            return (
+                str(self.repo_path),
+                self.subdir,
+                True,
+                self.repo_path.name,
+                self.branch,
+            )
         else:
             path = Path(self.source).resolve()
             if not path.exists() or not path.is_dir():
@@ -98,4 +112,4 @@ class RepositoryHandler:
                     f"❌ Local path not found or not a directory: {path}. "
                     f"Ensure the input is a valid local Git repository root."
                 )
-            return (str(path), self.subdir, False, path.name, self.branch) 
+            return (str(path), self.subdir, False, path.name, self.branch)

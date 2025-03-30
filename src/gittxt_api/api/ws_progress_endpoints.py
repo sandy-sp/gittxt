@@ -6,10 +6,11 @@ from pathlib import Path
 
 router = APIRouter()
 
+
 @router.websocket("/ws/{scan_id}")
 async def websocket_progress(websocket: WebSocket, scan_id: str):
     await websocket.accept()
-    
+
     # ✅ Check for invalid scan ID immediately
     if scan_id not in SCANS:
         await websocket.close()
@@ -19,7 +20,9 @@ async def websocket_progress(websocket: WebSocket, scan_id: str):
     while True:
         scan_data = SCANS.get(scan_id)
         if not scan_data:
-            await websocket.send_json({"event": "error", "message": "Scan data missing"})
+            await websocket.send_json(
+                {"event": "error", "message": "Scan data missing"}
+            )
             break
 
         status = scan_data["status"]
@@ -35,7 +38,9 @@ async def websocket_progress(websocket: WebSocket, scan_id: str):
             if status == "done":
                 repo_name = scan_data.get("repo_name")
                 output_dir = Path(scan_data.get("output_dir"))
-                payload["artifacts"] = available_artifacts(scan_id, output_dir, repo_name)
+                payload["artifacts"] = available_artifacts(
+                    scan_id, output_dir, repo_name
+                )
 
             await websocket.send_json(payload)
             break

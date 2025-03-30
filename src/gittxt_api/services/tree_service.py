@@ -2,6 +2,7 @@ from pathlib import Path
 from gittxt.utils.tree_utils import generate_tree
 import shutil
 
+
 def build_directory_tree(path: Path, max_depth: int = None) -> str:
     """
     Wrapper around generate_tree() to produce repo tree structure.

@@ -9,14 +9,22 @@ from gittxt.utils.summary_utils import format_size_short
 
 
 class ZipFormatter:
-    def __init__(self, repo_name, output_dir: Path, output_files, non_textual_files, repo_path: Path, repo_url: str = None):
+    def __init__(
+        self,
+        repo_name,
+        output_dir: Path,
+        output_files,
+        non_textual_files,
+        repo_path: Path,
+        repo_url: str = None,
+    ):
         self.repo_name = repo_name
         self.output_dir = output_dir
         self.output_files = output_files
         self.non_textual_files = non_textual_files
         self.repo_path = Path(repo_path).resolve()
         self.repo_url = repo_url
-        self.flatten_zip = False 
+        self.flatten_zip = False
 
     async def generate(self):
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -32,7 +40,11 @@ class ZipFormatter:
             for f in self.output_files:
                 if f.exists():
                     try:
-                        arcname = f.relative_to(self.output_dir) if not self.flatten_zip else f.name
+                        arcname = (
+                            f.relative_to(self.output_dir)
+                            if not self.flatten_zip
+                            else f.name
+                        )
                     except ValueError:
                         arcname = f.name  # fallback to flat if outside output_dir
                     target = outputs_dir / arcname
@@ -73,8 +85,17 @@ class ZipFormatter:
             "repo": self.repo_name,
             "url": self.repo_url,
             "generated_at": datetime.now(timezone.utc).isoformat() + " UTC",
-            "files": [str(f.relative_to(self.output_dir)) if self.output_dir in f.parents else str(f.name) for f in self.output_files],
-            "non_textual_assets": [str(f.relative_to(self.repo_path)) for f in self.non_textual_files]
+            "files": [
+                (
+                    str(f.relative_to(self.output_dir))
+                    if self.output_dir in f.parents
+                    else str(f.name)
+                )
+                for f in self.output_files
+            ],
+            "non_textual_assets": [
+                str(f.relative_to(self.repo_path)) for f in self.non_textual_files
+            ],
         }
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
             await f.write(json.dumps(summary_data, indent=2))
@@ -85,24 +106,28 @@ class ZipFormatter:
         for f in self.output_files:
             if f.exists():
                 size = f.stat().st_size
-                entries.append({
-                    "type": "output",
-                    "name": f.name,
-                    "size_bytes": size,
-                    "size_human": format_size_short(size)
-                })
+                entries.append(
+                    {
+                        "type": "output",
+                        "name": f.name,
+                        "size_bytes": size,
+                        "size_human": format_size_short(size),
+                    }
+                )
 
         for f in self.non_textual_files:
             if f.exists():
                 repo_root = Path(self.repo_path).resolve()
                 rel = f.resolve().relative_to(repo_root)
                 size = f.stat().st_size
-                entries.append({
-                    "type": "asset",
-                    "path": str(rel),
-                    "size_bytes": size,
-                    "size_human": format_size_short(size)
-                })
+                entries.append(
+                    {
+                        "type": "asset",
+                        "path": str(rel),
+                        "size_bytes": size,
+                        "size_human": format_size_short(size),
+                    }
+                )
 
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
             await f.write(json.dumps(entries, indent=2))

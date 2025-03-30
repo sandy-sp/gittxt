@@ -7,6 +7,7 @@ from gittxt.core.output_builder import OutputBuilder
 TEST_REPO = Path("tests/test_repo")
 OUTPUT_DIR = Path("tests/test_zip_output")
 
+
 @pytest.mark.asyncio
 async def test_zip_bundle_contents():
     scanner = Scanner(root_path=TEST_REPO, use_ignore_file=True)
@@ -19,13 +20,11 @@ async def test_zip_bundle_contents():
         repo_url="https://github.com/test-user/test_repo",
         branch="main",
         subdir="",
-        mode="rich"
+        mode="rich",
     )
 
     outputs = await builder.generate_output(
-        all_files,
-        repo_path=TEST_REPO.resolve(),
-        create_zip=True
+        all_files, repo_path=TEST_REPO.resolve(), create_zip=True
     )
 
     zip_files = [f for f in outputs if f.suffix == ".zip"]
