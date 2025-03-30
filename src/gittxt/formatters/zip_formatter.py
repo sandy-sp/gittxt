@@ -56,6 +56,9 @@ class ZipFormatter:
                 assets_dir = tempdir / "assets"
                 assets_dir.mkdir(parents=True, exist_ok=True)
                 for asset in self.non_textual_files:
+                    if not asset.is_file():  # ✅ skip directories
+                        print(f"⚠️ Skipped non-file asset: {asset}")
+                        continue
                     try:
                         try:
                             rel = asset.resolve().relative_to(self.repo_path)
