@@ -31,6 +31,7 @@ class ZipFormatter:
     async def generate(self):
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         zip_path = self.output_dir / f"{self.repo_name}-{timestamp}.zip"
+        logger.info(f"📦 Zipped bundle created: {zip_path}")
 
         with tempfile.TemporaryDirectory() as tempdir:
             tempdir = Path(tempdir)
