@@ -50,6 +50,7 @@ class Scanner:
         self.verbose = verbose
         self.accepted_files = []
         self.skipped_files = []
+        self.non_textual_files = []
 
         if use_ignore_file:
             ignore_file = self.root_path / ".gittxtignore"
@@ -105,7 +106,7 @@ class Scanner:
             logger.info("⏳ Scanning files... (no rich progress available)")
             await asyncio.gather(*[process_path(p) for p in all_items])
 
-        return self.accepted_files
+        return self.accepted_files, self.non_textual_files
 
     async def _with_progress(self, coro, progress_bar, task_id):
         await coro
@@ -140,14 +141,10 @@ class Scanner:
             self.skipped_files.append((path, "not in include patterns"))
             return
 
-        label = filetype_utils.classify_file(path)
         if label != "TEXTUAL":
-            if self.include_patterns and any(
-                path.match(p) for p in self.include_patterns
-            ):
-                logger.warning(
-                    f"⚠️ Skipped non-textual file matched by --include: {path}"
-                )
+            self.non_textual_files.append(path)
+            if self.include_patterns and any(path.match(p) for p in self.include_patterns):
+                logger.warning(f"⚠️ Skipped non-textual file matched by --include: {path}")
             if self.verbose:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
             self.skipped_files.append((path, f"non-textual ({label})"))
