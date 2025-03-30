@@ -123,15 +123,10 @@ def print_skipped_files(skipped_files):
     reasons = defaultdict(list)
     for path, reason in skipped_files:
         reasons[reason].append(path)
+        logger.debug(f"⏭️ Skipped: {path} → {reason}")
 
     for reason, paths in reasons.items():
         console.print(f"[yellow]- {reason}[/yellow]: {len(paths)} files")
-        for p in paths[:5]:
-            console.print(f"  • {p}")
-            print(f"  • {p}", flush=True)
-        if len(paths) > 5:
-            console.print(f"  [dim]+ {len(paths) - 5} more...[/dim]")
-            print(f"  [dim]+ {len(paths) - 5} more...[/dim]", flush=True)
 
 
 def render_summary_table(
@@ -301,11 +296,15 @@ async def _process_one_repo(
         console.print(
             f"[green]✅ Scan complete for {repo_name}. {len(textual_files)} files processed.[/green]"
         )
-        console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
+        formats_display = list(output_formats)
+        if create_zip:
+            formats_display = "zip"
+
+        console.print(f"[blue]📦 Format(s):[/blue] {(formats_display)}")
         console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
+
         print_skipped_files(skipped_files)
 
     finally:
-        # ✅ DEFER cleanup until after everything is complete
         if is_remote:
             cleanup_temp_folder(Path(repo_path))
