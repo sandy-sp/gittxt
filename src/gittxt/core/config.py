@@ -3,7 +3,7 @@ import json
 import platform
 import os
 from dotenv import load_dotenv
-from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT, DEFAULT_FILETYPE_CONFIG
 import logging
 
 logger = logging.getLogger("gittxt.config")
@@ -33,11 +33,20 @@ class ConfigManager:
         else:
             return (home_dir / "Gittxt").resolve()
 
+    @classmethod
+    def update_filetype_config(cls, textual: list, non_textual: list):
+        config = cls.load_config()
+        config["textual_exts"] = textual
+        config["non_textual_exts"] = non_textual
+        cls.save_config_updates(config)
+
     DEFAULT_CONFIG = {
         "output_dir": str(_determine_default_output_dir.__func__()),
         "size_limit": None,
         # Consolidate all top-level excludes here; references constants.py if you like
         "exclude_dirs": EXCLUDED_DIRS_DEFAULT,
+        "textual_exts": DEFAULT_FILETYPE_CONFIG["textual_exts"],
+        "non_textual_exts": DEFAULT_FILETYPE_CONFIG["non_textual_exts"],
         "output_format": "txt",
         "logging_level": "WARNING",
         "log_format": "plain",
