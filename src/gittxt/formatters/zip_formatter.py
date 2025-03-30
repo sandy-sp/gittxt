@@ -69,8 +69,10 @@ class ZipFormatter:
                         target = assets_dir / rel
                         target.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy(asset, target)
-                        logger.info("✅ Included asset: {target}")
-                        logger.info("⚠️ Asset outside repo: {asset} -> stored as {target}")
+                        logger.info(f"✅ Included asset: {asset} → {target}")
+                    except ValueError:
+                        rel = Path("unknown") / asset.name
+                        logger.warning(f"⚠️ Asset outside repo path: {asset}")
                     except Exception as e:
                         print(f"⚠️ Failed to include asset: {asset} ({e})")
 
