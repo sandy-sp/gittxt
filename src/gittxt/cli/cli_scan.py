@@ -273,10 +273,10 @@ async def _process_one_repo(
             progress=True,
             use_ignore_file=sync,
         )
-        all_files = await scanner.scan_directory()
+        textual_files, non_textual_files = await scanner.scan_directory()
         skipped_files = scanner.skipped_files
 
-        if not all_files:
+        if not textual_files:
             console.print("[yellow]⚠️ No valid textual files found.[/yellow]")
             return
 
@@ -291,15 +291,15 @@ async def _process_one_repo(
         )
 
         await builder.generate_output(
-            all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
+            textual_files, non_textual_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
         )
 
         # Summary
-        summary_data = await generate_summary(all_files)
+        summary_data = await generate_summary(textual_files + non_textual_files)
         render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
         console.print()
         console.print(
-            f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]"
+            f"[green]✅ Scan complete for {repo_name}. {len(textual_files)} files processed.[/green]"
         )
         console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
         console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
