@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 from gittxt.utils.summary_utils import format_size_short
+from gittxt.core.logger import Logger
 
+logger = Logger.get_logger(__name__)
 
 class ZipFormatter:
     def __init__(
@@ -57,7 +59,7 @@ class ZipFormatter:
                 assets_dir.mkdir(parents=True, exist_ok=True)
                 for asset in self.non_textual_files:
                     if not asset.is_file():  # ✅ skip directories
-                        print(f"⚠️ Skipped non-file asset: {asset}")
+                        logger.warning(f"⚠️ Skipped non-file asset: {asset}")
                         continue
                     try:
                         try:
@@ -67,8 +69,8 @@ class ZipFormatter:
                         target = assets_dir / rel
                         target.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy(asset, target)
-                        print(f"✅ Included asset: {target}")
-                        print(f"⚠️ Asset outside repo: {asset} -> stored as {target}")
+                        logger.info("✅ Included asset: {target}")
+                        logger.info("⚠️ Asset outside repo: {asset} -> stored as {target}")
                     except Exception as e:
                         print(f"⚠️ Failed to include asset: {asset} ({e})")
 
