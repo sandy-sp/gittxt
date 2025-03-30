@@ -84,7 +84,7 @@ class Scanner:
                     raise
                 except Exception as e:
                     logger.error(f"❌ Error processing file {path}: {e}")
-                    self.skipped_files.append((path, f"processing error: {e}"))
+                    self._record_skip((path, f"processing error: {e}"))
 
         if self.progress and USE_RICH:
             with Progress(
@@ -112,10 +112,15 @@ class Scanner:
         await coro
         progress_bar.update(task_id, advance=1)
 
+    def _record_skip(self, path: Path, reason: str):
+        resolved = path.resolve()
+        if all(resolved != p.resolve() for p, _ in self.skipped_files):
+            self._record_skip((resolved, reason))
+
     async def _process_single(self, path: Path):
         ext = path.suffix.lower() if path.suffix else ""
         if not isinstance(ext, str):
-            self.skipped_files.append((path, "invalid extension"))
+            self._record_skip((path, "invalid extension"))
             return
 
         if not path.is_file():
@@ -126,13 +131,13 @@ class Scanner:
         if not pattern_utils.passes_all_filters(
             path, self.exclude_dirs, self.size_limit, self.verbose
         ):
-            self.skipped_files.append((path, "filtered by size or dir"))
+            self._record_skip((path, "filtered by size or dir"))
             return
 
         if self.exclude_patterns and any(path.match(p) for p in self.exclude_patterns):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by exclude pattern: {path}")
-            self.skipped_files.append((path, "exclude pattern"))
+            self._record_skip((path, "exclude pattern"))
             return
 
         if self.include_patterns and not any(
@@ -140,7 +145,7 @@ class Scanner:
         ):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by not matching include pattern: {path}")
-            self.skipped_files.append((path, "not in include patterns"))
+            self._record_skip((path, "not in include patterns"))
             return
 
         if label != "TEXTUAL":
@@ -149,7 +154,7 @@ class Scanner:
                 logger.warning(f"⚠️ Skipped non-textual file matched by --include: {path}")
             if self.verbose:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
-            self.skipped_files.append((path, f"non-textual ({label})"))
+            self._record_skip((path, f"non-textual ({label})"))
             return
 
         self.accepted_files.append(path)
