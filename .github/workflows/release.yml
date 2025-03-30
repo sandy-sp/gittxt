@@ -11,45 +11,53 @@ permissions:
 
 jobs:
   release:
-    name: 📦 Create GitHub Release
+    name: 📆 Create GitHub Release
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛎 Checkout repository
+      - name: 📣 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 📝 Read README for release notes
-        id: readme
-        run: echo "::set-output name=notes::$(sed ':a;N;$!ba;s/\n/%0A/g' README.md)"
+      - name: 🖍 Extract release notes from CHANGELOG.md
+        id: changelog
+        run: |
+          RELEASE_TAG="${GITHUB_REF##*/}"
+          echo "Detected tag: $RELEASE_TAG"
+          awk "/^## \[?$RELEASE_TAG\]?/ {flag=1; next} /^## / {flag=0} flag" CHANGELOG.md > excerpt.txt
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat excerpt.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: 🏗 Build Distribution (Poetry)
+      - name: 🏐 Set up Python & Poetry
         run: |
           python -m pip install --upgrade pip
           pip install poetry
-          poetry build
+
+      - name: 🏋️ Build Distribution
+        run: poetry build
 
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           name: "Release ${{ github.ref_name }}"
-          body: "${{ steps.readme.outputs.notes }}"
+          body: "${{ steps.changelog.outputs.notes }}"
           draft: false
           prerelease: false
-          files: "dist/*"  
+          files: "dist/*"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
-    name: 📦 Publish to PyPI
+    name: 📆 Publish to PyPI
     needs: release
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛎 Checkout repository
+      - name: 📣 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🐍 Set up Python & Poetry
+      - name: 🐳 Set up Python & Poetry
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
@@ -57,10 +65,10 @@ jobs:
       - name: 📦 Install Poetry
         run: pip install poetry
 
-      - name: 🏗 Build Distribution (Ensure Files Exist)
-        run: poetry build  
+      - name: 🏠 Build Distribution
+        run: poetry build
 
-      - name: 📦 Publish to PyPI
+      - name: 🌐 Publish to PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
         run: poetry publish --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
