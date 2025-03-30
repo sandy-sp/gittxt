@@ -95,6 +95,7 @@ class OutputBuilder:
                 repo_url=self.repo_url,
                 branch=self.branch,
                 subdir=self.subdir,
+                mode=self.mode
             )
 
             tasks.append(
