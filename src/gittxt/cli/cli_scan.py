@@ -244,68 +244,68 @@ async def _process_one_repo(
 ):
     # Decide local vs. remote
     handler = RepositoryHandler(repo_source, branch=branch)
-    await handler.resolve() 
+    await handler.resolve()
     repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
     scan_root = Path(repo_path)
     if subdir:
         scan_root = scan_root / subdir
 
-    # Optionally load .gittxtignore if --sync
-    dynamic_ignores = load_gittxtignore(scan_root) if sync else []
-    merged_exclude_dirs = list(
-        set(exclude_dirs) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT)
-    )
+    try:
+        # Optionally load .gittxtignore if --sync
+        dynamic_ignores = load_gittxtignore(scan_root) if sync else []
+        merged_exclude_dirs = list(
+            set(exclude_dirs) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT)
+        )
+        # Warn user if --include-patterns has known non-textual extensions
+        for pattern in include_patterns:
+            ext = Path(pattern).suffix.lower()
+            if ext and not FiletypeConfigManager.is_known_textual_ext(ext):
+                console.print(
+                    f"[yellow]⚠️ Warning: Include pattern '{pattern}' targets non-textual file types. These will be skipped.[/yellow]"
+                )
 
-    # Warn user if --include-patterns has known non-textual extensions
-    for pattern in include_patterns:
-        ext = Path(pattern).suffix.lower()
-        if ext and not FiletypeConfigManager.is_known_textual_ext(ext):
-            console.print(
-                f"[yellow]⚠️ Warning: Include pattern '{pattern}' targets non-textual file types. These will be skipped.[/yellow]"
-            )
+        scanner = Scanner(
+            root_path=scan_root,
+            exclude_dirs=merged_exclude_dirs,
+            size_limit=size_limit,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            progress=True,
+            use_ignore_file=sync,
+        )
+        all_files = await scanner.scan_directory()
+        skipped_files = scanner.skipped_files
 
-    scanner = Scanner(
-        root_path=scan_root,
-        exclude_dirs=merged_exclude_dirs,
-        size_limit=size_limit,
-        include_patterns=include_patterns,
-        exclude_patterns=exclude_patterns,
-        progress=True,
-        use_ignore_file=sync,
-    )
-    all_files = await scanner.scan_directory()
-    skipped_files = scanner.skipped_files
+        if not all_files:
+            console.print("[yellow]⚠️ No valid textual files found.[/yellow]")
+            return
 
-    if not all_files:
-        console.print("[yellow]⚠️ No valid textual files found.[/yellow]")
+        builder = OutputBuilder(
+            repo_name=repo_name,
+            output_dir=final_output_dir,
+            output_format=",".join(output_formats),
+            repo_url=repo_source if is_remote else None,
+            branch=used_branch,
+            subdir=subdir,
+            mode=mode,
+        )
+
+        await builder.generate_output(
+            all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
+        )
+
+        # Summary
+        summary_data = await generate_summary(all_files)
+        render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
+        console.print()
+        console.print(
+            f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]"
+        )
+        console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
+        console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
+        print_skipped_files(skipped_files)
+
+    finally:
+        # ✅ DEFER cleanup until after everything is complete
         if is_remote:
             cleanup_temp_folder(Path(repo_path))
-        return
-
-    builder = OutputBuilder(
-        repo_name=repo_name,
-        output_dir=final_output_dir,
-        output_format=",".join(output_formats),
-        repo_url=repo_source if is_remote else None,
-        branch=used_branch,
-        subdir=subdir,
-        mode=mode,
-    )
-
-    await builder.generate_output(
-        all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
-    )
-
-    # Summary Output
-    summary_data = await generate_summary(all_files)
-    render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
-    console.print()
-    console.print(
-        f"[green]✅ Scan complete for {repo_name}. {len(all_files)} files processed.[/green]"
-    )
-    console.print(f"[blue]📦 Format(s):[/blue] {', '.join(output_formats)}")
-    console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
-    print_skipped_files(skipped_files)
-
-    if is_remote:
-        cleanup_temp_folder(Path(repo_path))
