@@ -292,7 +292,7 @@ async def _process_one_repo(
     )
 
     await builder.generate_output(
-        all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth, mode=mode
+        all_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
     )
 
     # Summary Output
