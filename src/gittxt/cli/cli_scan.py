@@ -24,7 +24,6 @@ console = Console()
 
 @click.command(help="📦 Scan directories or GitHub repos (textual only).")
 @click.argument("repos", nargs=-1)
-@click.option("--sync", is_flag=True, default=False, help="Opt-in to .gitignore usage.")
 @click.option(
     "--exclude-dir", "-x", "exclude_dirs", multiple=True, help="Exclude folder paths."
 )
@@ -42,16 +41,23 @@ console = Console()
     "--include-patterns", "-i", multiple=True, help="Glob to include (only textual)."
 )
 @click.option("--exclude-patterns", "-e", multiple=True, help="Glob to exclude.")
+@click.option("--zip", "create_zip", is_flag=True, help="Create a ZIP bundle.")
+@click.option(
+    "--lite", is_flag=True, help="Generate minimal output instead of full content."
+)
+@click.option("--sync", is_flag=True, default=False, help="Opt-in to .gitignore usage.")
 @click.option("--size-limit", type=int, help="Max file size in bytes.")
 @click.option("--branch", type=str, help="Git branch for remote repos.")
 @click.option(
     "--tree-depth", type=int, default=None, help="Limit tree output to N levels."
 )
-@click.option("--debug", is_flag=True, help="Enable debug logging.")
-@click.option("--zip", "create_zip", is_flag=True, help="Create a ZIP bundle.")
 @click.option(
-    "--lite", is_flag=True, help="Generate minimal output instead of full content."
+    "--log-level",
+    type=click.Choice(["debug", "info", "warning", "error"], case_sensitive=False),
+    default="info",
+    help="Set log verbosity level.",
 )
+
 def scan(
     repos,
     sync,
@@ -67,9 +73,9 @@ def scan(
     exclude_patterns,
     lite,
 ):
-    if debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-        logger.debug("🔍 Debug mode enabled.")
+    log_level = getattr(logging, log_level.upper(), logging.INFO)
+    logging.getLogger().setLevel(log_level)
+    logger.debug(f"🔍 Logging level set to: {log_level}")
 
     if not repos:
         console.print("[bold red]❌ No repositories specified.[/bold red]")
