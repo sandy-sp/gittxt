@@ -244,6 +244,7 @@ async def _process_one_repo(
 ):
     # Decide local vs. remote
     handler = RepositoryHandler(repo_source, branch=branch)
+    await handler.resolve() 
     repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
     scan_root = Path(repo_path)
     if subdir:
