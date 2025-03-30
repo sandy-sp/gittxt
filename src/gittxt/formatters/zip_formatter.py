@@ -46,20 +46,23 @@ class ZipFormatter:
                             else f.name
                         )
                     except ValueError:
-                        arcname = f.name  # fallback to flat if outside output_dir
+                        arcname = f.name  # fallback if outside output_dir
                     target = outputs_dir / arcname
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy(f, target)
 
-            # === Copy Assets ===
+            # === Copy Assets (Non-Textual Files) ===
             if self.non_textual_files:
                 assets_dir = tempdir / "assets"
                 assets_dir.mkdir(parents=True, exist_ok=True)
                 for asset in self.non_textual_files:
-                    rel = asset.resolve().relative_to(self.repo_path)
-                    target = assets_dir / rel
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy(asset, target)
+                    try:
+                        rel = asset.resolve().relative_to(self.repo_path)
+                        target = assets_dir / rel
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy(asset, target)
+                    except Exception as e:
+                        print(f"⚠️ Failed to include asset: {asset} ({e})")
 
             # === Add Summary JSON ===
             summary_path = tempdir / "summary.json"
@@ -94,7 +97,8 @@ class ZipFormatter:
                 for f in self.output_files
             ],
             "non_textual_assets": [
-                str(f.relative_to(self.repo_path)) for f in self.non_textual_files
+                str(f.resolve().relative_to(self.repo_path))
+                for f in self.non_textual_files
             ],
         }
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
@@ -117,17 +121,19 @@ class ZipFormatter:
 
         for f in self.non_textual_files:
             if f.exists():
-                repo_root = Path(self.repo_path).resolve()
-                rel = f.resolve().relative_to(repo_root)
-                size = f.stat().st_size
-                entries.append(
-                    {
-                        "type": "asset",
-                        "path": str(rel),
-                        "size_bytes": size,
-                        "size_human": format_size_short(size),
-                    }
-                )
+                try:
+                    rel = f.resolve().relative_to(self.repo_path)
+                    size = f.stat().st_size
+                    entries.append(
+                        {
+                            "type": "asset",
+                            "path": str(rel),
+                            "size_bytes": size,
+                            "size_human": format_size_short(size),
+                        }
+                    )
+                except Exception:
+                    pass
 
         async with aiofiles.open(path, "w", encoding="utf-8") as f:
             await f.write(json.dumps(entries, indent=2))
