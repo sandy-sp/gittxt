@@ -23,6 +23,7 @@ class JSONFormatter:
         repo_url: str = None,
         branch: str = None,
         subdir: str = None,
+        mode: str = "rich",
     ):
         self.repo_name = repo_name
         self.output_dir = output_dir
@@ -32,10 +33,12 @@ class JSONFormatter:
         self.repo_url = repo_url
         self.branch = branch
         self.subdir = subdir
+        self.mode = mode
 
     async def generate(
-        self, text_files, non_textual_files, summary_data: dict, mode="rich"
+        self, text_files, non_textual_files, summary_data: dict
     ):
+        mode = self.mode
         output_file = self.output_dir / f"{self.repo_name}.json"
         ordered_files = sort_textual_files(text_files, base_path=self.repo_root)
 
