@@ -118,8 +118,7 @@ class Scanner:
             self.skipped_files.append((path, "invalid extension"))
             return
 
-        if not path.is_file():
-            return
+        label = filetype_utils.classify_file(path)
 
         if not pattern_utils.passes_all_filters(
             path, self.exclude_dirs, self.size_limit, self.verbose
