@@ -158,4 +158,4 @@ class MarkdownFormatter:
                 else:
                     await md.write("_No non-textual assets found._\n")
 
-            return output_file
+                return output_file

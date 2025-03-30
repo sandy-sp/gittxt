@@ -98,7 +98,7 @@ class TextFormatter:
                     )
 
                     await txt_file.write(
-                        f"\n---\nFILE: {rel_path} | TYPE: {subcat} | SIZE: {size_fmt} | TOKENS: {tokens_fmt}\n---\n"
+                        f"\n\n---> FILE: {rel_path} | TYPE: {subcat} | SIZE: {size_fmt} | TOKENS: {tokens_fmt} <---\n"
                     )
                     await txt_file.write(f"{raw.strip()}\n")
 
@@ -112,10 +112,10 @@ class TextFormatter:
                         )
                         size_fmt = format_size_short(asset.stat().st_size)
                         await txt_file.write(
-                            f"{rel_path} | TYPE: {subcat} | SIZE: {size_fmt}"
+                            f"FILE: {rel_path} | TYPE: {subcat} | SIZE: {size_fmt}"
                         )
                         if asset_url:
                             await txt_file.write(f" | {asset_url}")
                         await txt_file.write("\n")
 
-            return output_file
+                return output_file

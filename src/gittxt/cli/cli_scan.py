@@ -289,6 +289,7 @@ async def _process_one_repo(
         repo_url=repo_source if is_remote else None,
         branch=used_branch,
         subdir=subdir,
+        mode=mode,
     )
 
     await builder.generate_output(

@@ -31,7 +31,7 @@ class OutputBuilder:
         repo_url=None,
         branch=None,
         subdir=None,
-        mode="rich",
+        mode="rich"
     ):
         self.repo_name = repo_name
         self.repo_url = repo_url or ""
@@ -95,6 +95,7 @@ class OutputBuilder:
                 repo_url=self.repo_url,
                 branch=self.branch,
                 subdir=self.subdir,
+                mode=self.mode
             )
 
             tasks.append(
