@@ -3,35 +3,27 @@ import mimetypes
 from gittxt.core.logger import Logger
 import json
 from gittxt.core.constants import DEFAULT_FILETYPE_CONFIG
+from gittxt.core.config import ConfigManager
 
 logger = Logger.get_logger(__name__)
 
 
 class FiletypeConfigManager:
-    CONFIG_FILE = Path(__file__).parent.parent / "config" / "filetype_config.json"
 
     @classmethod
     def load_config(cls) -> dict:
-        if cls.CONFIG_FILE.exists():
-            try:
-                with cls.CONFIG_FILE.open("r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.warning(
-                    f"⚠️ Could not load filetype config: {e}. Using defaults."
-                )
-                return DEFAULT_FILETYPE_CONFIG.copy()
-        else:
-            return DEFAULT_FILETYPE_CONFIG.copy()
+        config = ConfigManager.load_config()
+        return {
+            "textual_exts": config.get("textual_exts", []),
+            "non_textual_exts": config.get("non_textual_exts", []),
+        }
 
     @classmethod
     def save_config(cls, data: dict):
-        try:
-            cls.CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with cls.CONFIG_FILE.open("w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-        except Exception as e:
-            logger.error(f"❌ Failed to update filetype config: {e}")
+        ConfigManager.update_filetype_config(
+            textual=data.get("textual_exts", []),
+            non_textual=data.get("non_textual_exts", []),
+        )
 
     @classmethod
     def add_textual_ext(cls, ext: str) -> bool:
