@@ -10,7 +10,7 @@ OUTPUT_DIR = Path("tests/test_outputs_lite")
 @pytest.mark.asyncio
 async def test_lite_output_formatting():
     scanner = Scanner(root_path=TEST_REPO)
-    all_files = await scanner.scan_directory()
+    textual_files, non_textual_files = await scanner.scan_directory()
 
     builder = OutputBuilder(
         repo_name="test_repo",
@@ -22,7 +22,10 @@ async def test_lite_output_formatting():
         mode="lite",
     )
 
-    outputs = await builder.generate_output(all_files, repo_path=TEST_REPO)
+    outputs = await builder.generate_output(
+        textual_files, non_textual_files, repo_path=TEST_REPO
+    )
+    assert outputs
 
     for out in outputs:
         assert out.exists(), f"Expected output file not found: {out}"
