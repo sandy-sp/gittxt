@@ -68,13 +68,6 @@ def remove_filter(filter_type, values):
         console.print(f"[dim]⏭️ Not found in {filter_type}: {', '.join(sorted(skipped))}[/dim]")
 
 @filters.command("clear", help="🗑️ Clear all filters in all categories.")
-@click.option("--force", is_flag=True, help="Force clear without prompt.")
-def clear_filters(force):
-    if not force:
-        confirm = input("⚠️ This will clear all filters. Proceed? (y/n): ").strip().lower()
-        if confirm != "y":
-            console.print("[green]❎ Aborted[/green]")
-            return
-    for key in FILTER_KEYS:
-        ConfigManager.update_filter_list(key, [])
-    console.print("[yellow]⚠️ All filters cleared[/yellow]")
+def clear_filters():
+    ConfigManager.clear_all_filters()
+    console.print("[yellow]✅ All filters cleared.[/yellow]")

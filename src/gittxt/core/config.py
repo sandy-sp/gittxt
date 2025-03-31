@@ -144,3 +144,12 @@ class ConfigManager:
         config = cls.load_config()
         config["filters"][filter_key] = sorted(set(values))
         cls.save_config_updates(config)
+
+    @staticmethod
+    def clear_all_filters():
+        config = ConfigManager.load_config()
+        config["filters"]["textual_exts"] = []
+        config["filters"]["non_textual_exts"] = []
+        config["filters"]["excluded_dirs"] = []
+        ConfigManager.save_config_updates(config)
+        logger.info("✅ Cleared all filters.")
