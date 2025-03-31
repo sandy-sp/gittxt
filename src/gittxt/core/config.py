@@ -44,9 +44,11 @@ class ConfigManager:
         "output_dir": str(_determine_default_output_dir.__func__()),
         "size_limit": None,
         # Consolidate all top-level excludes here; references constants.py if you like
-        "exclude_dirs": EXCLUDED_DIRS_DEFAULT,
-        "textual_exts": DEFAULT_FILETYPE_CONFIG["textual_exts"],
-        "non_textual_exts": DEFAULT_FILETYPE_CONFIG["non_textual_exts"],
+        "filters": {
+            "exclude_dirs": EXCLUDED_DIRS_DEFAULT,
+            "textual_exts": DEFAULT_FILETYPE_CONFIG["textual_exts"],
+            "non_textual_exts": DEFAULT_FILETYPE_CONFIG["non_textual_exts"]
+        },
         "output_format": "txt",
         "logging_level": "WARNING",
         "log_format": "plain",
@@ -126,3 +128,13 @@ class ConfigManager:
             logger.info(f"✅ Configuration updated in {cls.CONFIG_FILE}")
         except Exception as e:
             logger.error(f"❌ Failed to update configuration file: {e}")
+
+    @classmethod
+    def get_filter_list(cls, filter_key: str) -> list:
+        return cls.load_config()["filters"].get(filter_key, [])
+
+    @classmethod
+    def update_filter_list(cls, filter_key: str, values: list):
+        config = cls.load_config()
+        config["filters"][filter_key] = sorted(set(values))
+        cls.save_config_updates(config)
