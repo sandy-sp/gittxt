@@ -1,16 +1,17 @@
 import shutil
 from pathlib import Path
 from gittxt.core.constants import OUTPUT_SUBDIRS
+from gittxt.core.logger import Logger
 
+logger = Logger.get_logger(__name__)
 
 def delete_directory(path: Path) -> None:
-    """
-    Recursively delete a directory.
-    """
     if path.exists() and path.is_dir():
-        shutil.rmtree(path)
-        print(f"🗑️ Deleted directory: {path}")
-
+        try:
+            shutil.rmtree(path)
+            logger.info(f"🗑️ Deleted directory: {path}")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to delete {path}: {e}")
 
 def cleanup_temp_folder(temp_dir: Path) -> None:
     """
