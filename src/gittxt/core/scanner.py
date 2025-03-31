@@ -65,6 +65,8 @@ class Scanner:
         """
         Async-friendly method to gather textual files under root_path,
         skipping excluded directories and large files.
+        Returns:
+        Tuple[List[Path], List[Path]]: Accepted textual files and non-textual files
         """
         all_items = [
             p
@@ -115,7 +117,7 @@ class Scanner:
     def _record_skip(self, path: Path, reason: str):
         resolved = path.resolve()
         if all(resolved != p.resolve() for p, _ in self.skipped_files):
-            self._record_skip((resolved, reason))
+            self.skipped_files.append((resolved, reason)) 
 
     async def _process_single(self, path: Path):
         ext = path.suffix.lower() if path.suffix else ""
