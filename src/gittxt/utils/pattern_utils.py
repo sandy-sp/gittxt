@@ -43,6 +43,7 @@ def passes_all_filters(
         if verbose:
             logger.debug(f"🛑 Skipped (size {size} > limit {size_limit}): {file_path}")
         return False
+    return True
 
 
 def should_skip_dir(dirname: str, user_excludes: list = []) -> bool:
