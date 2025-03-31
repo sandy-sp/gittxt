@@ -1,32 +1,41 @@
 from pathlib import Path
 from pygments.lexers import get_lexer_for_filename
 from pygments.util import ClassNotFound
-from .subcat_utils import _detect_textual_subcat
+from .subcat_utils import detect_subcategory
 from gittxt.core.logger import Logger
+from gittxt.utils.filetype_utils import classify_simple
 
 logger = Logger.get_logger(__name__)
 
-def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
+
+async def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
     """
-    Smart sort:
+    Smart async sort:
     1. README files first
     2. Then grouped by subcategory (docs, code, config, etc.)
     3. Then by detected language
     4. Then by relative path
     """
 
+    # === Step 1: Async subcategory detection ===
+    subcats = {}
+    for f in files:
+        primary, _ = classify_simple(f)
+        subcats[f] = await detect_subcategory(f, primary)
+
+    # === Step 2: Sort with sync logic ===
     def sort_key(file: Path):
         try:
             rel_path = file.relative_to(base_path) if base_path else file
         except ValueError:
             rel_path = file.resolve()
+
         name = file.name.lower()
-        # README.md first
         readme_names = {"readme", "readme.md", "readme.txt", "readme.rst"}
         if name in readme_names:
             return (0, "", "", rel_path.as_posix().lower())
 
-        subcat = _detect_textual_subcat(file)
+        subcat = subcats.get(file, "other")
         lang = detect_language(file)
 
         return (1, subcat, lang, rel_path.as_posix().lower())
