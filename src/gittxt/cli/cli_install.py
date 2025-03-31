@@ -1,18 +1,18 @@
 import click
 from rich.console import Console
 from pathlib import Path
-from gittxt.core.logger import Logger
 from gittxt.utils.cleanup_utils import cleanup_old_outputs
 from gittxt.utils.install_utils import run_interactive_install
 from .cli_utils import config
 
-logger = Logger.get_logger(__name__)
 console = Console()
-
 
 @click.command(help="⚙️  Run the interactive installer to configure Gittxt.")
 def install():
-    run_interactive_install()
+    try:
+        run_interactive_install()
+    except KeyboardInterrupt:
+        console.print("[yellow]⚠️ Installation aborted by user[/yellow]")
 
 
 @click.command(help="🔄 Remove previous scan outputs (including text/json/md/zips).")
@@ -25,3 +25,6 @@ def clean(output_dir):
     )
     cleanup_old_outputs(target_dir)
     console.print(f"[bold green]Cleaned output directory: {target_dir}")
+    if not target_dir.exists():
+        console.print(f"[red]❌ Output directory does not exist: {target_dir}[/red]")
+        return
