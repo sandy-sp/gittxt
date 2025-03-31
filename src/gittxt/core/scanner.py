@@ -1,19 +1,6 @@
 import asyncio
 from pathlib import Path
 from typing import List, Optional
-
-try:
-    from rich.progress import (
-        Progress,
-        SpinnerColumn,
-        TextColumn,
-        BarColumn,
-        TimeElapsedColumn,
-    )
-
-    USE_RICH = True
-except ImportError:
-    USE_RICH = False
 from gittxt.utils import pattern_utils
 from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
@@ -88,31 +75,8 @@ class Scanner:
                     logger.error(f"❌ Error processing file {path}: {e}")
                     self._record_skip(path, f"processing error: ({e})")
 
-        if self.progress and USE_RICH:
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TimeElapsedColumn(),
-                transient=True,
-            ) as progress_bar:
-                task_id = progress_bar.add_task(
-                    "Scanning repository files...", total=len(all_items)
-                )
-                wrapped = [
-                    self._with_progress(process_path(p), progress_bar, task_id)
-                    for p in all_items
-                ]
-                await asyncio.gather(*wrapped)
-        else:
-            logger.info("⏳ Scanning files... (no rich progress available)")
-            await asyncio.gather(*[process_path(p) for p in all_items])
-
+        await asyncio.gather(*[process_path(p) for p in all_items])
         return self.accepted_files, self.non_textual_files
-
-    async def _with_progress(self, coro, progress_bar, task_id):
-        await coro
-        progress_bar.update(task_id, advance=1)
 
     def _record_skip(self, path: Path, reason: str):
         resolved = path.resolve()
