@@ -39,8 +39,11 @@ def add_filter(filter_type, values):
     current = set(ConfigManager.get_filter_list(filter_type))
     if filter_type == "textual_exts":
         non_textual = set(ConfigManager.get_filter_list("non_textual_exts"))
+        removed = non_textual.intersection(values)
         non_textual.difference_update(values)
         ConfigManager.update_filter_list("non_textual_exts", list(non_textual))
+        if removed:
+            console.print(f"[yellow]⚠️ Removed from non_textual_exts: {', '.join(sorted(removed))}[/yellow]")
     elif filter_type == "non_textual_exts":
         textual = set(ConfigManager.get_filter_list("textual_exts"))
         conflict = textual.intersection(values)
@@ -60,9 +63,18 @@ def remove_filter(filter_type, values):
     current.difference_update(values)
     ConfigManager.update_filter_list(filter_type, list(current))
     console.print(f"[green]✅ Removed from {filter_type}[/green]")
+    skipped = set(values) - current
+    if skipped:
+        console.print(f"[dim]⏭️ Not found in {filter_type}: {', '.join(sorted(skipped))}[/dim]")
 
 @filters.command("clear", help="🗑️ Clear all filters in all categories.")
-def clear_filters():
+@click.option("--force", is_flag=True, help="Force clear without prompt.")
+def clear_filters(force):
+    if not force:
+        confirm = input("⚠️ This will clear all filters. Proceed? (y/n): ").strip().lower()
+        if confirm != "y":
+            console.print("[green]❎ Aborted[/green]")
+            return
     for key in FILTER_KEYS:
         ConfigManager.update_filter_list(key, [])
     console.print("[yellow]⚠️ All filters cleared[/yellow]")
