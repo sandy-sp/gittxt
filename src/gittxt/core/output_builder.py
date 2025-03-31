@@ -107,7 +107,6 @@ class OutputBuilder:
                 logger.info(f"📄 Output generated: {result}")
 
         if create_zip:
-            # === ALWAYS generate all 3 formats for ZIP ===
             full_output_files = []
             for fmt in self.output_formats:
                 FormatterClass = self.FORMATTERS[fmt]

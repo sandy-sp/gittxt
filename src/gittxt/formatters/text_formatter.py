@@ -92,7 +92,7 @@ class TextFormatter:
                 await txt_file.write("=== 📝 Extracted Textual Files ===\n")
                 for text_file in ordered_files:
                     rel_path = text_file.resolve().relative_to(self.repo_root)
-                    subcat = detect_subcategory(text_file, "TEXTUAL")
+                    subcat = await detect_subcategory(text_file, "TEXTUAL")
                     asset_url = build_github_url(
                         self.repo_url, rel_path, self.branch, self.subdir
                     )
@@ -111,7 +111,7 @@ class TextFormatter:
                     await txt_file.write("\n=== 🎨 Non-Textual Assets ===\n")
                     for asset in non_textual_files:
                         rel_path = asset.resolve().relative_to(self.repo_root)
-                        subcat = detect_subcategory(asset, "NON-TEXTUAL")
+                        subcat = await detect_subcategory(asset, "NON-TEXTUAL")
                         asset_url = build_github_url(
                             self.repo_url, rel_path, self.branch, self.subdir
                         )
