@@ -123,7 +123,7 @@ class MarkdownFormatter:
                 await md.write("## 📝 Extracted Textual Files\n")
                 for file in ordered_files:
                     rel = file.resolve().relative_to(self.repo_root)
-                    subcat = detect_subcategory(file, "TEXTUAL")
+                    subcat = await detect_subcategory(file, "TEXTUAL")
                     file_url = build_github_url(
                         self.repo_url, rel, self.branch, self.subdir
                     )
@@ -148,7 +148,7 @@ class MarkdownFormatter:
                 if non_textual_files:
                     for asset in non_textual_files:
                         rel = asset.resolve().relative_to(self.repo_root)
-                        subcat = detect_subcategory(asset, "NON-TEXTUAL")
+                        subcat = await detect_subcategory(asset, "NON-TEXTUAL")
                         size = format_size_short(asset.stat().st_size)
                         asset_url = (
                             build_github_url(self.repo_url, rel, self.branch, self.subdir)

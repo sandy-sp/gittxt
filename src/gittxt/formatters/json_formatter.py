@@ -74,7 +74,7 @@ class JSONFormatter:
             files_section = []
             for text_file in ordered_files:
                 rel_path = text_file.resolve().relative_to(self.repo_root)
-                subcat = detect_subcategory(text_file, "TEXTUAL")
+                subcat = await detect_subcategory(text_file, "TEXTUAL")
                 file_url = (
                     build_github_url(self.repo_url, rel_path, self.branch, self.subdir)
                     if self.repo_url
@@ -103,7 +103,7 @@ class JSONFormatter:
             assets_section = []
             for asset in non_textual_files:
                 rel_path = asset.resolve().relative_to(self.repo_root)
-                subcat = detect_subcategory(asset, "NON-TEXTUAL")
+                subcat = await detect_subcategory(asset, "NON-TEXTUAL")
                 asset_url = (
                     build_github_url(self.repo_url, rel_path, self.branch, self.subdir)
                     if self.repo_url
