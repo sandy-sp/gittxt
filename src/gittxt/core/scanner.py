@@ -117,7 +117,7 @@ class Scanner:
     def _record_skip(self, path: Path, reason: str):
         resolved = path.resolve()
         if all(resolved != p.resolve() for p, _ in self.skipped_files):
-            self.skipped_files.append((resolved, reason)) 
+            self.skipped_files.append((resolved, reason))
 
     async def _process_single(self, path: Path):
         ext = path.suffix.lower() if path.suffix else ""
