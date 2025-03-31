@@ -16,6 +16,7 @@ from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from .cli_utils import config
 from rich.table import Table
 from rich import box
+from rich.status import Status
 from collections import defaultdict
 
 logger = Logger.get_logger(__name__)
@@ -246,7 +247,8 @@ async def _process_one_repo(
 ):
     # Decide local vs. remote
     handler = RepositoryHandler(repo_source, branch=branch)
-    await handler.resolve()
+    with Status("[bold cyan]🔄 Cloning / resolving repo...[/bold cyan]", console=console):
+        await handler.resolve()
     repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
     scan_root = Path(repo_path)
     if subdir:
@@ -275,7 +277,8 @@ async def _process_one_repo(
             progress=True,
             use_ignore_file=sync,
         )
-        textual_files, non_textual_files = await scanner.scan_directory()
+        with Status("[bold cyan]🔍 Scanning repository...[/bold cyan]", console=console):
+            textual_files, non_textual_files = await scanner.scan_directory()
         skipped_files = scanner.skipped_files
 
         if not textual_files:
@@ -291,13 +294,14 @@ async def _process_one_repo(
             subdir=subdir,
             mode=mode,
         )
-
-        await builder.generate_output(
-            textual_files, non_textual_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
-        )
+        with Status("[bold cyan]🧩 Formatting output...[/bold cyan]", console=console):
+            await builder.generate_output(
+                textual_files, non_textual_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
+            )
 
         # Summary
-        summary_data = await generate_summary(textual_files + non_textual_files)
+        with Status("[bold cyan]📊 Generating summary...[/bold cyan]", console=console):
+            summary_data = await generate_summary(textual_files + non_textual_files)
         render_summary_table(summary_data, repo_name, branch=used_branch, subdir=subdir)
         console.print()
         console.print(
