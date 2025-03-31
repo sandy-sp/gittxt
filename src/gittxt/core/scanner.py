@@ -86,7 +86,7 @@ class Scanner:
                     raise
                 except Exception as e:
                     logger.error(f"❌ Error processing file {path}: {e}")
-                    self._record_skip((path, f"processing error: {e}"))
+                    self._record_skip(path, f"processing error: ({e})")
 
         if self.progress and USE_RICH:
             with Progress(
@@ -122,7 +122,7 @@ class Scanner:
     async def _process_single(self, path: Path):
         ext = path.suffix.lower() if path.suffix else ""
         if not isinstance(ext, str):
-            self._record_skip((path, "invalid extension"))
+            self._record_skip(path, f"invalid extension")
             return
 
         if not path.is_file():
@@ -133,13 +133,13 @@ class Scanner:
         if not pattern_utils.passes_all_filters(
             path, self.exclude_dirs, self.size_limit, self.verbose
         ):
-            self._record_skip((path, "filtered by size or dir"))
+            self._record_skip(path, f"filtered by size or dir")
             return
 
         if self.exclude_patterns and any(path.match(p) for p in self.exclude_patterns):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by exclude pattern: {path}")
-            self._record_skip((path, "exclude pattern"))
+            self._record_skip(path, f"exclude pattern")
             return
 
         if self.include_patterns and not any(
@@ -147,7 +147,7 @@ class Scanner:
         ):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by not matching include pattern: {path}")
-            self._record_skip((path, "not in include patterns"))
+            self._record_skip(path, f"not in include patterns")
             return
 
         if label != "TEXTUAL":
@@ -156,7 +156,7 @@ class Scanner:
                 logger.warning(f"⚠️ Skipped non-textual file matched by --include: {path}")
             if self.verbose:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
-            self._record_skip((path, f"non-textual ({label})"))
+            self._record_skip(path, f"non-textual ({label})")
             return
 
         self.accepted_files.append(path)
