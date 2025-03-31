@@ -74,6 +74,7 @@ def scan(
     lite,
 ):
     log_level = getattr(logging, log_level.upper(), logging.INFO)
+    Logger.setup_logger(force_stdout=True)
     logging.getLogger().setLevel(log_level)
     logger.debug(f"🔍 Logging level set to: {log_level}")
 
@@ -302,11 +303,13 @@ async def _process_one_repo(
         console.print(
             f"[green]✅ Scan complete for {repo_name}. {len(textual_files)} files processed.[/green]"
         )
-        formats_display = list(output_formats)
-        if create_zip:
-            formats_display = "zip"
 
-        console.print(f"[blue]📦 Format(s):[/blue] {(formats_display)}")
+        if create_zip:
+            formats_display = ["zip"]
+        else:
+            formats_display = sorted(output_formats)
+
+        console.print(f"[blue]📦 Format(s):[/blue] {', '.join(formats_display)}")
         console.print(f"[blue]📁 Output directory:[/blue] {final_output_dir.resolve()}")
 
         print_skipped_files(skipped_files)
