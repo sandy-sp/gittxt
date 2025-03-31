@@ -40,7 +40,7 @@ class TextFormatter:
     ):
         mode = self.mode
         output_file = self.output_dir / f"{self.repo_name}.txt"
-        ordered_files = await sort_textual_files(text_files, base_path=self.repo_root)
+        ordered_files = sort_textual_files(text_files, base_path=self.repo_root)
 
         async with aiofiles.open(output_file, "w", encoding="utf-8") as txt_file:
             if mode == "lite":
