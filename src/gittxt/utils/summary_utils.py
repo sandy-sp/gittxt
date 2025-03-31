@@ -5,6 +5,8 @@ import humanize
 import tiktoken
 from gittxt.utils.filetype_utils import classify_simple
 from gittxt.utils.subcat_utils import detect_subcategory
+from gittxt.core.logger import Logger
+logger = Logger.get_logger(__name__)
 
 
 def format_number_short(n: int) -> str:
@@ -42,8 +44,10 @@ async def estimate_tokens_from_file(
             encoding = tiktoken.get_encoding(encoding_name)
             return len(encoding.encode(content))
         except Exception:
-            return int(len(content) / 4) if use_fallback else 0
-    except Exception:
+            if use_fallback:
+                return int(len(content.split()))
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to estimate tokens for {file.name}: {e}")
         return 0
 
 
@@ -51,13 +55,13 @@ async def generate_summary(
     file_paths: List[Path], estimate_tokens: bool = True
 ) -> Dict:
     """
-    Return a summary dict with:
-      - total_files
-      - total_size (raw bytes)
-      - file_type_breakdown
-      - estimated_tokens (raw int)
-      - tokens_by_type (raw ints per subcat)
-      - formatted (human-readable versions for display)
+    Returns a dictionary containing:
+    - total_files: Count of scanned files
+    - total_size: Cumulative byte size of all files
+    - estimated_tokens: Raw token count for TEXTUAL files
+    - file_type_breakdown: {subcat: count}
+    - tokens_by_type: {subcat: raw token count}
+    - formatted: Human-friendly summary of size and tokens
     """
     summary = {
         "total_files": len(file_paths),
