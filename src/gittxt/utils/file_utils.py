@@ -1,11 +1,11 @@
 from pathlib import Path
 import aiofiles
 from gittxt.core.logger import Logger
+from typing import Optional
 
 logger = Logger.get_logger(__name__)
 
-
-async def async_read_text(file_path: Path) -> str:
+async def async_read_text(file_path: Path) -> Optional[str]:
     """
     Asynchronously read a file as text (UTF-8, ignoring errors).
     """
@@ -18,13 +18,12 @@ async def async_read_text(file_path: Path) -> str:
         logger.warning(f"⚠️ Failed to read file {file_path}: {e}")
         return None
 
-
 def load_gittxtignore(repo_path: Path) -> list:
-    """
-    Load .gittxtignore patterns from a repository root, returning them as a list.
-    """
     ignore_file = repo_path / ".gittxtignore"
     if ignore_file.exists():
-        patterns = ignore_file.read_text(encoding="utf-8").splitlines()
-        return [p.strip() for p in patterns if p.strip() and not p.startswith("#")]
+        try:
+            patterns = ignore_file.read_text(encoding="utf-8").splitlines()
+            return [p.strip() for p in patterns if p.strip() and not p.startswith("#")]
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to load .gittxtignore: {e}")
     return []
