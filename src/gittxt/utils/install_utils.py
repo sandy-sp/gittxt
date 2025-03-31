@@ -3,7 +3,7 @@ from pathlib import Path
 from gittxt.core.config import ConfigManager
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
-DEFAULT_OUTPUT_DIR = str(ConfigManager._determine_default_output_dir.__func__())
+DEFAULT_OUTPUT_DIR = Path("gittxt-output").resolve()
 DEFAULT_OUTPUT_FORMAT = "txt"
 
 def run_interactive_install():
@@ -28,8 +28,8 @@ def run_interactive_install():
     # === Logging Level ===
     current_level = config.get("logging_level", "info")
     logging_level = click.prompt(
-        "🔊 Logging level (debug/info/warning/error)",
-        type=click.Choice(["debug", "info", "warning", "error"]),
+        "🔊 Logging level (DEBUG/INFO/WARNING/ERROR)",
+        type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"], case_sensitive=False),
         default=current_level,
     )
     config["logging_level"] = logging_level
