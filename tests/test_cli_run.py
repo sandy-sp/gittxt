@@ -1,4 +1,7 @@
+import zipfile
 import subprocess
+import tempfile
+import shutil
 from pathlib import Path
 
 TEST_REPO = Path("tests/test_repo")
@@ -48,3 +51,38 @@ def test_cli_scan_lite_zip():
     assert any(
         f.name.endswith(".json") for f in json_files
     ), "Expected .json output missing"
+
+def test_zip_bundle_contains_expected_files():
+    # Setup temp output directory
+    with tempfile.TemporaryDirectory() as temp_out:
+        repo_url = "https://github.com/cyclotruc/gitingest"
+        output_dir = Path(temp_out)
+
+        # Run the CLI with --zip
+        result = subprocess.run(
+            [
+                "gittxt",
+                "scan",
+                repo_url,
+                "--zip",
+                "--output-dir",
+                str(output_dir),
+                "--output-format",
+                "txt"
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode == 0, f"Failed: {result.stderr}"
+
+        # Locate ZIP
+        zip_files = list(output_dir.glob("*.zip"))
+        assert zip_files, "No ZIP file created"
+        zip_path = zip_files[0]
+
+        with zipfile.ZipFile(zip_path, "r") as z:
+            names = z.namelist()
+            assert any("manifest.json" in f for f in names), "Missing manifest.json"
+            assert any("summary.json" in f or "README.md" in f for f in names), "Missing summary or README"
+            assert any("output.txt" in f for f in names), "Missing output.txt"
