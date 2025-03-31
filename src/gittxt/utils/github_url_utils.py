@@ -13,32 +13,38 @@ def build_github_url(
     if not repo_url or not rel_path:
         return ""
 
-    # Normalize SSH to HTTPS
+    # Normalize SSH → HTTPS
     repo_url = repo_url.replace("git@github.com:", "https://github.com/")
     repo_url = repo_url.replace(".git", "")
     repo_url = repo_url.rstrip("/")
 
-    # Extract base URL (no /tree/ or /blob/)
-    if "/tree/" in repo_url:
-        repo_url = repo_url.split("/tree/")[0]
-    elif "/blob/" in repo_url:
-        repo_url = repo_url.split("/blob/")[0]
+    # Remove tree/blob segments
+    repo_url = re.sub(r"/(tree|blob)/[^/]+.*$", "", repo_url)
 
     rel = rel_path.as_posix()
-    subdir_path = f"{subdir.strip('/')}/" if subdir else ""
+    if subdir:
+        # Prevent double subdir (e.g. subdir/subdir/file)
+        try:
+            rel = Path(rel_path).relative_to(subdir).as_posix()
+        except ValueError:
+            rel = rel_path.as_posix()
+        subdir_path = f"{subdir.strip('/')}/"
+    else:
+        subdir_path = ""
 
     return f"{repo_url}/blob/{branch}/{subdir_path}{rel}"
 
 
 def build_github_repo_url(repo_url: str) -> str:
     """
-    Used for repo-level URL in the ZIP readme or summary references (no /blob/).
+    Builds the repo-level URL (no /blob/) to use in ZIP summaries, etc.
     """
     if not repo_url:
         return ""
 
     repo_url = repo_url.replace("git@github.com:", "https://github.com/")
-    repo_url = repo_url.replace(".git", "")
+    repo_url = repo_url.replace(".git", "").rstrip("/")
+
     parsed = urlparse(repo_url)
     path_parts = parsed.path.strip("/").split("/")
 
@@ -46,12 +52,15 @@ def build_github_repo_url(repo_url: str) -> str:
         return ""
 
     owner, repo = path_parts[:2]
-    subdir = "/".join(path_parts[3:]) if "tree" in path_parts else ""
     branch = "main"
+    subdir = ""
 
     tree_match = re.search(r"/tree/([^/]+)", parsed.path)
     if tree_match:
         branch = tree_match.group(1)
+        remaining = parsed.path.split(f"/tree/{branch}/")
+        if len(remaining) > 1:
+            subdir = remaining[1].strip("/")
 
     base_url = f"https://github.com/{owner}/{repo}/tree/{branch}"
     if subdir:
