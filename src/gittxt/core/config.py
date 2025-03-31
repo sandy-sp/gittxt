@@ -50,7 +50,7 @@ class ConfigManager:
             "non_textual_exts": DEFAULT_FILETYPE_CONFIG["non_textual_exts"]
         },
         "output_format": "txt",
-        "logging_level": "WARNING",
+        "logging_level": "warning",
         "log_format": "plain",
         "auto_zip": False,
         # If you want to store tree excludes separately:
