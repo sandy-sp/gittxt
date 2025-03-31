@@ -1,10 +1,18 @@
 import click
 from pathlib import Path
 from gittxt.core.config import ConfigManager
-from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT, DEFAULT_FILETYPE_CONFIG
 
 DEFAULT_OUTPUT_DIR = Path("gittxt-output").resolve()
 DEFAULT_OUTPUT_FORMAT = "txt"
+
+
+def normalize_extensions(exts):
+    """
+    Ensure all extensions begin with a '.' and are lowercase.
+    """
+    return sorted({f".{ext.strip().lstrip('.').lower()}" for ext in exts if ext.strip()})
+
 
 def run_interactive_install():
     click.echo("🛠️ Welcome to the Gittxt Installer!")
@@ -45,22 +53,22 @@ def run_interactive_install():
 
     if click.confirm("🧩 Configure file filters (extensions/folders)?", default=True):
         # --- Textual Extensions ---
-        current_textual = filters.get("textual_exts", [".py", ".md", ".txt", ".json", ".yaml", ".yml", ".csv", ".html"])
+        current_textual = filters.get("textual_exts", DEFAULT_FILETYPE_CONFIG["textual_exts"])
         click.echo(f"🔠 Current textual extensions: {', '.join(current_textual)}")
         new_textual = click.prompt(
             "Enter textual extensions (comma-separated)",
             default=",".join(current_textual),
         )
-        filters["textual_exts"] = sorted({ext.strip() for ext in new_textual.split(",") if ext.strip()})
+        filters["textual_exts"] = normalize_extensions(new_textual.split(","))
 
         # --- Non-Textual Extensions ---
-        current_nontextual = filters.get("non_textual_exts", [".zip", ".bin", ".exe", ".docx", ".pdf", ".xls"])
+        current_nontextual = filters.get("non_textual_exts", DEFAULT_FILETYPE_CONFIG["non_textual_exts"])
         click.echo(f"🚫 Current non-textual extensions: {', '.join(current_nontextual)}")
         new_non = click.prompt(
             "Enter non-textual extensions (comma-separated)",
             default=",".join(current_nontextual),
         )
-        filters["non_textual_exts"] = sorted({ext.strip() for ext in new_non.split(",") if ext.strip()})
+        filters["non_textual_exts"] = normalize_extensions(new_non.split(","))
 
         # --- Excluded Dirs ---
         current_excluded = filters.get("excluded_dirs", EXCLUDED_DIRS_DEFAULT)
@@ -72,5 +80,9 @@ def run_interactive_install():
         filters["excluded_dirs"] = sorted({d.strip() for d in new_dirs.split(",") if d.strip()})
 
     # Save final config
-    ConfigManager.save_config_updates(config)
-    click.echo("✅ Configuration saved to gittxt-config.json")
+    try:
+        ConfigManager.save_config_updates(config)
+        click.echo("✅ Configuration saved to gittxt-config.json")
+    except Exception as e:
+        click.echo(f"❌ Failed to save config: {e}")
+        raise click.Abort()
