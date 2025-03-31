@@ -1,4 +1,5 @@
 import pytest
+import os
 from pathlib import Path
 from gittxt.core.scanner import Scanner
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
@@ -132,3 +133,28 @@ async def test_scanner_with_no_size_limit(tmp_path):
     )
     accepted, _ = await scanner.scan_directory()
     assert large_file in accepted
+
+@pytest.mark.asyncio
+async def test_scanner_skips_on_processing_error(tmp_path):
+    test_dir = tmp_path / "repo"
+    test_dir.mkdir()
+
+    # Create a fake file and remove read permission to trigger an error
+    broken_file = test_dir / "corrupt.txt"
+    broken_file.write_text("trigger error")
+    os.chmod(broken_file, 0)  # remove all permissions
+
+    scanner = Scanner(
+        root_path=test_dir,
+        progress=False,
+    )
+    accepted, _ = await scanner.scan_directory()
+
+    # Restore permission so test teardown doesn't fail
+    os.chmod(broken_file, 0o644)
+
+    # The file should be skipped
+    assert broken_file not in accepted
+
+    skipped_paths = [p for p, _ in scanner.skipped_files]
+    assert broken_file.resolve() in [p.resolve() for p in skipped_paths]
