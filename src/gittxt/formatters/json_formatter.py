@@ -41,7 +41,7 @@ class JSONFormatter:
     ):
         mode = self.mode
         output_file = self.output_dir / f"{self.repo_name}.json"
-        ordered_files = sort_textual_files(text_files, base_path=self.repo_root)
+        ordered_files = await sort_textual_files(text_files, base_path=self.repo_root)
 
         if mode == "lite":
             files = []
