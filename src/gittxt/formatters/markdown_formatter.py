@@ -10,6 +10,7 @@ from gittxt.utils.summary_utils import (
     format_size_short,
     format_number_short,
 )
+from gittxt.utils.github_url_utils import parse_github_url
 
 
 class MarkdownFormatter:
@@ -44,10 +45,13 @@ class MarkdownFormatter:
         async with aiofiles.open(output_file, "w", encoding="utf-8") as md:
             if mode == "lite":
                 # === LITE HEADER ===
-                # === Header ===
                 await md.write(f"# Gittxt Lite Report for `{self.repo_name}`\n\n")
                 if self.repo_url:
-                    owner = self.repo_url.rstrip("/").split("/")[-2]
+                    try:
+                        parsed_data = parse_github_url(self.repo_url)
+                        owner = parsed_data.get("owner", "")
+                    except ValueError as e:
+                        owner = ""  # Default to empty if parsing fails
                     await md.write(f"- **Owner**: `{owner}`\n")
                     await md.write(
                         f"- **Repo URL**: [{self.repo_url}]({self.repo_url})\n"
