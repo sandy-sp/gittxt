@@ -5,7 +5,7 @@ from gittxt.core.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
-async def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
+def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
     """
     Simplified sort for formatter output:
     1. README files first
