@@ -10,7 +10,7 @@ from gittxt.utils.summary_utils import (
     format_size_short,
     format_number_short,
 )
-from gittxt.utils.github_url_utils import parse_github_url
+from gittxt.utils.repo_url_parser import parse_github_url
 
 
 class MarkdownFormatter:

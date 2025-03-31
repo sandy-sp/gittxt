@@ -2,7 +2,7 @@ from pathlib import Path
 import aiofiles
 from datetime import datetime, timezone
 from gittxt.utils.file_utils import async_read_text
-from gittxt.utils.github_url_utils import build_github_url, parse_github_url
+from gittxt.utils.github_url_utils import build_github_url
 from gittxt.utils.formatter_utils import sort_textual_files
 from gittxt.utils.subcat_utils import detect_subcategory
 from gittxt.utils.summary_utils import (
@@ -10,6 +10,7 @@ from gittxt.utils.summary_utils import (
     format_number_short,
     format_size_short,
 )
+from gittxt.utils.repo_url_parser import parse_github_url
 
 
 class TextFormatter:
