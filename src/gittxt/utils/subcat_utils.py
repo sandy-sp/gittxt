@@ -26,7 +26,7 @@ async def _detect_textual_subcat(file: Path) -> str:
 
     return infer_textual_subcategory(file, content, lexer_name)
 
-def infer_textual_subcategory(file: Path, content: str, lexer_name: str = "") -> str:
+async def infer_textual_subcategory(file: Path, content: str, lexer_name: str = "") -> str:
     vote = {
         "code": 0,
         "docs": 0,
@@ -81,7 +81,7 @@ def infer_textual_subcategory(file: Path, content: str, lexer_name: str = "") ->
         return "other"
     return subcat
 
-def _detect_non_textual_subcat(file: Path) -> str:
+async def _detect_non_textual_subcat(file: Path) -> str:
     mime_type, _ = mimetypes.guess_type(str(file))
     if mime_type:
         mime_type = mime_type.lower()
