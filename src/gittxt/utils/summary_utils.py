@@ -75,7 +75,7 @@ async def generate_summary(
         if not file.exists():
             continue
         primary, _reason = classify_simple(file)
-        subcat = detect_subcategory(file, primary)
+        subcat = await detect_subcategory(file, primary)
         size = file.stat().st_size
         summary["total_size"] += size
 
