@@ -45,6 +45,9 @@ class Logger:
 
         log_level_str = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
         log_format_style = os.getenv("GITTXT_LOG_FORMAT", config["log_format"]).lower()
+        force_stdout = (
+            force_stdout or os.getenv("GITTXT_FORCE_STDOUT", "false").lower() == "true"
+        )
 
         level_map = {
             "debug": logging.DEBUG,
@@ -76,15 +79,15 @@ class Logger:
 
         console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
-
-        rotating_file_handler = RotatingFileHandler(
-            Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
-        )
-        rotating_file_handler.setLevel(log_level)
-        rotating_file_handler.setFormatter(
-            Logger._get_formatter(mode="plain")
-        )  # always plain file logs
-        root_logger.addHandler(rotating_file_handler)
+        try:
+            rotating_file_handler = RotatingFileHandler(
+                Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
+            )
+            rotating_file_handler.setLevel(log_level)
+            rotating_file_handler.setFormatter(Logger._get_formatter(mode="plain"))
+            root_logger.addHandler(rotating_file_handler)
+        except Exception as e:
+            print(f"⚠️ Failed to create file logger: {e}")
 
     @staticmethod
     def _get_formatter(mode="plain"):
@@ -109,6 +112,18 @@ class Logger:
                     return Logger._colorize(record.levelname, msg)
 
             return ColoredFormatter("%(levelname)s - %(message)s")
+
+    @staticmethod
+    def override_log_level(level_str):
+        level_map = {
+            "debug": logging.DEBUG,
+            "info": logging.INFO,
+            "warning": logging.WARNING,
+            "error": logging.ERROR,
+            "critical": logging.CRITICAL,
+        }
+        log_level = level_map.get(level_str.lower(), logging.WARNING)
+        logging.getLogger().setLevel(log_level)
 
     @staticmethod
     def get_logger(name):
