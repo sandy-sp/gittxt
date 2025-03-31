@@ -56,6 +56,8 @@ class RepositoryHandler:
             git_url = f"git@{host}:{owner}/{repo_name}.git"
         else:
             git_url = f"https://{host}/{owner}/{repo_name}.git"
+        if not git_url.endswith(".git"):
+            git_url += ".git"
 
         temp_dir = self._prepare_temp_dir(repo_name)
         self._clone_remote_repo(git_url, branch, temp_dir)
@@ -82,12 +84,15 @@ class RepositoryHandler:
                 f"🚀 Cloning repository: {git_url} (branch={branch}) => {temp_dir}"
             )
             git.Repo.clone_from(git_url, str(temp_dir), depth=1, branch=branch)
+            self.branch = branch
         except git.GitCommandError as e:
             logger.warning(f"⚠️ Initial clone failed: {e}")
             logger.info("🔁 Retrying without branch specification...")
             try:
                 git.Repo.clone_from(git_url, str(temp_dir), depth=1)
+                self.branch = "main"  # fallback assumption (could be refined)
             except Exception as fallback_error:
+                delete_directory(temp_dir)
                 raise RuntimeError(
                     f"❌ Both clone attempts failed.\nGit URL: {git_url}\nBranch attempted: {branch}\n"
                     f"Original error: {e}\nFallback error: {fallback_error}"
