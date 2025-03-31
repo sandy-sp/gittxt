@@ -1,6 +1,6 @@
 import click
 from .cli_scan import scan
-from .cli_filetypes import filetypes
+from .cli_filters import filters
 from .cli_install import install, clean
 from gittxt.__init__ import __version__
 
@@ -8,12 +8,12 @@ from gittxt.__init__ import __version__
 class CustomGroup(click.Group):
     def __init__(self, *args, **kwargs):
         kwargs["invoke_without_command"] = False
-        kwargs["help"] = "[🚀] Gittxt CLI - Extract and classify Git repositories."
+        kwargs["help"] = "[📝] Gittxt CLI - Get text from Git repositories in AI-ready formats."
         super().__init__(*args, **kwargs)
 
     def list_commands(self, ctx):
         # Custom order instead of alphabetical
-        return ["scan", "install", "filetypes", "clean"]
+        return ["scan","install", "filters", "clean"]
 
 
 @click.group(cls=CustomGroup)
@@ -23,6 +23,6 @@ def cli():
 
 
 cli.add_command(scan)
-cli.add_command(filetypes)
 cli.add_command(install)
+cli.add_command(filters)
 cli.add_command(clean)
