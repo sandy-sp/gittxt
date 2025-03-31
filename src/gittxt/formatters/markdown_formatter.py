@@ -40,7 +40,7 @@ class MarkdownFormatter:
     ):
         mode = self.mode
         output_file = self.output_dir / f"{self.repo_name}.md"
-        ordered_files = sort_textual_files(text_files)
+        ordered_files = await sort_textual_files(text_files)
 
         async with aiofiles.open(output_file, "w", encoding="utf-8") as md:
             if mode == "lite":
