@@ -54,3 +54,30 @@ def run_interactive_install():
 
     ConfigManager.save_config_updates(config)
     click.echo("\n🎉 Setup complete! Your configuration has been saved.\n")
+
+    # Optional filters setup
+    if "filters" not in config:
+        config["filters"] = {}
+
+    filters = config["filters"]
+
+    if click.confirm("Would you like to configure file filters (extensions/folders)?", default=True):
+        # Textual
+        current_textual = filters.get("textual_exts", [])
+        click.echo(f"Current textual extensions: {', '.join(current_textual) or '-'}")
+        new_textual = click.prompt("Enter textual extensions (comma-separated)", default=",".join(current_textual))
+        filters["textual_exts"] = sorted(set(e.strip() for e in new_textual.split(",")))
+
+        # Non-Textual
+        current_non = filters.get("non_textual_exts", [])
+        click.echo(f"Current non-textual extensions: {', '.join(current_non) or '-'}")
+        new_non = click.prompt("Enter non-textual extensions (comma-separated)", default=",".join(current_non))
+        filters["non_textual_exts"] = sorted(set(e.strip() for e in new_non.split(",")))
+
+        # Excluded Dirs
+        current_dirs = filters.get("excluded_dirs", [])
+        click.echo(f"Current excluded dirs: {', '.join(current_dirs) or '-'}")
+        new_dirs = click.prompt("Enter excluded directories (comma-separated)", default=",".join(current_dirs))
+        filters["excluded_dirs"] = sorted(set(e.strip() for e in new_dirs.split(",")))
+
+        ConfigManager.save_config_updates(config)
