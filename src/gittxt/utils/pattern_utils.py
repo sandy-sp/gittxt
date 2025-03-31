@@ -32,15 +32,19 @@ def passes_all_filters(
             logger.debug(f"🛑 Skipped (excluded dir): {file_path}")
         return False
 
-    if size_limit and file_path.stat().st_size > size_limit:
+    try:
+        size = file_path.stat().st_size
+    except Exception as e:
         if verbose:
-            logger.debug(
-                f"🛑 Skipped (size {file_path.stat().st_size} > limit {size_limit}): {file_path}"
-            )
+            logger.debug(f"⚠️ Skipped (stat error): {file_path} → {e}")
         return False
 
-    return True
+    if size_limit and size > size_limit:
+        if verbose:
+            logger.debug(f"🛑 Skipped (size {size} > limit {size_limit}): {file_path}")
+        return False
 
 
 def should_skip_dir(dirname: str, user_excludes: list = []) -> bool:
-    return dirname in EXCLUDED_DIRS_DEFAULT or dirname in user_excludes
+    name = dirname.lower()
+    return name in {d.lower() for d in EXCLUDED_DIRS_DEFAULT} or name in {d.lower() for d in user_excludes}
