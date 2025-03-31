@@ -11,6 +11,7 @@ from gittxt.utils.summary_utils import (
     format_number_short,
     format_size_short,
 )
+from gittxt.utils.repo_url_parser import parse_github_url
 
 
 class JSONFormatter:
@@ -49,7 +50,14 @@ class JSONFormatter:
                 raw_text = await async_read_text(text_file) or "[no content]"
                 files.append({"path": str(rel_path), "content": raw_text.strip()})
 
-            owner = self.repo_url.rstrip("/").split("/")[-2] if self.repo_url else ""
+            # Use parse_github_url to extract the owner
+            owner = ""
+            if self.repo_url:
+                try:
+                    parsed_data = parse_github_url(self.repo_url)
+                    owner = parsed_data.get("owner", "")
+                except ValueError as e:
+                    owner = ""
 
             output = {
                 "repository": {
