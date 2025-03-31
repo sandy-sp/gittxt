@@ -2,7 +2,9 @@ from pathlib import Path
 from pygments.lexers import get_lexer_for_filename
 from pygments.util import ClassNotFound
 from .subcat_utils import _detect_textual_subcat
+from gittxt.core.logger import Logger
 
+logger = Logger.get_logger(__name__)
 
 def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
     """
@@ -14,11 +16,14 @@ def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
     """
 
     def sort_key(file: Path):
-        rel_path = file.relative_to(base_path) if base_path else file
+        try:
+            rel_path = file.relative_to(base_path) if base_path else file
+        except ValueError:
+            rel_path = file.resolve()
         name = file.name.lower()
-
         # README.md first
-        if name in {"readme.md", "readme"}:
+        readme_names = {"readme", "readme.md", "readme.txt", "readme.rst"}
+        if name in readme_names:
             return (0, "", "", rel_path.as_posix().lower())
 
         subcat = _detect_textual_subcat(file)
@@ -38,4 +43,5 @@ def detect_language(file: Path) -> str:
         lexer = get_lexer_for_filename(file.name)
         return lexer.name.lower()
     except ClassNotFound:
+        logger.debug(f"🔍 Language not detected for: {file.name}")
         return ""
