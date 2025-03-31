@@ -55,6 +55,7 @@ class FiletypeConfigManager:
                 config["textual_exts"].remove(ext)
             config["non_textual_exts"].append(ext)
         cls.save_config(config)
+        logger.info(f"✅ Added '{ext}' to non_textual_exts")
 
     @classmethod
     def is_known_textual_ext(cls, ext: str) -> bool:
@@ -87,10 +88,11 @@ def _is_text_file_heuristic(file: Path) -> bool:
         if is_binary(file):
             return False
         mime_type = guess_mime(file)
-        if mime_type.startswith(("image/", "audio/", "video/", "application/pdf")):
+        if mime_type and mime_type.startswith(("image/", "audio/", "video/", "application/pdf")):
             return False
         return True
-    except Exception:
+    except Exception as e:
+        logger.debug(f"🔍 Heuristic check failed for {file.name}: {e}")
         return False
 
 
