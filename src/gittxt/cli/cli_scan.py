@@ -54,7 +54,7 @@ console = Console()
 @click.option(
     "--log-level",
     type=click.Choice(["debug", "info", "warning", "error"], case_sensitive=False),
-    default="info",
+    default="warning",
     help="Set log verbosity level.",
 )
 
@@ -67,7 +67,7 @@ def scan(
     output_dir,
     output_format,
     tree_depth,
-    debug,
+    log_level,
     create_zip,
     include_patterns,
     exclude_patterns,
