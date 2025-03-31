@@ -3,7 +3,7 @@ import json
 import platform
 import os
 from dotenv import load_dotenv
-from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT, DEFAULT_FILETYPE_CONFIG
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT, DEFAULT_FILETYPE_CONFIG, VALID_KEYS
 import logging
 
 logger = logging.getLogger("gittxt.config")
@@ -21,7 +21,7 @@ class ConfigManager:
     """
 
     SRC_DIR = Path(__file__).resolve().parent
-    CONFIG_DIR = SRC_DIR.parent / "config"  # e.g. src/gittxt/config/
+    CONFIG_DIR = SRC_DIR.parent / "config"
     CONFIG_FILE = CONFIG_DIR / "gittxt-config.json"
 
     @staticmethod
@@ -45,7 +45,7 @@ class ConfigManager:
         "size_limit": None,
         # Consolidate all top-level excludes here; references constants.py if you like
         "filters": {
-            "exclude_dirs": EXCLUDED_DIRS_DEFAULT,
+            "excluded_dirs": EXCLUDED_DIRS_DEFAULT,
             "textual_exts": DEFAULT_FILETYPE_CONFIG["textual_exts"],
             "non_textual_exts": DEFAULT_FILETYPE_CONFIG["non_textual_exts"]
         },
@@ -128,13 +128,19 @@ class ConfigManager:
             logger.info(f"✅ Configuration updated in {cls.CONFIG_FILE}")
         except Exception as e:
             logger.error(f"❌ Failed to update configuration file: {e}")
-
+ 
     @classmethod
     def get_filter_list(cls, filter_key: str) -> list:
+        if filter_key not in VALID_KEYS:
+            logger.warning(f"⚠️ Unknown filter key: {filter_key}")
+            return []
         return cls.load_config()["filters"].get(filter_key, [])
 
     @classmethod
     def update_filter_list(cls, filter_key: str, values: list):
+        if filter_key not in VALID_KEYS:
+            logger.error(f"❌ Cannot update unknown filter key: {filter_key}")
+            return
         config = cls.load_config()
         config["filters"][filter_key] = sorted(set(values))
         cls.save_config_updates(config)
