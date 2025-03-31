@@ -25,3 +25,6 @@ DEFAULT_FILETYPE_CONFIG = {
     "textual_exts": [".py", ".md", ".txt", ".html", ".json", ".yml", ".yaml", ".csv"],
     "non_textual_exts": [".zip", ".exe", ".bin", ".docx", ".xls", ".pdf"],
 }
+
+# Keys used in config filters
+VALID_KEYS = {"excluded_dirs", "textual_exts", "non_textual_exts"}
