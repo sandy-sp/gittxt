@@ -35,7 +35,7 @@ console = Console()
     help="Custom output directory.",
 )
 @click.option(
-    "--output-format", "-f", default="txt,json", help="Comma-separated: txt, json, md."
+    "--output-format", "-f", default="txt", help="Comma-separated: txt, json, md."
 )
 @click.option(
     "--include-patterns", "-i", multiple=True, help="Glob to include (only textual)."
