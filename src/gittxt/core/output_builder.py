@@ -4,7 +4,6 @@ from gittxt.core.logger import Logger
 from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR
 from gittxt.utils.tree_utils import generate_tree
 from gittxt.utils.summary_utils import generate_summary
-from gittxt.utils.filetype_utils import classify_file
 from gittxt.formatters.text_formatter import TextFormatter
 from gittxt.formatters.json_formatter import JSONFormatter
 from gittxt.formatters.markdown_formatter import MarkdownFormatter
@@ -110,7 +109,7 @@ class OutputBuilder:
         if create_zip:
             # === ALWAYS generate all 3 formats for ZIP ===
             full_output_files = []
-            for fmt in ["txt", "md", "json"]:
+            for fmt in self.output_formats:
                 FormatterClass = self.FORMATTERS[fmt]
                 formatter = FormatterClass(
                     repo_name=self.repo_name,
