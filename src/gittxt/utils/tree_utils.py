@@ -1,5 +1,8 @@
 from pathlib import Path
 import os
+from gittxt.core.logger import Logger
+
+logger = Logger.get_logger(__name__)
 
 
 def generate_tree(
@@ -27,22 +30,23 @@ def generate_tree(
         return ""
 
     if max_depth is not None and current_depth >= max_depth:
-        return prefix.rstrip() + "└── ..."
+        return f"{prefix}└── ..."
 
     lines = []
     try:
         with os.scandir(path) as entries:
             entries_list = sorted(
-                entries, key=lambda e: (not e.is_dir(), e.name.lower())
+                (e for e in entries if e.name not in exclude_dirs),
+                key=lambda e: (not e.is_dir(), e.name.lower()),
             )
-            entries_list = [e for e in entries_list if e.name not in exclude_dirs]
 
             pointers = (
                 ["├── "] * (len(entries_list) - 1) + ["└── "] if entries_list else []
             )
+
             for pointer, entry in zip(pointers, entries_list):
                 lines.append(f"{prefix}{pointer}{entry.name}")
-                if entry.is_dir():
+                if entry.is_dir(follow_symlinks=False):
                     extension = "│   " if pointer != "└── " else "    "
                     subtree = generate_tree(
                         Path(entry.path),
@@ -53,7 +57,8 @@ def generate_tree(
                     )
                     if subtree:
                         lines.append(subtree)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to scan directory {path}: {e}")
         return ""
 
     return "\n".join(lines)
