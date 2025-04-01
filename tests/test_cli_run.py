@@ -55,7 +55,7 @@ def test_cli_scan_lite_zip():
 def test_zip_bundle_contains_expected_files():
     # Setup temp output directory
     with tempfile.TemporaryDirectory():
-        repo_url = "https://github.com/cyclotruc/gitingest"
+        repo_url = "https://github.com/sandy-sp/gittxt"
         output_dir = OUTPUT_DIR / "zip_test"
         output_dir.mkdir(parents=True, exist_ok=True)
 
