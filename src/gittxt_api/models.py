@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, constr
 from typing import List, Literal, Optional, Dict
 
 class ScanRequest(BaseModel):
@@ -8,9 +8,9 @@ class ScanRequest(BaseModel):
         regex=r"^[a-zA-Z0-9._-]+$",  # Only allow valid branch names
         description="Branch name must be alphanumeric with optional '.', '_', or '-'."
     )
-    subdir: Optional[str] = None
-    exclude_patterns: Optional[List[str]] = []
-    include_patterns: Optional[List[str]] = []
+    subdir: Optional[constr(regex=r"^[a-zA-Z0-9_\-/]*$")] = None  # Allow only valid relative paths
+    exclude_patterns: Optional[List[str]] = Field(default_factory=list)
+    include_patterns: Optional[List[str]] = Field(default_factory=list)
     output_format: List[Literal['txt', 'json', 'md', 'zip']] = ['txt']
     lite: bool = False
     size_limit: Optional[int] = Field(
