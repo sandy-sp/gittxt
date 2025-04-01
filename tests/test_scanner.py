@@ -16,11 +16,11 @@ async def test_scanner_with_default_config():
         use_ignore_file=True,
         size_limit=5 * 1024 * 1024,
     )
-    included = await scanner.scan_directory()
+    included, _ = await scanner.scan_directory()
 
     print("INCLUDED FILES:", [str(f) for f in included])
 
-    assert isinstance(included, list)
+    assert all(isinstance(f, Path) for f in included)
     assert any("script.py" in str(f) for f in included), "Expected script.py not found"
     assert all(
         "node_modules" not in str(f) for f in included
@@ -66,7 +66,7 @@ async def test_scanner_with_include_pattern():
         include_patterns=["*.txt"],
         verbose=True,
     )
-    included = await scanner.scan_directory()
+    included, _ = await scanner.scan_directory()
 
     print("INCLUDED FILES:", [str(f) for f in included])
 
@@ -74,7 +74,7 @@ async def test_scanner_with_include_pattern():
         "included.txt" in str(f) for f in included
     ), "Expected included.txt to be found"
     assert all(
-        f.name.endswith(".txt") for f in included
+        str(f.name).endswith(".txt") for f in included
     ), "Only .txt files should be included"
 
 
@@ -86,12 +86,12 @@ async def test_scanner_with_exclude_pattern():
         exclude_patterns=["*.csv", "*.min.js"],
         verbose=True,
     )
-    included = await scanner.scan_directory()
+    included, _ = await scanner.scan_directory()
 
     print("INCLUDED FILES:", [str(f) for f in included])
 
     assert all(
-        not f.name.endswith(".csv") and not f.name.endswith(".min.js") for f in included
+        not str(f.name).endswith(".csv") and not str(f.name).endswith(".min.js") for f in included
     ), "CSV and min.js files should be excluded"
 
 @pytest.mark.asyncio
