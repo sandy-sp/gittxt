@@ -3,7 +3,7 @@ from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
 from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR, TEMP_DIR
 
-__version__ = "1.5.9"
+__version__ = "1.6.0"
 __author__ = "Sandeep Paidipati"
 __description__ = "Gittxt: Get text from Git repositories in AI-ready formats"
 
