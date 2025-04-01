@@ -5,6 +5,7 @@ from typing import Optional
 
 logger = Logger.get_logger(__name__)
 
+
 async def async_read_text(file_path: Path) -> Optional[str]:
     """
     Asynchronously read a file as text (UTF-8, ignoring errors).
@@ -17,6 +18,7 @@ async def async_read_text(file_path: Path) -> Optional[str]:
     except Exception as e:
         logger.warning(f"⚠️ Failed to read file {file_path}: {e}")
         return None
+
 
 def load_gittxtignore(repo_path: Path) -> list:
     ignore_file = repo_path / ".gittxtignore"

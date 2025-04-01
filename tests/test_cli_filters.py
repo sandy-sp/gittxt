@@ -3,6 +3,7 @@ from click.testing import CliRunner
 from gittxt.cli.cli_filters import filters
 from gittxt.core.config import ConfigManager
 
+
 @pytest.fixture(autouse=True)
 def reset_filters():
     # Reset all filters before each test
@@ -14,6 +15,7 @@ def reset_filters():
     ConfigManager.update_filter_list("textual_exts", [])
     ConfigManager.update_filter_list("non_textual_exts", [])
     ConfigManager.update_filter_list("excluded_dirs", [])
+
 
 def test_list_filters_empty():
     runner = CliRunner()

@@ -1,4 +1,4 @@
-.PHONY: test lint format check
+.PHONY: test lint format build check cache
 
 test:
 	@echo "🔧 Generating test repo in tests/test_repo..."
@@ -14,11 +14,9 @@ test:
 	rm -rf tests/test_zip_output
 
 lint:
-	poetry run ruff check .
 	poetry run ruff check . --fix
 
 format:
-	poetry run black . --check
 	poetry run black .
 
 build:
@@ -27,6 +25,8 @@ build:
 
 check:
 	poetry check
+	poetry run ruff check .
+	poetry run black . --check
 
 cache:
 	find . -type d -name "__pycache__" -exec rm -r {} +

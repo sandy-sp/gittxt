@@ -86,24 +86,24 @@ class Scanner:
     async def _process_single(self, path: Path):
         ext = path.suffix.lower() if path.suffix else ""
         if not isinstance(ext, str):
-            self._record_skip(path, f"invalid extension")
+            self._record_skip(path, "invalid extension")
             return
 
         if not path.is_file():
             return
-        
+
         label = filetype_utils.classify_file(path)
 
         if not pattern_utils.passes_all_filters(
             path, self.exclude_dirs, self.size_limit, self.verbose
         ):
-            self._record_skip(path, f"filtered by size or dir")
+            self._record_skip(path, "filtered by size or dir")
             return
 
         if self.exclude_patterns and any(path.match(p) for p in self.exclude_patterns):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by exclude pattern: {path}")
-            self._record_skip(path, f"exclude pattern")
+            self._record_skip(path, "exclude pattern")
             return
 
         if self.include_patterns and not any(
@@ -111,13 +111,17 @@ class Scanner:
         ):
             if self.verbose:
                 logger.debug(f"🛑 Skipped by not matching include pattern: {path}")
-            self._record_skip(path, f"not in include patterns")
+            self._record_skip(path, "not in include patterns")
             return
 
         if label != "TEXTUAL":
             self.non_textual_files.append(path)
-            if self.include_patterns and any(path.match(p) for p in self.include_patterns):
-                logger.warning(f"⚠️ Skipped non-textual file matched by --include: {path}")
+            if self.include_patterns and any(
+                path.match(p) for p in self.include_patterns
+            ):
+                logger.warning(
+                    f"⚠️ Skipped non-textual file matched by --include: {path}"
+                )
             if self.verbose:
                 logger.debug(f"🛑 Skipped non-textual file: {path}")
             self._record_skip(path, f"non-textual ({label})")

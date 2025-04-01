@@ -5,12 +5,14 @@ from gittxt.core.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
+
 def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
     """
     Simplified sort for formatter output:
     1. README files first
     2. Then remaining files sorted by relative path
     """
+
     def sort_key(file: Path):
         name = file.name.lower()
         if name in {"readme", "readme.md", "readme.txt", "readme.rst"}:
@@ -24,6 +26,7 @@ def sort_textual_files(files: list[Path], base_path: Path = None) -> list[Path]:
         return (1, rel_path.as_posix().lower())
 
     return sorted(files, key=sort_key)
+
 
 def detect_language(file: Path) -> str:
     try:

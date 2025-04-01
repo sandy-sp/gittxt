@@ -7,6 +7,7 @@ from .cli_utils import config
 
 console = Console()
 
+
 @click.command(help="⚙️  Run the interactive installer to configure Gittxt.")
 def install():
     try:

@@ -8,12 +8,14 @@ from gittxt.__init__ import __version__
 class CustomGroup(click.Group):
     def __init__(self, *args, **kwargs):
         kwargs["invoke_without_command"] = False
-        kwargs["help"] = "[📝] Gittxt CLI - Get text from Git repositories in AI-ready formats."
+        kwargs["help"] = (
+            "[📝] Gittxt CLI - Get text from Git repositories in AI-ready formats."
+        )
         super().__init__(*args, **kwargs)
 
     def list_commands(self, ctx):
         # Custom order instead of alphabetical
-        return ["scan","install", "filters", "clean"]
+        return ["scan", "install", "filters", "clean"]
 
 
 @click.group(cls=CustomGroup)

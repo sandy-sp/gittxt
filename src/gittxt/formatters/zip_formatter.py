@@ -10,6 +10,7 @@ from gittxt.core.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
+
 class ZipFormatter:
     def __init__(
         self,

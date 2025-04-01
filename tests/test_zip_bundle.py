@@ -24,7 +24,7 @@ async def test_zip_bundle_contents():
     )
 
     outputs = await builder.generate_output(
-    textual_files, non_textual_files, repo_path=TEST_REPO.resolve(), create_zip=True
+        textual_files, non_textual_files, repo_path=TEST_REPO.resolve(), create_zip=True
     )
 
     zip_files = [f for f in outputs if f.suffix == ".zip"]

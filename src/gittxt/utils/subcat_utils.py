@@ -8,10 +8,12 @@ from gittxt.utils.file_utils import async_read_text
 
 logger = Logger.get_logger(__name__)
 
+
 async def detect_subcategory(file: Path, primary: str) -> str:
     if primary == "NON-TEXTUAL":
         return _detect_non_textual_subcat(file)
     return await _detect_textual_subcat(file)
+
 
 async def _detect_textual_subcat(file: Path) -> str:
     content = await async_read_text(file)
@@ -25,6 +27,7 @@ async def _detect_textual_subcat(file: Path) -> str:
         lexer_name = ""
 
     return infer_textual_subcategory(file, content, lexer_name)
+
 
 def infer_textual_subcategory(file: Path, content: str, lexer_name: str = "") -> str:
     vote = {
@@ -80,6 +83,7 @@ def infer_textual_subcategory(file: Path, content: str, lexer_name: str = "") ->
     if vote[subcat] == 0:
         return "other"
     return subcat
+
 
 def _detect_non_textual_subcat(file: Path) -> str:
     mime_type, _ = mimetypes.guess_type(str(file))

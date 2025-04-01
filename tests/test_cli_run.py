@@ -1,7 +1,6 @@
 import zipfile
 import subprocess
 import tempfile
-import shutil
 from pathlib import Path
 
 TEST_REPO = Path("tests/test_repo")
@@ -52,6 +51,7 @@ def test_cli_scan_lite_zip():
         f.name.endswith(".json") for f in json_files
     ), "Expected .json output missing"
 
+
 def test_zip_bundle_contains_expected_files():
     # Setup temp output directory
     with tempfile.TemporaryDirectory():
@@ -69,7 +69,7 @@ def test_zip_bundle_contains_expected_files():
                 "--output-dir",
                 str(output_dir),
                 "--output-format",
-                "txt"
+                "txt",
             ],
             capture_output=True,
             text=True,
@@ -89,5 +89,7 @@ def test_zip_bundle_contains_expected_files():
         with zipfile.ZipFile(zip_path, "r") as z:
             names = z.namelist()
             assert any("manifest.json" in f for f in names), "Missing manifest.json"
-            assert any("summary.json" in f or "README.md" in f for f in names), "Missing summary or README"
+            assert any(
+                "summary.json" in f or "README.md" in f for f in names
+            ), "Missing summary or README"
             assert any(f.endswith(".txt") for f in names), "Missing .txt files"

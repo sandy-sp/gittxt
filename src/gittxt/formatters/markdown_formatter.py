@@ -35,9 +35,7 @@ class MarkdownFormatter:
         self.repo_root = Path(repo_path).resolve()
         self.mode = mode
 
-    async def generate(
-        self, text_files, non_textual_files, summary_data: dict
-    ):
+    async def generate(self, text_files, non_textual_files, summary_data: dict):
         mode = self.mode
         output_file = self.output_dir / f"{self.repo_name}.md"
         ordered_files = sort_textual_files(text_files)
@@ -50,7 +48,7 @@ class MarkdownFormatter:
                     try:
                         parsed_data = parse_github_url(self.repo_url)
                         owner = parsed_data.get("owner", "")
-                    except ValueError as e:
+                    except ValueError:
                         owner = ""  # Default to empty if parsing fails
                     await md.write(f"- **Owner**: `{owner}`\n")
                     await md.write(
@@ -100,7 +98,9 @@ class MarkdownFormatter:
 
                 formatted = summary_data.get("formatted", {})
                 await md.write("## 📊 Summary Report\n")
-                await md.write(f"- **Total Files**: `{summary_data.get('total_files')}`\n")
+                await md.write(
+                    f"- **Total Files**: `{summary_data.get('total_files')}`\n"
+                )
                 await md.write(f"- **Total Size**: `{formatted.get('total_size')}`\n")
                 await md.write(
                     f"- **Estimated Tokens**: `{formatted.get('estimated_tokens')}`\n\n"
@@ -115,7 +115,8 @@ class MarkdownFormatter:
                     for subcat in sorted(breakdown):
                         count = breakdown[subcat]
                         tokens = tokens_by_type.get(
-                            subcat, summary_data.get("tokens_by_type", {}).get(subcat, 0)
+                            subcat,
+                            summary_data.get("tokens_by_type", {}).get(subcat, 0),
                         )
                         await md.write(f"| {subcat} | {count} | {tokens} |\n")
                     await md.write("\n")
@@ -151,7 +152,9 @@ class MarkdownFormatter:
                         subcat = await detect_subcategory(asset, "NON-TEXTUAL")
                         size = format_size_short(asset.stat().st_size)
                         asset_url = (
-                            build_github_url(self.repo_url, rel, self.branch, self.subdir)
+                            build_github_url(
+                                self.repo_url, rel, self.branch, self.subdir
+                            )
                             if self.repo_url
                             else ""
                         )

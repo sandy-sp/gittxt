@@ -6,6 +6,7 @@ import tiktoken
 from gittxt.utils.filetype_utils import classify_simple
 from gittxt.utils.subcat_utils import detect_subcategory
 from gittxt.core.logger import Logger
+
 logger = Logger.get_logger(__name__)
 
 

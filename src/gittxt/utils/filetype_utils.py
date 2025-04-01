@@ -1,7 +1,6 @@
 from pathlib import Path
 import mimetypes
 from gittxt.core.logger import Logger
-import json
 from gittxt.core.constants import DEFAULT_FILETYPE_CONFIG
 from gittxt.core.config import ConfigManager
 
@@ -88,7 +87,9 @@ def _is_text_file_heuristic(file: Path) -> bool:
         if is_binary(file):
             return False
         mime_type = guess_mime(file)
-        if mime_type and mime_type.startswith(("image/", "audio/", "video/", "application/pdf")):
+        if mime_type and mime_type.startswith(
+            ("image/", "audio/", "video/", "application/pdf")
+        ):
             return False
         return True
     except Exception as e:

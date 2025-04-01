@@ -5,6 +5,7 @@ from gittxt.core.config import ConfigManager
 config = ConfigManager.load_config()
 console = Console()
 
+
 def _print_summary(repo_name, summary_data, final_output_dir, output_format):
     output_path = final_output_dir / repo_name
     try:

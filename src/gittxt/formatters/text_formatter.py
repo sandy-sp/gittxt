@@ -35,9 +35,7 @@ class TextFormatter:
         self.subdir = subdir
         self.mode = mode
 
-    async def generate(
-        self, text_files, non_textual_files, summary_data: dict
-    ):
+    async def generate(self, text_files, non_textual_files, summary_data: dict):
         mode = self.mode
         output_file = self.output_dir / f"{self.repo_name}.txt"
         ordered_files = sort_textual_files(text_files, base_path=self.repo_root)
@@ -49,7 +47,7 @@ class TextFormatter:
                     try:
                         parsed_data = parse_github_url(self.repo_url)
                         owner = parsed_data.get("owner", "")
-                    except ValueError as e:
+                    except ValueError:
                         owner = ""  # Default to empty if parsing fails
                     await txt_file.write(f"Owner: {owner}\n")
                 if self.branch:
@@ -66,7 +64,7 @@ class TextFormatter:
                     await txt_file.write(f"---> File: {rel_path} <---\n")
                     await txt_file.write(f"{raw.strip()}\n\n")
                 return output_file
-            
+
             else:
                 # === Rich Mode ===
                 await txt_file.write("=== Gittxt Report ===\n")
@@ -83,7 +81,9 @@ class TextFormatter:
 
                 formatted = summary_data.get("formatted", {})
                 await txt_file.write("=== 📊 Summary Report ===\n")
-                await txt_file.write(f"Total Files: {summary_data.get('total_files')}\n")
+                await txt_file.write(
+                    f"Total Files: {summary_data.get('total_files')}\n"
+                )
                 await txt_file.write(f"Total Size: {formatted.get('total_size')}\n")
                 await txt_file.write(
                     f"Estimated Tokens: {formatted.get('estimated_tokens')}\n\n"

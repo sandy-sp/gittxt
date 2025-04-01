@@ -13,11 +13,15 @@ FILTER_EMOJIS = {
     "excluded_dirs": "📁 Excluded Directories",
 }
 
+
 @click.group(help="🧩 Manage filters (extensions, excluded folders)")
 def filters():
     pass
 
-@filters.command("list", help="🔍 View current textual, non-textual, and excluded folder filters.")
+
+@filters.command(
+    "list", help="🔍 View current textual, non-textual, and excluded folder filters."
+)
 def list_filters():
     config = ConfigManager.load_config()
     filters = config.get("filters", {})
@@ -32,7 +36,11 @@ def list_filters():
             content = Text("-", style="dim")
         console.print(Panel(content, title=title, expand=False, border_style="blue"))
 
-@filters.command("add", help="➕ Add values to a specific filter category (textual_exts, non_textual_exts, or excluded_dirs).")
+
+@filters.command(
+    "add",
+    help="➕ Add values to a specific filter category (textual_exts, non_textual_exts, or excluded_dirs).",
+)
 @click.argument("filter_type", type=click.Choice(FILTER_KEYS))
 @click.argument("values", nargs=-1)
 def add_filter(filter_type, values):
@@ -43,19 +51,27 @@ def add_filter(filter_type, values):
         non_textual.difference_update(values)
         ConfigManager.update_filter_list("non_textual_exts", list(non_textual))
         if removed:
-            console.print(f"[yellow]⚠️ Removed from non_textual_exts: {', '.join(sorted(removed))}[/yellow]")
+            console.print(
+                f"[yellow]⚠️ Removed from non_textual_exts: {', '.join(sorted(removed))}[/yellow]"
+            )
     elif filter_type == "non_textual_exts":
         textual = set(ConfigManager.get_filter_list("textual_exts"))
         conflict = textual.intersection(values)
         if conflict:
-            console.print(f"[red]❌ Cannot move from textual to non-textual: {', '.join(conflict)}[/red]")
+            console.print(
+                f"[red]❌ Cannot move from textual to non-textual: {', '.join(conflict)}[/red]"
+            )
             return
 
     current.update(values)
     ConfigManager.update_filter_list(filter_type, list(current))
     console.print(f"[green]✅ Updated {filter_type}[/green]")
 
-@filters.command("remove", help="➖ Remove values from a specific filter category (textual_exts, non_textual_exts, or excluded_dirs).")
+
+@filters.command(
+    "remove",
+    help="➖ Remove values from a specific filter category (textual_exts, non_textual_exts, or excluded_dirs).",
+)
 @click.argument("filter_type", type=click.Choice(FILTER_KEYS))
 @click.argument("values", nargs=-1)
 def remove_filter(filter_type, values):
@@ -65,7 +81,10 @@ def remove_filter(filter_type, values):
     console.print(f"[green]✅ Removed from {filter_type}[/green]")
     skipped = set(values) - current
     if skipped:
-        console.print(f"[dim]⏭️ Not found in {filter_type}: {', '.join(sorted(skipped))}[/dim]")
+        console.print(
+            f"[dim]⏭️ Not found in {filter_type}: {', '.join(sorted(skipped))}[/dim]"
+        )
+
 
 @filters.command("clear", help="🗑️ Clear all filters in all categories.")
 def clear_filters():

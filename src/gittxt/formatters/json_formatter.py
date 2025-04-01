@@ -36,9 +36,7 @@ class JSONFormatter:
         self.subdir = subdir
         self.mode = mode
 
-    async def generate(
-        self, text_files, non_textual_files, summary_data: dict
-    ):
+    async def generate(self, text_files, non_textual_files, summary_data: dict):
         mode = self.mode
         output_file = self.output_dir / f"{self.repo_name}.json"
         ordered_files = sort_textual_files(text_files, base_path=self.repo_root)
@@ -56,7 +54,7 @@ class JSONFormatter:
                 try:
                     parsed_data = parse_github_url(self.repo_url)
                     owner = parsed_data.get("owner", "")
-                except ValueError as e:
+                except ValueError:
                     owner = ""
 
             output = {

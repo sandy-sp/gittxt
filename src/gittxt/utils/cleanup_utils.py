@@ -5,6 +5,7 @@ from gittxt.core.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
+
 def delete_directory(path: Path) -> None:
     if path.exists() and path.is_dir():
         try:
@@ -12,6 +13,7 @@ def delete_directory(path: Path) -> None:
             logger.info(f"🗑️ Deleted directory: {path}")
         except Exception as e:
             logger.warning(f"⚠️ Failed to delete {path}: {e}")
+
 
 def cleanup_temp_folder(temp_dir: Path) -> None:
     """

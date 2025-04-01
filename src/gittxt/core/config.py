@@ -3,7 +3,11 @@ import json
 import platform
 import os
 from dotenv import load_dotenv
-from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT, DEFAULT_FILETYPE_CONFIG, VALID_KEYS
+from gittxt.core.constants import (
+    EXCLUDED_DIRS_DEFAULT,
+    DEFAULT_FILETYPE_CONFIG,
+    VALID_KEYS,
+)
 import logging
 
 logger = logging.getLogger("gittxt.config")
@@ -47,7 +51,7 @@ class ConfigManager:
         "filters": {
             "excluded_dirs": EXCLUDED_DIRS_DEFAULT,
             "textual_exts": DEFAULT_FILETYPE_CONFIG["textual_exts"],
-            "non_textual_exts": DEFAULT_FILETYPE_CONFIG["non_textual_exts"]
+            "non_textual_exts": DEFAULT_FILETYPE_CONFIG["non_textual_exts"],
         },
         "output_format": "txt",
         "logging_level": "warning",
@@ -128,7 +132,7 @@ class ConfigManager:
             logger.info(f"✅ Configuration updated in {cls.CONFIG_FILE}")
         except Exception as e:
             logger.error(f"❌ Failed to update configuration file: {e}")
- 
+
     @classmethod
     def get_filter_list(cls, filter_key: str) -> list:
         if filter_key not in VALID_KEYS:

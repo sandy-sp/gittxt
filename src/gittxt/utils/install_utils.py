@@ -11,7 +11,9 @@ def normalize_extensions(exts):
     """
     Ensure all extensions begin with a '.' and are lowercase.
     """
-    return sorted({f".{ext.strip().lstrip('.').lower()}" for ext in exts if ext.strip()})
+    return sorted(
+        {f".{ext.strip().lstrip('.').lower()}" for ext in exts if ext.strip()}
+    )
 
 
 def run_interactive_install():
@@ -53,7 +55,9 @@ def run_interactive_install():
 
     if click.confirm("🧩 Configure file filters (extensions/folders)?", default=True):
         # --- Textual Extensions ---
-        current_textual = filters.get("textual_exts", DEFAULT_FILETYPE_CONFIG["textual_exts"])
+        current_textual = filters.get(
+            "textual_exts", DEFAULT_FILETYPE_CONFIG["textual_exts"]
+        )
         click.echo(f"🔠 Current textual extensions: {', '.join(current_textual)}")
         new_textual = click.prompt(
             "Enter textual extensions (comma-separated)",
@@ -62,8 +66,12 @@ def run_interactive_install():
         filters["textual_exts"] = normalize_extensions(new_textual.split(","))
 
         # --- Non-Textual Extensions ---
-        current_nontextual = filters.get("non_textual_exts", DEFAULT_FILETYPE_CONFIG["non_textual_exts"])
-        click.echo(f"🚫 Current non-textual extensions: {', '.join(current_nontextual)}")
+        current_nontextual = filters.get(
+            "non_textual_exts", DEFAULT_FILETYPE_CONFIG["non_textual_exts"]
+        )
+        click.echo(
+            f"🚫 Current non-textual extensions: {', '.join(current_nontextual)}"
+        )
         new_non = click.prompt(
             "Enter non-textual extensions (comma-separated)",
             default=",".join(current_nontextual),
@@ -77,7 +85,9 @@ def run_interactive_install():
             "Enter excluded directories (comma-separated)",
             default=",".join(current_excluded),
         )
-        filters["excluded_dirs"] = sorted({d.strip() for d in new_dirs.split(",") if d.strip()})
+        filters["excluded_dirs"] = sorted(
+            {d.strip() for d in new_dirs.split(",") if d.strip()}
+        )
 
     # Save final config
     try:

@@ -91,8 +91,10 @@ async def test_scanner_with_exclude_pattern():
     print("INCLUDED FILES:", [str(f) for f in included])
 
     assert all(
-        not str(f.name).endswith(".csv") and not str(f.name).endswith(".min.js") for f in included
+        not str(f.name).endswith(".csv") and not str(f.name).endswith(".min.js")
+        for f in included
     ), "CSV and min.js files should be excluded"
+
 
 @pytest.mark.asyncio
 async def test_scanner_respects_gittxtignore(tmp_path):
@@ -128,7 +130,10 @@ async def test_scanner_respects_gittxtignore(tmp_path):
 
     assert "keep.txt" in accepted_names, "Expected keep.txt to be accepted"
     assert "skip.zip" not in accepted_names, "Expected skip.zip to be excluded"
-    assert not any("node_modules" in p for p in accepted_paths), "node_modules should be excluded"
+    assert not any(
+        "node_modules" in p for p in accepted_paths
+    ), "node_modules should be excluded"
+
 
 @pytest.mark.asyncio
 async def test_scanner_with_no_size_limit(tmp_path):
@@ -144,6 +149,7 @@ async def test_scanner_with_no_size_limit(tmp_path):
     )
     accepted, _ = await scanner.scan_directory()
     assert large_file in accepted
+
 
 @pytest.mark.asyncio
 async def test_scanner_skips_on_processing_error(tmp_path):

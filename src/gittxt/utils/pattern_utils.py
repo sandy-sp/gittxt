@@ -48,4 +48,6 @@ def passes_all_filters(
 
 def should_skip_dir(dirname: str, user_excludes: list = []) -> bool:
     name = dirname.lower()
-    return name in {d.lower() for d in EXCLUDED_DIRS_DEFAULT} or name in {d.lower() for d in user_excludes}
+    return name in {d.lower() for d in EXCLUDED_DIRS_DEFAULT} or name in {
+        d.lower() for d in user_excludes
+    }

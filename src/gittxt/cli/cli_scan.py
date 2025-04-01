@@ -58,7 +58,6 @@ console = Console()
     default="warning",
     help="Set log verbosity level.",
 )
-
 def scan(
     repos,
     sync,
@@ -247,7 +246,9 @@ async def _process_one_repo(
 ):
     # Decide local vs. remote
     handler = RepositoryHandler(repo_source, branch=branch)
-    with Status("[bold cyan]🔄 Cloning / resolving repo...[/bold cyan]", console=console):
+    with Status(
+        "[bold cyan]🔄 Cloning / resolving repo...[/bold cyan]", console=console
+    ):
         await handler.resolve()
     repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
     scan_root = Path(repo_path)
@@ -277,7 +278,9 @@ async def _process_one_repo(
             progress=True,
             use_ignore_file=sync,
         )
-        with Status("[bold cyan]🔍 Scanning repository...[/bold cyan]", console=console):
+        with Status(
+            "[bold cyan]🔍 Scanning repository...[/bold cyan]", console=console
+        ):
             textual_files, non_textual_files = await scanner.scan_directory()
         skipped_files = scanner.skipped_files
 
@@ -296,7 +299,11 @@ async def _process_one_repo(
         )
         with Status("[bold cyan]🧩 Formatting output...[/bold cyan]", console=console):
             await builder.generate_output(
-                textual_files, non_textual_files, repo_path, create_zip=create_zip, tree_depth=tree_depth
+                textual_files,
+                non_textual_files,
+                repo_path,
+                create_zip=create_zip,
+                tree_depth=tree_depth,
             )
 
         # Summary

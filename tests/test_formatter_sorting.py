@@ -1,6 +1,6 @@
 import pytest
-from pathlib import Path
 from gittxt.utils.formatter_utils import sort_textual_files
+
 
 @pytest.mark.asyncio
 async def test_sort_textual_files_readme_first(tmp_path):
@@ -30,4 +30,6 @@ async def test_sort_textual_files_readme_first(tmp_path):
 
     # Assert
     assert result[0].name.lower().startswith("readme")
-    assert result[1:] == sorted(result[1:], key=lambda f: f.relative_to(root).as_posix().lower())
+    assert result[1:] == sorted(
+        result[1:], key=lambda f: f.relative_to(root).as_posix().lower()
+    )

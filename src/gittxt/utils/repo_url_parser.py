@@ -16,7 +16,11 @@ def parse_github_url(url: str) -> dict:
 
     # Load allowed domains (with fallback)
     allowed_domains = ["github.com"]
-    allowed_domains += [d.strip() for d in os.getenv("GITTXT_ALLOWED_DOMAINS", "").split(",") if d.strip()]
+    allowed_domains += [
+        d.strip()
+        for d in os.getenv("GITTXT_ALLOWED_DOMAINS", "").split(",")
+        if d.strip()
+    ]
 
     # === SSH format ===
     ssh_pattern = re.compile(
