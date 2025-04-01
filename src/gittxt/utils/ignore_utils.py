@@ -1,20 +1,27 @@
+from pathlib import Path
 from gittxt.core.logger import Logger
 
 logger = Logger.get_logger(__name__)
 
 
-def parse_ignore_file(path):
+def parse_ignore_file(path: Path) -> list[str]:
     """
-    Parse a .gittxtignore file, returning cleaned ignore patterns.
-    Ignores lines that are empty or start with '#'.
+    Parse a .gittxtignore file and return a list of valid glob patterns.
+
+    - Ignores blank lines and comments.
+    - Expands directory patterns like 'node_modules/' into 'node_modules/*'.
     """
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-        return [
-            line.strip()
-            for line in lines
-            if line.strip() and not line.strip().startswith("#")
-        ]
+        patterns = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.endswith("/"):
+                patterns.append(f"{line}*")
+            else:
+                patterns.append(line)
+        return patterns
     except Exception as e:
         logger.warning(f"⚠️ Failed to parse ignore file: {path} → {e}")
         return []
