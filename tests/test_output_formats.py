@@ -10,7 +10,7 @@ OUTPUT_DIR = Path("tests/test_outputs")
 @pytest.mark.asyncio
 async def test_output_builder_all_formats():
     scanner = Scanner(root_path=TEST_REPO)
-    all_files = await scanner.scan_directory()
+    textual_files, non_textual_files = await scanner.scan_directory()
 
     builder = OutputBuilder(
         repo_name="test_repo",
@@ -22,7 +22,7 @@ async def test_output_builder_all_formats():
         mode="rich",
     )
 
-    outputs = await builder.generate_output(all_files, repo_path=TEST_REPO)
+    outputs = await builder.generate_output(textual_files, non_textual_files, repo_path=TEST_REPO)
 
     assert outputs, "No outputs returned from builder"
     assert any(f.suffix == ".txt" for f in outputs), "TXT output missing"
