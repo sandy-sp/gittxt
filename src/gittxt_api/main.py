@@ -7,10 +7,17 @@ from slowapi.errors import RateLimitExceeded
 import logging
 from .api.routes import router as api_router
 
-app = FastAPI(title="Gittxt API", version="1.6.0")
+app = FastAPI(
+    title="Gittxt API",
+    version="1.6.0",
+    description="API for scanning Git repositories and generating outputs.",
+)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger("gittxt_api")
 
 # Exception handlers
@@ -59,4 +66,4 @@ async def log_requests(request: Request, call_next):
     logger.info(f"Response status: {response.status_code}")
     return response
 
-app.include_router(api_router)
+
