@@ -23,7 +23,7 @@ jobs:
         run: |
           RELEASE_TAG="${GITHUB_REF##*/}"
           echo "Detected tag: $RELEASE_TAG"
-          awk "/^## \[?$RELEASE_TAG\]?/ {flag=1; next} /^## / {flag=0} flag" CHANGELOG.md > excerpt.txt
+          awk "/^## \[?$RELEASE_TAG\]?/ {flag=1; next} /^## / {flag=0} flag" docs/CHANGELOG.md > excerpt.txt
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           cat excerpt.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
