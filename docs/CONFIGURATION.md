@@ -1,24 +1,26 @@
 # ⚙️ Gittxt Configuration Guide
 
-This document explains the available ways to configure Gittxt: via CLI, environment variables, and optional config files.
+This document explains how to configure Gittxt using the CLI, environment variables, and `.gittxtignore` files.
 
 ---
 
-## 🧾 CLI Overrides (Most Common)
+## 🧾 CLI Configuration
 
-You can override behavior on a per-scan basis using CLI options:
+You can configure Gittxt behavior on a per-scan basis using CLI options:
 
 ```bash
 gittxt scan . \
   --output-dir reports/ \
   --output-format txt,json,md \
   --lite \
+  --zip \
   --size-limit 500000 \
   --exclude-patterns "*.zip" "*.png" \
   --include-patterns "**/*.py"
 ```
 
-For full options, run:
+For complete options, run:
+
 ```bash
 gittxt scan --help
 ```
@@ -27,72 +29,83 @@ gittxt scan --help
 
 ## 🧑‍💻 Environment Variables
 
-You can set persistent defaults via environment variables:
+Set persistent defaults using environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `GITTXT_OUTPUT_DIR` | Default directory to write outputs |
-| `GITTXT_TREE_DEPTH` | Default directory tree max depth |
-| `GITTXT_ZIP_BUNDLE` | Set to `1` to enable ZIP by default |
-| `GITTXT_LITE_MODE`  | Set to `1` to enable lite output |
+| Variable               | Description                                    | Example          |
+| ---------------------- | ---------------------------------------------- | ---------------- |
+| `GITTXT_OUTPUT_DIR`    | Default output directory                       | `~/reports`      |
+| `GITTXT_TREE_DEPTH`    | Default directory tree depth                   | `3`              |
+| `GITTXT_AUTO_ZIP`      | Set to `true` to enable ZIP bundles by default | `true`           |
+| `GITTXT_LITE_MODE`     | Set to `true` to enable lite mode by default   | `true`           |
+| `GITTXT_SIZE_LIMIT`    | Default file size limit in bytes               | `1000000` (1 MB) |
+| `GITTXT_LOGGING_LEVEL` | Logging verbosity (`debug`, `info`, `warning`) | `info`           |
 
 Example:
+
 ```bash
 export GITTXT_OUTPUT_DIR=~/reports
-export GITTXT_LITE_MODE=1
+export GITTXT_LITE_MODE=true
+export GITTXT_AUTO_ZIP=true
 ```
 
 ---
 
-## 📄 JSON Config File (Coming Soon)
+## 📄 `.gittxtignore` File
 
-Support for a per-project `gittxt-config.json` is planned in future versions.
-It will allow setting defaults like:
+You can exclude files or directories using a `.gittxtignore` file placed in the root of your repository. It follows `.gitignore` syntax:
 
-```json
-{
-  "output_dir": "docs/outputs",
-  "exclude_patterns": ["*.zip", "*.bin"],
-  "include_patterns": ["**/*.py"],
-  "lite": true,
-  "zip": true
-}
+```text
+# .gittxtignore
+*.zip
+images/
+node_modules/
 ```
 
-Stay tuned for this feature in the roadmap.
+- Patterns listed here override defaults and CLI settings.
+- Useful for project-specific exclusion management.
 
 ---
 
-## 🔧 Filetype Whitelist / Blacklist
+## 🔧 Filetype Filters
 
-You can override file type detection rules using:
+Manage filetype detection rules with CLI commands:
+
 ```bash
-gittxt filetypes add-textual .ipynb
+gittxt filters add textual_exts .ipynb
+gittxt filters remove textual_exts .txt
 ```
 
-This updates:
-- `config/filetype_config.json`
+Filter categories:
 
-You can also manually edit it:
+- `textual_exts`: Extensions classified as textual.
+- `non_textual_exts`: Extensions classified as non-textual.
+- `excluded_dirs`: Directories excluded from scans.
+
+Manual editing via configuration (`config/gittxt-config.json`):
+
 ```json
 {
-  "textual_exts": [".py", ".md", ".ipynb"],
-  "non_textual_exts": [".zip", ".png"]
+  "filters": {
+    "textual_exts": [".py", ".md", ".ipynb"],
+    "non_textual_exts": [".zip", ".png"],
+    "excluded_dirs": [".git", "node_modules"]
+  }
 }
 ```
 
 ---
 
-## 🧪 Testing Your Config
+## 🧪 Testing Your Configuration
 
-You can preview what’s picked up by using verbose + progress:
+Preview scan results with verbose logging and progress indicators:
+
 ```bash
 gittxt scan . --verbose --progress
 ```
 
-Skipped files will print with reasons (e.g. filtered by size, non-textual).
+Files skipped due to size, exclusion patterns, or file-type filters will be logged with clear reasons.
 
 ---
 
-For real-world examples, see `docs/USAGE_EXAMPLES.md`
+For real-world examples, see [`docs/USAGE_EXAMPLES.md`](USAGE_EXAMPLES.md).
 
