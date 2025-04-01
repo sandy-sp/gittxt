@@ -11,7 +11,7 @@ OUTPUT_DIR = Path("tests/test_zip_output")
 @pytest.mark.asyncio
 async def test_zip_bundle_contents():
     scanner = Scanner(root_path=TEST_REPO, use_ignore_file=True)
-    all_files = await scanner.scan_directory()
+    textual_files, non_textual_files = await scanner.scan_directory()
 
     builder = OutputBuilder(
         repo_name="test_repo",
@@ -24,7 +24,7 @@ async def test_zip_bundle_contents():
     )
 
     outputs = await builder.generate_output(
-        all_files, repo_path=TEST_REPO.resolve(), create_zip=True
+    textual_files, non_textual_files, repo_path=TEST_REPO.resolve(), create_zip=True
     )
 
     zip_files = [f for f in outputs if f.suffix == ".zip"]
