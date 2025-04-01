@@ -96,28 +96,39 @@ async def test_scanner_with_exclude_pattern():
 
 @pytest.mark.asyncio
 async def test_scanner_respects_gittxtignore(tmp_path):
-    # Setup test repo
+    # Setup mock repo structure
     test_dir = tmp_path / "repo"
     test_dir.mkdir()
-    (test_dir / "keep.txt").write_text("This should be kept")
-    (test_dir / "skip.zip").write_text("Binary content")
-    (test_dir / "node_modules").mkdir()
-    (test_dir / "node_modules" / "lib.js").write_text("console.log('test')")
 
-    # Create .gittxtignore
+    # Create files and directories
+    keep_file = test_dir / "keep.txt"
+    skip_file = test_dir / "skip.zip"
+    node_modules_dir = test_dir / "node_modules"
+    node_modules_dir.mkdir()
+    lib_file = node_modules_dir / "lib.js"
+
+    keep_file.write_text("This should be kept")
+    skip_file.write_text("Binary content")
+    lib_file.write_text("console.log('test')")
+
+    # Create .gittxtignore file
     (test_dir / ".gittxtignore").write_text("*.zip\nnode_modules/")
 
+    # Run scanner
     scanner = Scanner(
         root_path=test_dir,
         use_ignore_file=True,
         progress=False,
     )
-    accepted, non_textual = await scanner.scan_directory()
+    accepted_files, _ = await scanner.scan_directory()
 
-    accepted_names = [p.name for p in accepted]
-    assert "keep.txt" in accepted_names
-    assert "skip.zip" not in accepted_names
-    assert all("node_modules" not in str(p) for p in accepted)
+    # Check results
+    accepted_names = {f.name for f in accepted_files}
+    accepted_paths = [str(p) for p in accepted_files]
+
+    assert "keep.txt" in accepted_names, "Expected keep.txt to be accepted"
+    assert "skip.zip" not in accepted_names, "Expected skip.zip to be excluded"
+    assert not any("node_modules" in p for p in accepted_paths), "node_modules should be excluded"
 
 @pytest.mark.asyncio
 async def test_scanner_with_no_size_limit(tmp_path):
