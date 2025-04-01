@@ -18,16 +18,9 @@ jobs:
       - name: 📣 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🖍 Extract release notes from CHANGELOG.md
-        id: changelog
-        run: |
-          RELEASE_TAG="${GITHUB_REF##*/}"
-          echo "Detected tag: $RELEASE_TAG"
-          awk "/^## \[?$RELEASE_TAG\]?/ {flag=1; next} /^## \[/ {flag=0} flag" docs/CHANGELOG.md > excerpt.txt
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "# Release $RELEASE_TAG" >> $GITHUB_OUTPUT
-          cat excerpt.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+      - name: 📝 Read README for release notes
+        id: readme
+        run: echo "::set-output name=notes::$(sed ':a;N;$!ba;s/\n/%0A/g' README.md)"
 
       - name: 🏐 Set up Python & Poetry
         run: |
@@ -42,7 +35,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: "Release ${{ github.ref_name }}"
-          body: "${{ steps.changelog.outputs.notes }}"
+          body: "${{ steps.readme.outputs.notes }}"
           draft: false
           prerelease: false
           files: "dist/*"
