@@ -7,7 +7,7 @@ from gittxt.utils.subcat_utils import infer_textual_subcategory
     ("index.js", "import fs from 'fs'", "code"),
     ("config.yaml", "setting: true\nparameter: value", "config"),
     ("data.csv", "id,value\n1,2", "data"),
-    ("LICENSE", "MIT License", "meta"),
+    ("LICENSE", "MIT License", "docs"),
     ("notes.txt", "this is plain text", "other"),
 ])
 def test_infer_textual_subcategory(name, content, expected, tmp_path):
