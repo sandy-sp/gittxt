@@ -1,100 +1,32 @@
-# 📘 Gittxt Usage Examples
+# 🚀 Gittxt Usage Examples
 
-This guide provides practical examples of how to use the `gittxt` CLI for scanning repositories, applying filters, and generating outputs in different formats.
-
----
-
-## 🛠 Basic Scan
-
-Scan a local or remote repository and output results in default formats (TXT + JSON):
-
-```bash
-gittxt scan https://github.com/some-user/some-repo
-```
-
-This creates:
-- `some-repo.txt`
-- `some-repo.json`
-
-in the configured output directory.
+This document provides practical examples of using Gittxt CLI for common tasks, demonstrating the latest available options and configurations.
 
 ---
 
-## 📂 Scanning a Subdirectory
+## 📂 Basic Local Repository Scan
 
-Target a specific subfolder within a GitHub repo:
-
-```bash
-gittxt scan https://github.com/org/repo --branch main --output-dir out --lite --zip
-```
-
-Add a subdir:
+Scan your current directory and generate default outputs:
 
 ```bash
-gittxt scan https://github.com/org/repo --subdir src/lib --zip
+gittxt scan .
 ```
 
 ---
 
-## 🧹 Exclude Directories and Files
+## 🚩 Specifying Output Formats and Directory
 
-Skip node_modules, virtualenvs, or specific patterns:
+Generate reports in specific formats and place them in a custom output directory:
 
 ```bash
-gittxt scan . -x node_modules -x venv -e "*.zip" -e "*.png"
-```
-
-Also supports `.gittxtignore`:
-
-```text
-# .gittxtignore
-*.zip
-images/
+gittxt scan . --output-dir ./reports --output-format txt,json,md
 ```
 
 ---
 
-## ✅ Include Only Specific File Patterns
+## 🌟 Lite Mode
 
-Restrict to files matching given globs:
-
-```bash
-gittxt scan . -i "**/*.py" -i "*.md"
-```
-
-Only `.py` and `.md` files will be considered textual.
-
----
-
-## 🚫 Size Limit
-
-Ignore large files:
-
-```bash
-gittxt scan . --size-limit 1000000  # 1MB
-```
-
----
-
-## 📦 Create a ZIP Bundle
-
-Package all outputs + assets + manifest:
-
-```bash
-gittxt scan . --zip
-```
-
-This generates:
-- `repo-name-YYYYMMDD-HHMMSS.zip`
-  - `outputs/*.txt`, `*.json`, `*.md`
-  - `assets/` folder for images, binaries
-  - `summary.json`, `manifest.json`, `README.md`
-
----
-
-## ⚡️ Lite Mode Output
-
-For minimal reports without full content:
+Generate minimal, lightweight outputs:
 
 ```bash
 gittxt scan . --lite
@@ -102,27 +34,74 @@ gittxt scan . --lite
 
 ---
 
-## 📁 Output Directory
+## 📦 ZIP Bundle Creation
 
-Customize where outputs are saved:
+Include all outputs and assets in a ZIP archive:
 
 ```bash
-gittxt scan . --output-dir ./my-reports
+gittxt scan . --zip
 ```
 
 ---
 
-## 🧪 Running on Test Repo
+## 🚫 Exclude Files Using Patterns
+
+Exclude specific files or types during scanning:
 
 ```bash
-make test
+gittxt scan . --exclude-patterns "*.log" "*.tmp" "node_modules/*"
 ```
-
-This runs:
-- `generate_test_repo.py`
-- full pytest suite on test cases
 
 ---
 
-For advanced configuration, see `docs/CONFIGURATION.md`
+## ✅ Include Only Certain File Types
+
+Limit scan to certain file types (e.g., only Python and Markdown files):
+
+```bash
+gittxt scan . --include-patterns "**/*.py" "**/*.md"
+```
+
+---
+
+## 📄 `.gittxtignore` File Usage
+
+Place a `.gittxtignore` file in your repository root with content:
+
+```text
+*.zip
+images/
+node_modules/
+```
+
+Enable syncing with `.gitignore`:
+
+```bash
+gittxt scan . --sync
+```
+
+---
+
+## 📁 Scanning Remote Repositories
+
+Scan a specific branch or subdirectory of a remote GitHub repository:
+
+```bash
+gittxt scan https://github.com/user/sample-repo --branch develop
+```
+
+---
+
+## 🔧 Updating File Type Filters
+
+Add or remove file types from detection filters:
+
+```bash
+gittxt filters add textual_exts .ipynb
+gittxt filters remove textual_exts .log
+```
+
+---
+
+For detailed configuration options, see [`docs/CONFIGURATION.md`](CONFIGURATION.md).
 
