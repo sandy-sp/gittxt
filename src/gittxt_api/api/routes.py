@@ -3,8 +3,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from ..models import ScanRequest, ScanResponse
 from ..worker import run_scan
 from ..storage import get_output_file, load_summary_data
-from src.gittxt_api.main import authenticate, limiter
-from src.gittxt_api.config import RATE_LIMIT
+from src.gittxt_api.utils.auth import authenticate_request, limiter
 from pydantic import PositiveInt
 
 router = APIRouter()
@@ -15,7 +14,7 @@ ALLOWED_FORMATS = {"txt", "json", "md", "zip"}
 def health_check():
     return {"status": "ok"}
 
-@router.post("/scan", response_model=ScanResponse, dependencies=[Depends(authenticate)])
+@router.post("/scan", response_model=ScanResponse, dependencies=[Depends(authenticate_request)])
 @limiter.limit(RATE_LIMIT)  # Use a configurable rate limit
 def scan_repo(request: ScanRequest):
     try:
@@ -50,3 +49,8 @@ def get_scan_summary(scan_id: str, page: PositiveInt = 1, page_size: PositiveInt
         "page_size": page_size,
         "files": files[start:end],
     }
+
+@router.get("/example")
+@limiter.limit("5/minute")
+async def example_endpoint():
+    return {"message": "This is an example endpoint"}
