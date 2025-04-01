@@ -5,6 +5,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import logging
+import os
 from .api.routes import router as api_router
 
 app = FastAPI(
@@ -23,11 +24,18 @@ logger = logging.getLogger("gittxt_api")
 # Exception handlers
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "An unexpected error occurred. Please try again later."},
-    )
+    if os.getenv("ENV") == "production":
+        logger.error("Unhandled exception occurred.")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "An unexpected error occurred. Please try again later."},
+        )
+    else:
+        logger.error(f"Unhandled exception: {exc}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(exc)},
+        )
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
