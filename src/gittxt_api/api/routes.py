@@ -16,8 +16,10 @@ def health_check():
 def scan_repo(request: ScanRequest):
     try:
         return run_scan(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid input: {e}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
 
 @router.get("/download/{scan_id}")
 def download_file(scan_id: str, format: str):
@@ -35,12 +37,10 @@ def get_scan_summary(scan_id: str, page: int = 1, page_size: int = 10):
     files = summary.get("files", [])
     start = (page - 1) * page_size
     end = start + page_size
-    paginated_files = files[start:end]
-
     return {
         "scan_id": scan_id,
         "total_files": len(files),
         "page": page,
         "page_size": page_size,
-        "files": paginated_files,
+        "files": files[start:end],
     }
