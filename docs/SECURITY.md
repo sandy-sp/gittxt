@@ -2,18 +2,82 @@
 
 ## Supported Versions
 
-As Gittxt is currently in **v1.5.9**, we aim to provide security updates for the latest release only.
+As Gittxt is currently in **v1.6.0**, we aim to provide security updates for the latest release only.
 
 | Version | Supported          |
 |---------|--------------------|
-| 1.5.9   | ✅ Actively supported |
-| < 1.4.1 | ❌ Not supported     |
+| 1.6.0   | ✅ Actively supported |
+
+---
+# 🔐 Gittxt Security Practices
+
+Gittxt is designed with security best practices in mind to ensure safe and reliable operation.
 
 ---
 
-## Reporting a Vulnerability
+## 🛡 Security Features
 
-We are committed to ensuring the security of Gittxt and the safety of its users. If you discover a vulnerability, please follow the process below.
+- **Local Processing**: All repository processing and file scanning are performed locally, minimizing data exposure.
+- **Selective File Processing**: Only textual content and explicitly included assets are processed.
+- **Configurable Exclusions**: Use `.gittxtignore` files and exclusion patterns to ensure sensitive data or files are never scanned or included in outputs.
+- **No Persistent Caching**: Scanned repository data is not cached locally to avoid unnecessary retention of potentially sensitive information.
+
+---
+
+## 🚧 Best Practices
+
+### Exclude Sensitive Files
+
+Always exclude sensitive files using CLI patterns or a `.gittxtignore` file:
+
+```text
+*.pem
+*.key
+.env
+secrets.json
+```
+
+CLI example:
+```bash
+gittxt scan . --exclude-patterns "*.pem" "*.key" ".env"
+```
+
+### Limit Repository Scans
+
+Scan only necessary parts of your repository:
+
+```bash
+gittxt scan . --include-patterns "src/**/*"
+```
+
+### Secure Outputs
+
+- Use the `--output-dir` option to store generated outputs in a secure, dedicated location.
+- Consider enabling `--zip` mode for secure and organized data management.
+
+---
+
+## 🔍 Auditing and Logs
+
+- Gittxt supports configurable logging levels (`debug`, `info`, `warning`, `error`).
+- Monitor logs for unusual activity, file access errors, or unexpected file type detections:
+
+```bash
+gittxt scan . --log-level info
+```
+
+---
+
+## 🚨 Reporting Vulnerabilities
+
+If you identify a vulnerability or security issue:
+- **Do not** disclose publicly immediately.
+- Privately report.
+
+We appreciate your responsible disclosure and commit to addressing vulnerabilities promptly.
+
+We are committed to ensuring the security of Gittxt and the safety of its users. 
+If you discover a vulnerability, please follow the process below.
 
 ### 📩 How to Report
 - Email **sandeep.paidipati@gmail.com** with the following:
