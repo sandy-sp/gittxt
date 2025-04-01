@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "gittxt"
-version = "1.5.8"
+version = "1.5.9"
 description = "Gittxt: Get text from Git repositories in AI-ready formats"
 readme = "README.md"
 license = { text = "MIT" }

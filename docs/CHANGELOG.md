@@ -4,7 +4,7 @@ All notable changes to **Gittxt** will be documented in this file.
 
 ---
 
-## [1.5.8] - 2025-03-29
+## [1.5.9] - 2025-03-29
 
 ### ✨ Features
 - Added `--lite` mode for minimal output format across all exporters
