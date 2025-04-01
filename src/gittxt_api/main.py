@@ -1,12 +1,12 @@
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.security import APIKeyHeader
-from slowapi import Limiter
+from src.gittxt_api.utils.auth import authenticate_request, limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import logging
 import os
-from .api.routes import router as api_router
+from src.gittxt_api.api.routes import router as api_router
 
 app = FastAPI(
     title="Gittxt API",
@@ -54,7 +54,6 @@ def authenticate(api_key: str = Depends(api_key_header)):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 # Rate limiting
-limiter = Limiter(key_func=get_remote_address)
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
@@ -73,5 +72,7 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     logger.info(f"Response status: {response.status_code}")
     return response
+
+app.include_router(api_router)
 
 
