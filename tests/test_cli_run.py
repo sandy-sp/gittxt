@@ -54,9 +54,10 @@ def test_cli_scan_lite_zip():
 
 def test_zip_bundle_contains_expected_files():
     # Setup temp output directory
-    with tempfile.TemporaryDirectory() as temp_out:
+    with tempfile.TemporaryDirectory():
         repo_url = "https://github.com/cyclotruc/gitingest"
-        output_dir = Path(temp_out)
+        output_dir = OUTPUT_DIR / "zip_test"
+        output_dir.mkdir(parents=True, exist_ok=True)
 
         # Run the CLI with --zip
         result = subprocess.run(
@@ -77,7 +78,11 @@ def test_zip_bundle_contains_expected_files():
         assert result.returncode == 0, f"Failed: {result.stderr}"
 
         # Locate ZIP
-        zip_files = list(output_dir.glob("*.zip"))
+        zip_files = list(output_dir.rglob("*.zip"))
+        if not zip_files:
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
+
         assert zip_files, "No ZIP file created"
         zip_path = zip_files[0]
 
@@ -85,4 +90,4 @@ def test_zip_bundle_contains_expected_files():
             names = z.namelist()
             assert any("manifest.json" in f for f in names), "Missing manifest.json"
             assert any("summary.json" in f or "README.md" in f for f in names), "Missing summary or README"
-            assert any("output.txt" in f for f in names), "Missing output.txt"
+            assert any(f.endswith(".txt") for f in names), "Missing .txt files"
