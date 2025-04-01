@@ -2,7 +2,6 @@ import pytest
 from pathlib import Path
 from gittxt.utils.subcat_utils import infer_textual_subcategory
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("name,content,expected", [
     ("main.py", "def hello():\n  pass", "code"),
     ("index.js", "import fs from 'fs'", "code"),
@@ -11,8 +10,8 @@ from gittxt.utils.subcat_utils import infer_textual_subcategory
     ("LICENSE", "MIT License", "meta"),
     ("notes.txt", "this is plain text", "other"),
 ])
-async def test_infer_textual_subcategory(name, content, expected, tmp_path):
+def test_infer_textual_subcategory(name, content, expected, tmp_path):
     file = tmp_path / name
     file.write_text(content)
-    result = await infer_textual_subcategory(file, content)
+    result = infer_textual_subcategory(file, content)
     assert result == expected
