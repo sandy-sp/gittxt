@@ -4,6 +4,42 @@ All notable changes to **Gittxt** will be documented in this file.
 
 ---
 
+## [1.6.0] - 2025-03-31
+
+### ✨ Features
+- Added `--lite` mode for minimal output across all formatters.
+- Implemented `--zip` option to bundle outputs and non-textual assets into ZIP archives.
+- Full asynchronous I/O support implemented for repository scanning and formatting.
+- Added support for `.gittxtignore` to manage file/folder exclusions via gitignore-style patterns.
+- Enhanced summary reports now display token counts, file-type breakdown, and detailed directory trees.
+
+### 🛠 Improvements
+- Modularized CLI into dedicated files: `cli_scan.py`, `cli_utils.py`, `cli_filters.py`, and `cli_install.py`.
+- Improved directory tree generation with symlink support and configurable depth limits.
+- Refactored formatters (`json_formatter.py`, `markdown_formatter.py`, `text_formatter.py`) for consistent behavior across rich and lite modes.
+- ZIP formatter (`zip_formatter.py`) now includes `manifest.json` and `summary.json` in every bundle.
+- Enhanced MIME-based file type heuristics in `filetype_utils.py` with fallback checks and improved accuracy.
+- Optimized path handling and error management during file and asset bundling.
+
+### 🧪 Tests
+- Expanded test coverage for all formatters, notably ZIP bundling and lite-mode formatting.
+- Enhanced scanner tests to cover `.gittxtignore` functionality, size limit handling, and glob pattern exclusions.
+- Updated CLI tests to align with the newly modularized CLI structure.
+
+### 🐛 Bug Fixes
+- Fixed incorrect path resolution errors in multiple formatters causing test failures.
+- Addressed crashes due to missing branch handling in CLI when scanning remote repositories.
+- Resolved relative path calculation issues when creating ZIP bundles containing files outside the root directory.
+- Improved skipped-file logging with clearer reasons and verbosity.
+- Fixed CLI crash when invalid or inaccessible repositories were specified.
+
+### 🧹 Cleanup
+- Removed deprecated `--max-lines` CLI option.
+- Eliminated redundant logging statements and obsolete utility functions.
+- Streamlined configuration management logic for easier maintenance and readability.
+
+---
+
 ## [1.5.9] - 2025-03-29
 
 ### ✨ Features
