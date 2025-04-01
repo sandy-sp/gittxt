@@ -42,6 +42,7 @@ async def scan_repo_logic_async(request: ScanRequest, task_id: str):
 
         result = await scan_repo_logic(request)
 
+        result["__cleanup_path__"] = result["output_dir"]
         update_task(task_id, TaskStatus.COMPLETED, result=result)
     except Exception as e:
         update_task(task_id, TaskStatus.FAILED, error=str(e))
