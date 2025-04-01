@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import axios from 'axios';
 
+interface ScanResponse {
+  success: boolean;
+  data: any;
+}
+
 interface Props {
-  onScanComplete: (data: any) => void;
+  onScanComplete: (data: ScanResponse) => void;
 }
 
 export default function ScanForm({ onScanComplete }: Props) {
@@ -12,21 +17,29 @@ export default function ScanForm({ onScanComplete }: Props) {
   const [formats, setFormats] = useState<string[]>(['txt', 'json']);
   const [lite, setLite] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleFormatToggle = (format: string) => {
+  const handleFormatToggle = useCallback((format: string) => {
     setFormats(prev =>
       prev.includes(format)
         ? prev.filter(f => f !== format)
         : [...prev, format]
     );
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+
+    if (!repoUrl.startsWith('https://github.com/')) {
+      setError('Please enter a valid GitHub repository URL.');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const res = await axios.post('http://127.0.0.1:8000/scan', {
+      const res = await axios.post<ScanResponse>('http://127.0.0.1:8000/scan', {
         repo_url: repoUrl,
         exclude_patterns: exclude.split(',').map(p => p.trim()),
         include_patterns: [],
@@ -37,7 +50,7 @@ export default function ScanForm({ onScanComplete }: Props) {
 
       onScanComplete(res.data);
     } catch (err) {
-      alert("Scan failed. See console.");
+      setError('Scan failed. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -47,8 +60,9 @@ export default function ScanForm({ onScanComplete }: Props) {
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow mb-4 space-y-4">
       <div>
-        <label className="block font-semibold">GitHub Repo URL</label>
+        <label htmlFor="repoUrl" className="block font-semibold">GitHub Repo URL</label>
         <input
+          id="repoUrl"
           type="url"
           value={repoUrl}
           onChange={e => setRepoUrl(e.target.value)}
@@ -59,8 +73,9 @@ export default function ScanForm({ onScanComplete }: Props) {
       </div>
 
       <div>
-        <label className="block font-semibold">Exclude Patterns</label>
+        <label htmlFor="exclude" className="block font-semibold">Exclude Patterns</label>
         <input
+          id="exclude"
           type="text"
           value={exclude}
           onChange={e => setExclude(e.target.value)}
@@ -70,8 +85,11 @@ export default function ScanForm({ onScanComplete }: Props) {
       </div>
 
       <div>
-        <label className="block font-semibold">Include files under (bytes): {sizeLimit}</label>
+        <label htmlFor="sizeLimit" className="block font-semibold">
+          Include files under (bytes): {sizeLimit}
+        </label>
         <input
+          id="sizeLimit"
           type="range"
           min={1024}
           max={100000}
@@ -99,19 +117,22 @@ export default function ScanForm({ onScanComplete }: Props) {
 
       <div className="flex items-center gap-2">
         <input
+          id="liteMode"
           type="checkbox"
           checked={lite}
           onChange={() => setLite(!lite)}
         />
-        <label>Lite Mode</label>
+        <label htmlFor="liteMode">Lite Mode</label>
       </div>
+
+      {error && <p className="text-red-500">{error}</p>}
 
       <button
         type="submit"
         disabled={loading}
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       >
-        {loading ? "Scanning..." : "Ingest"}
+        {loading ? "Scanning..." : "Get Text"}
       </button>
     </form>
   );
