@@ -1,9 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from gittxt_api.models.scan import ScanRequest, ScanResponse
+from gittxt_api.services.scan_service import scan_repo_logic
 
 router = APIRouter()
 
 @router.post("/", response_model=ScanResponse)
 async def scan_repo(request: ScanRequest):
-    # Placeholder for calling the scan service
-    raise HTTPException(status_code=501, detail="Scan logic not implemented yet")
+    try:
+        result = await scan_repo_logic(request)
+        return ScanResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
