@@ -4,6 +4,7 @@ from gittxt.core.scanner import Scanner
 from gittxt.core.config import GittxtConfig
 from gittxt_api.models.scan import ScanRequest
 from gittxt_api.utils.logger import get_logger
+from gittxt_api.utils.task_registry import update_task, TaskStatus
 
 logger = get_logger("scan_service")
 
@@ -34,3 +35,13 @@ async def scan_repo_logic(request: ScanRequest) -> dict:
     except Exception as e:
         logger.error(f"Scan failed: {e}")
         raise
+
+async def scan_repo_logic_async(request: ScanRequest, task_id: str):
+    try:
+        update_task(task_id, TaskStatus.RUNNING)
+
+        result = await scan_repo_logic(request)
+
+        update_task(task_id, TaskStatus.COMPLETED, result=result)
+    except Exception as e:
+        update_task(task_id, TaskStatus.FAILED, error=str(e))
