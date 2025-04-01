@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "gittxt"
-version = "1.5.9"
+version = "1.6.0"
 description = "Gittxt: Get text from Git repositories in AI-ready formats"
 readme = "README.md"
 license = { text = "MIT" }
@@ -14,7 +14,7 @@ authors = [
 requires-python = ">=3.9"
 
 keywords = [
-  "cli", "git", "text-extraction", "LLM", "NLP", "machine-learning", "dataset", "repository", "documentation", "scanner"
+  "llm-dataset", "text-extraction", "git-repos", "ai-preprocessing", "cli-tool", "nlp", "data-pipeline", "repo-analysis", "source-code", "github-scanner", "ai-ready"
 ]
 
 classifiers = [
