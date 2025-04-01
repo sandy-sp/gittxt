@@ -13,6 +13,8 @@ class ScanRequest(BaseModel):
 
 class ScanResponse(BaseModel):
     scan_id: str
+    repo_name: Optional[str] = None
+    timestamp: Optional[str] = None
     summary: Dict
     directory_tree: str
     file_types: Dict[str, List[str]]
