@@ -1,6 +1,6 @@
 # 📦 Output Formats in Gittxt
 
-This document provides examples and structure breakdowns for each of the supported output formats in Gittxt.
+This document provides examples and detailed descriptions for each of the supported output formats in Gittxt.
 
 ---
 
@@ -10,7 +10,7 @@ This document provides examples and structure breakdowns for each of the support
 ```
 === Gittxt Report ===
 Repo: sample-repo
-Generated: 2025-03-29T12:34:56Z
+Generated: 2025-03-31T12:34:56Z
 Branch: main
 
 === Directory Tree ===
@@ -24,9 +24,7 @@ Total Size: 10.5 kB
 Estimated Tokens: 3.2k
 
 === 📝 Extracted Textual Files ===
----
-FILE: src/app.py | TYPE: Python | SIZE: 5.0 kB | TOKENS: 1.5k
----
+---> FILE: src/app.py | TYPE: Python | SIZE: 5.0 kB | TOKENS: 1.5k <---
 [content here]
 ```
 
@@ -40,7 +38,7 @@ Branch: main
 └── data.md
 
 === Textual Files ===
---- File: script.py ---
+---> File: script.py <---
 [content here]
 ```
 
@@ -55,7 +53,7 @@ Branch: main
     "url": "https://github.com/user/sample-repo",
     "branch": "main",
     "subdir": "src",
-    "generated_at": "2025-03-29T12:34:56Z",
+    "generated_at": "2025-03-31T12:34:56Z",
     "tree_summary": "├── src\n│   └── file.py"
   },
   "summary": {
@@ -72,9 +70,6 @@ Branch: main
     "file_type_breakdown": {
       "Python": 2,
       "Markdown": 1
-    },
-    "tokens_by_type": {
-      "Python": 1500
     }
   },
   "files": [...],
@@ -87,17 +82,18 @@ Branch: main
 ## 📘 Markdown (.md)
 
 ```markdown
+
 # 🧾 Gittxt Report for `sample-repo`
 
-- **Generated**: 2025-03-29
+- **Generated**: 2025-03-31
 - **Repository**: [GitHub URL]
 - **Format**: markdown
 
 ## 📂 Directory Tree
-```text
+
 ├── src
 │   └── app.py
-```
+
 
 ## 📊 Summary Report
 - **Total Files**: 3
@@ -109,9 +105,9 @@ Branch: main
 - **Size**: 5.0 kB
 - **Tokens (est.)**: 1.5k
 - **URL**: [GitHub link]
-```text
+
 [code here]
-```
+
 
 ## 🎨 Non-Textual Assets
 | Path | Type | Size | URL |
@@ -123,7 +119,7 @@ Branch: main
 
 ## 📆 ZIP Bundle (.zip)
 
-Each ZIP archive contains:
+Each ZIP archive includes:
 ```
 repo-name-YYYYMMDD-HHMMSS.zip
 ├── outputs/
@@ -160,5 +156,5 @@ Mirrors the `summary` block from JSON formatter output.
 
 ---
 
-For real-world usage, see `docs/USAGE_EXAMPLES.md`
+For practical examples, see [`docs/USAGE_EXAMPLES.md`](USAGE_EXAMPLES.md).
 
