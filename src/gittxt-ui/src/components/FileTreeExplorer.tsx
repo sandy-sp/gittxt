@@ -16,18 +16,25 @@ function TreeNode({
   showSelectedOnly,
   manifest
 }) {
+  if (!node) {
+    console.error("TreeNode received an undefined node:", { path });
+    return null;
+  }
+
+  console.log("Rendering TreeNode:", { node, path });
+
   const [expanded, setExpanded] = useState(true);
   const fullPath = path ? `${path}/${node.name}` : node.name;
-  const isSelected = selected.has(fullPath);
+  const isSelected = selected?.has(fullPath) || false; // Defensive check
   const isFile = !node.children;
   const isActive = fullPath === activePath;
 
   const fileExt = isFile ? node.name.split('.').pop() : '';
-  const shouldRender = !isFile || !filterTypes.length || filterTypes.includes(fileExt);
+  const shouldRender = !isFile || !filterTypes?.length || filterTypes.includes(fileExt); // Defensive check
   if (!shouldRender) return null;
-  if (showSelectedOnly && isFile && !selected.has(fullPath)) return null;
+  if (showSelectedOnly && isFile && !selected?.has(fullPath)) return null; // Defensive check
 
-  const toggleSelect = () => onToggle(fullPath, !isSelected);
+  const toggleSelect = () => onToggle?.(fullPath, !isSelected); // Defensive check
   const toggleExpand = () => setExpanded(!expanded);
 
   const meta = manifest?.[fullPath];
@@ -53,7 +60,7 @@ function TreeNode({
           className={`text-sm font-mono ${
             isFile ? 'cursor-pointer hover:underline text-blue-700' : ''
           } ${isActive ? 'bg-yellow-100 px-1 rounded' : ''}`}
-          onClick={() => isFile && onFileClick(fullPath)}
+          onClick={() => isFile && onFileClick?.(fullPath)} // Defensive check
         >
           {node.name}
         </span>
@@ -74,22 +81,18 @@ function TreeNode({
             transition={{ duration: 0.2 }}
           >
             {node.children.map((child) => (
-              <ul className="text-sm">
-                {treeData ? (
-                  <TreeNode
-                    node={treeData}
-                    path=""
-                    selected={selected}
-                    onToggle={onToggle}
-                    onFileClick={onFileClick}
-                    activePath={activePath}
-                    filterTypes={filterTypes || []}
-                    showSelectedOnly={showSelectedOnly}
-                  />
-                ) : (
-                  <li className="text-gray-400 italic">No repository tree available.</li>
-                )}
-              </ul>
+              <TreeNode
+                key={child.name} // Add a unique key for each child
+                node={child} // Pass the correct child node
+                path={fullPath} // Update the path for the child
+                selected={selected}
+                onToggle={onToggle}
+                onFileClick={onFileClick}
+                activePath={activePath}
+                filterTypes={filterTypes || []}
+                showSelectedOnly={showSelectedOnly}
+                manifest={manifest}
+              />
             ))}
           </motion.ul>
         )}
@@ -108,6 +111,13 @@ export default function FileTreeExplorer({
   showSelectedOnly,
   manifest
 }) {
+  console.log("Rendering FileTreeExplorer:", { treeData });
+
+  if (!treeData) {
+    console.error("FileTreeExplorer received undefined treeData");
+    return <div>Error: No tree data available</div>;
+  }
+
   return (
     <div className="bg-white shadow-md rounded-xl p-4 mb-4">
       <h2 className="text-lg font-semibold mb-2">📁 Repository Structure</h2>
