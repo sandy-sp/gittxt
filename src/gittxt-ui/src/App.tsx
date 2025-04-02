@@ -39,3 +39,11 @@ export default function App() {
     </div>
   );
 }
+
+import ScanResultsUI from './pages/ScanResultsUI';
+
+function App() {
+  return <ScanResultsUI />;
+}
+
+export default App;
