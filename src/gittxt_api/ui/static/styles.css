@@ -1,0 +1,82 @@
+/* src/gittxt_api/ui/static/styles.css */
+
+body {
+    font-family: sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    margin: 0;
+    padding: 2rem;
+  }
+  
+  .container {
+    max-width: 720px;
+    margin: auto;
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  label {
+    display: block;
+    margin: 1rem 0 0.5rem;
+    font-weight: bold;
+  }
+  
+  input[type="text"],
+  input[type="number"],
+  textarea {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    resize: vertical;
+  }
+  
+  textarea {
+    height: 60px;
+  }
+  
+  .checkbox-group label {
+    display: inline-block;
+    margin-right: 1rem;
+    font-weight: normal;
+  }
+  
+  button {
+    background: #1e88e5;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  button:hover {
+    background: #1565c0;
+  }
+  
+  #status, #result {
+    margin-top: 2rem;
+    padding: 1rem;
+    border-radius: 6px;
+  }
+  
+  #status {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+  }
+  
+  #result {
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+  }
+  
