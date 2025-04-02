@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Folder, FolderOpen, FileText } from 'lucide-react';
 
-function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, filterTypes }) {
+function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, filterTypes, showSelectedOnly }) {
   const [expanded, setExpanded] = useState(true);
   const fullPath = path ? `${path}/${node.name}` : node.name;
   const isSelected = selected.has(fullPath);
@@ -9,8 +11,8 @@ function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, fil
 
   const fileExt = isFile ? node.name.split('.').pop() : '';
   const shouldRender = !isFile || !filterTypes.length || filterTypes.includes(fileExt);
-
   if (!shouldRender) return null;
+  if (showSelectedOnly && isFile && !selected.has(fullPath)) return null;
 
   const toggleSelect = () => onToggle(fullPath, !isSelected);
   const toggleExpand = () => setExpanded(!expanded);
@@ -20,9 +22,10 @@ function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, fil
       <div className="flex items-center space-x-2">
         {node.children && (
           <button onClick={toggleExpand} className="text-sm">
-            {expanded ? '▼' : '▶'}
+            {expanded ? <FolderOpen size={16} /> : <Folder size={16} />}
           </button>
         )}
+        {!node.children && <FileText size={16} className="text-gray-600" />}
         <input
           type="checkbox"
           checked={isSelected}
@@ -37,27 +40,36 @@ function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, fil
           {node.name}
         </span>
       </div>
-      {expanded && node.children && (
-        <ul className="mt-1">
-          {node.children.map((child) => (
-            <TreeNode
-              key={child.name}
-              node={child}
-              path={fullPath}
-              onToggle={onToggle}
-              selected={selected}
-              onFileClick={onFileClick}
-              activePath={activePath}
-              filterTypes={filterTypes}
-            />
-          ))}
-        </ul>
-      )}
+      <AnimatePresence initial={false}>
+        {expanded && node.children && (
+          <motion.ul
+            className="mt-1"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {node.children.map((child) => (
+              <TreeNode
+                key={child.name}
+                node={child}
+                path={fullPath}
+                onToggle={onToggle}
+                selected={selected}
+                onFileClick={onFileClick}
+                activePath={activePath}
+                filterTypes={filterTypes}
+                showSelectedOnly={showSelectedOnly}
+              />
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
     </li>
   );
 }
 
-export default function FileTreeView({ treeData, selected, onToggle, onFileClick, activePath, filterTypes }) {
+export default function FileTreeView({ treeData, selected, onToggle, onFileClick, activePath, filterTypes, showSelectedOnly }) {
   return (
     <div className="bg-white shadow-md rounded-xl p-4 mb-4">
       <h2 className="text-lg font-semibold mb-2">📁 Repository Structure</h2>
@@ -70,6 +82,7 @@ export default function FileTreeView({ treeData, selected, onToggle, onFileClick
           onFileClick={onFileClick}
           activePath={activePath}
           filterTypes={filterTypes || []}
+          showSelectedOnly={showSelectedOnly}
         />
       </ul>
     </div>
