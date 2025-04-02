@@ -156,6 +156,7 @@ export default function ScanResultsUI() {
                 activePath={activeFilePath}
                 filterTypes={filter.filetypes}
                 showSelectedOnly={showSelectedOnly}
+                showBadges={true}
               />
               <CategoryFilter
                 categories={filteredCategories}
@@ -163,6 +164,8 @@ export default function ScanResultsUI() {
                 onChange={handleFilterChange}
                 onFileClick={handleFileClick}
                 activePath={activeFilePath}
+                selectedFiles={selectedFiles}
+                showBadges={true}
               />
             </div>
             <div className="md:col-span-2">
