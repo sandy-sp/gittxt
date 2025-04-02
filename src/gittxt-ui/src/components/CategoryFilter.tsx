@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, FolderOpen, FileText } from 'lucide-react';
+import ReactTooltip from 'react-tooltip';
 
-export default function CategoryFilter({ categories, selected, onChange, onFileClick, activePath }) {
+export default function CategoryFilter({
+  categories,
+  selected,
+  onChange,
+  onFileClick,
+  activePath,
+  manifest
+}) {
   const [expandedLangs, setExpandedLangs] = useState({});
   const [expandedCats, setExpandedCats] = useState({});
 
@@ -49,18 +57,26 @@ export default function CategoryFilter({ categories, selected, onChange, onFileC
                             transition={{ duration: 0.2 }}
                             className="ml-6"
                           >
-                            {files.map((file) => (
-                              <li
-                                key={file}
-                                className={`flex items-center space-x-2 text-xs font-mono cursor-pointer hover:underline ${
-                                  activePath === file ? 'bg-yellow-100 px-1 rounded' : ''
-                                }`}
-                                onClick={() => onFileClick(file)}
-                              >
-                                <FileText size={12} />
-                                <span>{file}</span>
-                              </li>
-                            ))}
+                            {files.map((file) => {
+                              const meta = manifest?.[file];
+                              const tooltip = meta
+                                ? `Size: ${meta.human_readable_size || meta.size} • Tokens: ${meta.token_count || '?'}`
+                                : '';
+
+                              return (
+                                <li
+                                  key={file}
+                                  data-tip={tooltip}
+                                  className={`flex items-center space-x-2 text-xs font-mono cursor-pointer hover:underline ${
+                                    activePath === file ? 'bg-yellow-100 px-1 rounded' : ''
+                                  }`}
+                                  onClick={() => onFileClick(file)}
+                                >
+                                  <FileText size={12} />
+                                  <span>{file}</span>
+                                </li>
+                              );
+                            })}
                           </motion.ul>
                         )}
                       </AnimatePresence>
@@ -72,6 +88,7 @@ export default function CategoryFilter({ categories, selected, onChange, onFileC
           </li>
         ))}
       </ul>
+      <ReactTooltip place="right" type="dark" effect="solid" />
     </div>
   );
 }
