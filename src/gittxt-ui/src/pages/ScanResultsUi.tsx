@@ -92,7 +92,7 @@ export default function ScanResultsUI() {
     : {};
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="p-4 max-w-7xl mx-auto">
       <div className="mb-4">
         <input
           className="w-full p-2 border rounded"
@@ -127,24 +127,30 @@ export default function ScanResultsUI() {
             onToggle={setShowSelectedOnly}
             onReset={handleResetFilters}
           />
-          <FileTreeView
-            treeData={results.treeObject}
-            selected={selectedFiles}
-            onToggle={handleToggleSelect}
-            onFileClick={handleFileClick}
-            activePath={activeFilePath}
-            filterTypes={filter.filetypes}
-            showSelectedOnly={showSelectedOnly}
-          />
-          <CategoryFilter
-            categories={filteredCategories}
-            selected={filter.languages}
-            onChange={handleFilterChange}
-            onFileClick={handleFileClick}
-            activePath={activeFilePath}
-          />
-          <FilePreview filePath={activeFilePath} />
-          <DownloadLinks downloads={results.downloads} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <FileTreeView
+                treeData={results.treeObject}
+                selected={selectedFiles}
+                onToggle={handleToggleSelect}
+                onFileClick={handleFileClick}
+                activePath={activeFilePath}
+                filterTypes={filter.filetypes}
+                showSelectedOnly={showSelectedOnly}
+              />
+              <CategoryFilter
+                categories={filteredCategories}
+                selected={filter.languages}
+                onChange={handleFilterChange}
+                onFileClick={handleFileClick}
+                activePath={activeFilePath}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <FilePreview filePath={activeFilePath} />
+              <DownloadLinks downloads={results.downloads} />
+            </div>
+          </div>
         </>
       )}
     </div>
