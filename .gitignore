@@ -40,6 +40,7 @@ gittxt-config.json
 filetype_config.json
 subcategory_config.json
 poetry.lock
+package-lock.json
 
 # Frontend UI node modules
 node_modules
