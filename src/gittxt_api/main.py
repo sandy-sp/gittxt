@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from src.gittxt_api.api import scan, health
+from src.gittxt_api.api import scan, health, scan_tree
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,6 +31,7 @@ app.add_middleware(
 # Routers
 app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(scan.router, prefix="/scan", tags=["Scan"])
+app.include_router(scan_tree.router, prefix="/scan", tags=["Scan"])
 
 # Mount UI static and template routes
 app.mount("/static", StaticFiles(directory="src/gittxt_api/ui/static"), name="static")
