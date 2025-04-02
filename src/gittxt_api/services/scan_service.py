@@ -1,3 +1,5 @@
+
+import os
 import tempfile
 import asyncio
 import subprocess
@@ -115,3 +117,20 @@ async def scan_repo_logic_async(request: ScanRequest, task_id: str):
         update_task(task_id, TaskStatus.COMPLETED, result=result_dict)
     except Exception as e:
         update_task(task_id, TaskStatus.FAILED, error=str(e))
+
+def load_gittxtignore(repo_root):
+    """
+    Load .gittxtignore file from the repo root and return patterns.
+    Returns empty list if file does not exist or fails to load.
+    """
+    ignore_file = os.path.join(repo_root, ".gittxtignore")
+    if not os.path.isfile(ignore_file):
+        return []
+
+    try:
+        with open(ignore_file, "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
+        return lines
+    except Exception as e:
+        print(f"[WARN] Failed to load .gittxtignore: {e}")
+        return []
