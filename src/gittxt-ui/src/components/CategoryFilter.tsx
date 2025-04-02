@@ -59,26 +59,25 @@ export default function CategoryFilter({
                             transition={{ duration: 0.2 }}
                             className="ml-6"
                           >
-                            {files.map((file) => {
-                              const meta = manifest?.[file];
-                              const tooltip = meta
-                                ? `Size: ${meta.human_readable_size || meta.size} • Tokens: ${meta.token_count || '?'}`
-                                : '';
-
-                              return (
-                                <li
-                                  key={file}
-                                  data-tip={tooltip}
-                                  className={`flex items-center space-x-2 text-xs font-mono cursor-pointer hover:underline ${
-                                    activePath === file ? 'bg-yellow-100 px-1 rounded' : ''
-                                  }`}
-                                  onClick={() => onFileClick(file)}
-                                >
-                                  <FileText size={12} />
-                                  <span>{file}</span>
-                                </li>
-                              );
-                            })}
+                            {files.map((f) => (
+                              <li
+                                key={f}
+                                className={`flex items-center space-x-2 text-xs font-mono cursor-pointer hover:underline ${
+                                  activePath === f ? 'bg-yellow-100 px-1 rounded' : ''
+                                }`}
+                                onClick={() => onFileClick(f)}
+                                data-tip={f}
+                                data-for={`tooltip-${f}`}
+                              >
+                                <FileText size={12} />
+                                <span
+                                  data-tooltip-id={`tooltip-${f}`}
+                                  data-tooltip-content={getTooltipContent(f, manifest)}>
+                                  {f}
+                                </span>
+                                <Tooltip id={`tooltip-${f}`} place="right" type="dark" effect="solid" />
+                              </li>
+                            ))}
                           </motion.ul>
                         )}
                       </AnimatePresence>
@@ -90,12 +89,6 @@ export default function CategoryFilter({
           </li>
         ))}
       </ul>
-      <span
-        data-tooltip-id={`tooltip-${file}`}
-        data-tooltip-content={getTooltipContent(file, manifest)}>
-        {file}
-      </span>
-      <Tooltip id={`tooltip-${file}`} place="right" type="dark" effect="solid" />
     </div>
   );
 }
