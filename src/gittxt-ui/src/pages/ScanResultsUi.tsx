@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import SummaryCard from './components/SummaryCard';
-import TreeViewer from './components/TreeViewer';
-import CategoryFilter from './components/CategoryFilter';
-import DownloadLinks from './components/DownloadLinks';
-import FileTreeView from './components/FileTreeView';
-import FilePreview from './components/FilePreview';
-import FileTypeFilter from './components/FileTypeFilter';
-import QuickFilterToggle from './components/QuickFilterToggle';
+import SummaryCard from '../components/SummaryCard';
+import TreeViewer from '../components/TreeViewer';
+import CategoryFilter from '../components/CategoryFilter';
+import DownloadLinks from '../components/DownloadLinks';
+import FileTreeView from '../components/FileTreeView';
+import FilePreview from '../components/FilePreview';
+import FileTypeFilter from '../components/FileTypeFilter';
+import QuickFilterToggle from '../components/QuickFilterToggle';
 import { Loader2, GitBranch, Sun, Moon } from 'lucide-react';
 
 export default function ScanResultsUI() {
