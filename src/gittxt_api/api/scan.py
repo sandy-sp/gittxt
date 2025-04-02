@@ -1,17 +1,14 @@
-from fastapi import APIRouter, HTTPException
-from src.gittxt_api.models.scan import ScanRequest, ScanResponse
-from src.gittxt_api.services.scan_service import scan_repo_logic
-from fastapi import BackgroundTasks
-from src.gittxt_api.utils.task_registry import create_task, update_task, get_task, TaskStatus
-from src.gittxt_api.services.scan_service import scan_repo_logic_async
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from gittxt_api.models.scan import ScanRequest, ScanResponse
+from gittxt_api.services.scan_service import perform_scan
+from gittxt_api.utils.task_registry import create_task, update_task, get_task, TaskStatus
 
 router = APIRouter()
 
 @router.post("/", response_model=ScanResponse)
 async def scan_repo(request: ScanRequest):
     try:
-        result = await scan_repo_logic(request)
-        return ScanResponse(**result)
+        return await perform_scan(request)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -19,10 +16,7 @@ async def scan_repo(request: ScanRequest):
 @router.post("/async")
 async def scan_repo_background(request: ScanRequest, background_tasks: BackgroundTasks):
     task_id = create_task()
-
-    # Run scanner logic in the background
     background_tasks.add_task(scan_repo_logic_async, request, task_id)
-
     return {"task_id": task_id, "status": TaskStatus.PENDING}
 
 
@@ -32,17 +26,13 @@ async def scan_status(task_id: str):
     if not task:
         raise HTTPException(status_code=404, detail="Task ID not found")
 
-    # Strip internal metadata
-    response = {
-        "status": task["status"],
-    }
+    return {"status": task["status"]}
 
-    if task["status"] == TaskStatus.COMPLETED:
-        result = task.get("result", {})
-        clean_result = {k: v for k, v in result.items() if not k.startswith("__")}
-        response["result"] = clean_result
 
-    if task["status"] == TaskStatus.FAILED:
-        response["error"] = task.get("error")
+@router.get("/result/{task_id}", response_model=ScanResponse)
+async def scan_result(task_id: str):
+    task = get_task(task_id)
+    if not task or task["status"] != TaskStatus.COMPLETED:
+        raise HTTPException(status_code=404, detail="Result not available yet.")
 
-    return response
+    return ScanResponse(**task["result"])
