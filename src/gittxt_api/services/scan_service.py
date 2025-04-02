@@ -3,19 +3,19 @@ import asyncio
 import subprocess
 import time
 from pathlib import Path
-from gittxt.core.scanner import Scanner
-from gittxt.core.config import ConfigManager
-from gittxt.core.output_builder import OutputBuilder
-from gittxt.core.repository import RepositoryHandler
-from gittxt.utils.summary_utils import generate_summary
-from gittxt.utils.cleanup_utils import cleanup_temp_folder
-from gittxt.utils.file_utils import load_gittxtignore
-from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
-from gittxt.utils.filetype_utils import FiletypeConfigManager
+from src.gittxt.core.scanner import Scanner
+from src.gittxt.core.config import ConfigManager
+from src.gittxt.core.output_builder import OutputBuilder
+from src.gittxt.core.repository import RepositoryHandler
+from src.gittxt.utils.summary_utils import generate_summary
+from src.gittxt.utils.cleanup_utils import cleanup_temp_folder
+from src.gittxt.utils.file_utils import load_gittxtignore
+from src.gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
+from src.gittxt.utils.filetype_utils import FiletypeConfigManager
 
-from gittxt_api.models.scan import ScanRequest, ScanResponse
-from gittxt_api.utils.logger import get_logger
-from gittxt_api.utils.task_registry import update_task, TaskStatus
+from src.gittxt_api.models.scan import ScanRequest, ScanResponse
+from src.gittxt_api.utils.logger import get_logger
+from src.gittxt_api.utils.task_registry import update_task, TaskStatus
 
 logger = get_logger("scan_service")
 
@@ -110,8 +110,8 @@ async def scan_repo_logic_async(request: ScanRequest, task_id: str):
         update_task(task_id, TaskStatus.RUNNING)
         result = await perform_scan(request)
         result_dict = result.dict()
-        result_dict["__cleanup_path__"] = result.output_dir
-        result_dict["__timestamp__"] = time.time()
+        result_dict["__cleanup_path"] = result.output_dir
+        result_dict["__timestamp"] = time.time()
         update_task(task_id, TaskStatus.COMPLETED, result=result_dict)
     except Exception as e:
         update_task(task_id, TaskStatus.FAILED, error=str(e))
