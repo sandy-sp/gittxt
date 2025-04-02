@@ -31,4 +31,18 @@ async def scan_status(task_id: str):
     task = get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task ID not found")
-    return task
+
+    # Strip internal metadata
+    response = {
+        "status": task["status"],
+    }
+
+    if task["status"] == TaskStatus.COMPLETED:
+        result = task.get("result", {})
+        clean_result = {k: v for k, v in result.items() if not k.startswith("__")}
+        response["result"] = clean_result
+
+    if task["status"] == TaskStatus.FAILED:
+        response["error"] = task.get("error")
+
+    return response
