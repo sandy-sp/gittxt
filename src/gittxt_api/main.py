@@ -1,7 +1,12 @@
-import asyncio
+import logging
 from fastapi import FastAPI
-from gittxt_api.api import scan, download, health
-from gittxt_api.utils.cleanup import cleanup_worker
+from fastapi.middleware.cors import CORSMiddleware
+from src.gittxt_api.api import scan, health
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(levelname)s] %(name)s: %(message)s"
+)
 
 app = FastAPI(
     title="Gittxt API",
@@ -9,11 +14,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.include_router(scan.router, prefix="/scan", tags=["Scanner"])
-app.include_router(download.router, prefix="/download", tags=["Download"])
-app.include_router(health.router, prefix="/health")
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(cleanup_worker())
+# Routers
+app.include_router(health.router, prefix="/health", tags=["Health"])
+app.include_router(scan.router, prefix="/scan", tags=["Scan"])
