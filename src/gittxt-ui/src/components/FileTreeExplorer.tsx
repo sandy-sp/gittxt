@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, FolderOpen, FileText } from 'lucide-react';
-import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'react-tooltip';
 import { getTooltipContent } from '../utils/tooltipHelpers';
 
 function TreeNode({
@@ -119,7 +119,7 @@ export default function FileTreeExplorer({
         data-tooltip-content={getTooltipContent(file, manifest)}>
         {file}
       </span>
-      <ReactTooltip place="right" type="dark" effect="solid" />
+      <Tooltip id="tooltip-id" place="right" type="dark" effect="solid" />
     </div>
   );
 }
