@@ -120,7 +120,7 @@ export default function FileTreeExplorer({
         data-tooltip-content={getTooltipContent(file, manifest)}>
         {file}
       </span>
-      <Tooltip id="tooltip-id" place="right" type="dark" effect="solid" />
+      <Tooltip id={`tooltip-${file}`} place="right" type="dark" effect="solid" />
     </div>
   );
 }
