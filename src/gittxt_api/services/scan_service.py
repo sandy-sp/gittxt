@@ -8,8 +8,8 @@ from gittxt.utils.summary_utils import generate_summary
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from gittxt.utils.filetype_utils import FiletypeConfigManager
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
-from gittxt_api.models.scan_request import ScanRequest
-from gittxt_api.models.scan_response import ScanResponse
+from gittxt_api.models.scan import ScanRequest
+from gittxt_api.models.scan import ScanResponse
 
 import asyncio
 import logging
