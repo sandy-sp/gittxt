@@ -74,18 +74,22 @@ function TreeNode({
             transition={{ duration: 0.2 }}
           >
             {node.children.map((child) => (
-              <TreeNode
-                key={child.name}
-                node={child}
-                path={fullPath}
-                onToggle={onToggle}
-                selected={selected}
-                onFileClick={onFileClick}
-                activePath={activePath}
-                filterTypes={filterTypes}
-                showSelectedOnly={showSelectedOnly}
-                manifest={manifest}
-              />
+              <ul className="text-sm">
+                {treeData ? (
+                  <TreeNode
+                    node={treeData}
+                    path=""
+                    selected={selected}
+                    onToggle={onToggle}
+                    onFileClick={onFileClick}
+                    activePath={activePath}
+                    filterTypes={filterTypes || []}
+                    showSelectedOnly={showSelectedOnly}
+                  />
+                ) : (
+                  <li className="text-gray-400 italic">No repository tree available.</li>
+                )}
+              </ul>
             ))}
           </motion.ul>
         )}
