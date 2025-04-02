@@ -7,6 +7,7 @@ import DownloadLinks from './components/DownloadLinks';
 import FileTreeView from './components/FileTreeView';
 import FilePreview from './components/FilePreview';
 import FileTypeFilter from './components/FileTypeFilter';
+import QuickFilterToggle from './components/QuickFilterToggle';
 
 export default function ScanResultsUI() {
   const [repoUrl, setRepoUrl] = useState('');
@@ -15,6 +16,7 @@ export default function ScanResultsUI() {
   const [filter, setFilter] = useState({ languages: [], filetypes: [] });
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [activeFilePath, setActiveFilePath] = useState('');
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
 
   const triggerScan = async () => {
     setLoading(true);
@@ -73,6 +75,7 @@ export default function ScanResultsUI() {
               cat,
               files.filter((f) => {
                 const ext = results.manifest?.[f]?.file_type;
+                if (showSelectedOnly && !selectedFiles.has(f)) return false;
                 return !filter.filetypes.length || filter.filetypes.includes(ext);
               })
             ])
@@ -105,12 +108,15 @@ export default function ScanResultsUI() {
           <SummaryCard summary={results.summary} />
           <TreeViewer tree={results.tree} />
           <FileTypeFilter filetypes={allExtensions} selected={filter.filetypes} onChange={handleTypeFilter} />
+          <QuickFilterToggle checked={showSelectedOnly} onToggle={setShowSelectedOnly} />
           <FileTreeView
             treeData={results.treeObject}
             selected={selectedFiles}
             onToggle={handleToggleSelect}
             onFileClick={handleFileClick}
             activePath={activeFilePath}
+            filterTypes={filter.filetypes}
+            showSelectedOnly={showSelectedOnly}
           />
           <CategoryFilter
             categories={filteredCategories}
