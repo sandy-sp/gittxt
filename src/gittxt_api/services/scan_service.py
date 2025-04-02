@@ -18,6 +18,13 @@ async def scan_repo_logic(request: ScanRequest) -> dict:
             zip=request.zip,
             lite=request.lite,
             branch=request.branch,
+            subdir=request.subdir,
+            include_patterns=request.include_patterns,
+            exclude_patterns=request.exclude_patterns,
+            size_limit=request.size_limit,
+            tree_depth=request.tree_depth,
+            log_level=request.log_level or "info",
+            sync=request.sync,
         )
 
         scanner = Scanner(config=config)
