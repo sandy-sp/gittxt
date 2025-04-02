@@ -1,49 +1,52 @@
-import React, { useState } from 'react';
-import {
-  ScanForm,
-  SummaryPanel,
-  TreeView,
-  FileTypeTable,
-  DownloadPanel
-} from './components';
+import { useState } from 'react';
+import InputSection from './components/InputSection';
+import Summary from './components/Summary';
+import DirectoryTree from './components/DirectoryTree';
+import CategorizedFiles from './components/CategorizedFiles';
+import DownloadButtons from './components/DownloadButtons';
+import { scanRepository } from './utils/api';
+import { parseGitHubURL } from './utils/github';
 
-export default function App() {
-  const [scanResult, setScanResult] = useState<any>(null);
+function App() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [scanData, setScanData] = useState(null);
+
+  const handleScan = async (repoUrl) => {
+    const { repo, branch } = parseGitHubURL(repoUrl);
+    if (!repo) {
+      setError('Invalid GitHub URL');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setScanData(null);
+
+    try {
+      const result = await scanRepository({ repo, branch });
+      setScanData(result);
+    } catch (err) {
+      setError(err.message || 'Scan failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-bold text-blue-700 mb-6">Gittxt Visualizer</h1>
-
-      {/* Scan Input */}
-      <ScanForm onScanComplete={setScanResult} />
-
-      {/* Output Results */}
-      {scanResult && (
-        <div className="space-y-6">
-          <div className="bg-green-50 border border-green-300 p-4 rounded">
-            <h2 className="text-xl font-semibold text-green-700 mb-2">✅ Scan Complete</h2>
-            <p><strong>Repo:</strong> {scanResult.repo_name}</p>
-            <p><strong>Scan ID:</strong> {scanResult.scan_id}</p>
-            <p><strong>Timestamp:</strong> {scanResult.timestamp}</p>
-          </div>
-
-          <SummaryPanel summary={scanResult.summary} />
-          <TreeView tree={scanResult.directory_tree} />
-          <FileTypeTable fileTypes={scanResult.file_types} />
-          <DownloadPanel
-            scanId={scanResult.scan_id}
-            availableFormats={scanResult.summary.output_format || ['txt']}
-          />
-        </div>
+    <div className="p-4 max-w-6xl mx-auto">
+      <InputSection onScan={handleScan} loading={loading} />
+      {error && <div className="text-red-600 my-2">{error}</div>}
+      {scanData && (
+        <>
+          <Summary data={scanData.summary} />
+          <DirectoryTree tree={scanData.tree} />
+          <CategorizedFiles categories={scanData.categories} />
+          <DownloadButtons links={scanData.downloads} />
+        </>
       )}
     </div>
   );
-}
-
-import ScanResultsUI from './pages/ScanResultsUI';
-
-function App() {
-  return <ScanResultsUI />;
 }
 
 export default App;
