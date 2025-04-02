@@ -55,7 +55,7 @@ export default function ScanResultsUI() {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   const handleFilterChange = (newFilter) => {
     setFilter((prev) => ({ ...prev, ...newFilter }));
@@ -67,8 +67,7 @@ export default function ScanResultsUI() {
 
   const handleToggleSelect = (path, isSelected) => {
     const updated = new Set(selectedFiles);
-    if (isSelected) updated.add(path);
-    else updated.delete(path);
+    isSelected ? updated.add(path) : updated.delete(path);
     setSelectedFiles(updated);
   };
 
@@ -83,13 +82,7 @@ export default function ScanResultsUI() {
   };
 
   const allExtensions = results?.manifest
-    ? Array.from(
-        new Set(
-          Object.values(results.manifest)
-            .map((f) => f.file_type)
-            .filter(Boolean)
-        )
-      )
+    ? Array.from(new Set(Object.values(results.manifest).map(f => f.file_type).filter(Boolean)))
     : [];
 
   const filteredCategories = results?.categories
@@ -110,31 +103,27 @@ export default function ScanResultsUI() {
       )
     : {};
 
-  const repoInfo = results?.summary?.repo_url
-    ? new URL(results.summary.repo_url)
-    : null;
+  const repoInfo = results?.summary?.repo_url ? new URL(results.summary.repo_url) : null;
   const repoDisplay = repoInfo ? `${repoInfo.pathname.slice(1)}${results.summary.branch ? ` @ ${results.summary.branch}` : ''}` : '';
 
-  const totalTextual = results?.manifest
-    ? Object.keys(results.manifest).length
-    : 0;
+  const totalTextual = results?.manifest ? Object.keys(results.manifest).length : 0;
   const selectedCount = selectedFiles.size;
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
       <div className="mb-4 flex justify-between items-center">
-        <input
-          className="w-full p-2 border rounded"
-          type="text"
-          placeholder="Enter GitHub repo URL..."
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
+        <div className="flex-1">
+          <input
+            className="w-full p-2 border rounded"
+            type="text"
+            placeholder="Enter GitHub repo URL..."
+            value={repoUrl}
+            onChange={(e) => setRepoUrl(e.target.value)}
+          />
           {scanError && (
-            <div className="mt-2 text-sm text-red-500">
-              {scanError}
-            </div>
-          )}          
-        />
+            <div className="mt-2 text-sm text-red-500">{scanError}</div>
+          )}
+        </div>
         <button
           onClick={toggleDarkMode}
           className="ml-4 p-2 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
@@ -142,6 +131,7 @@ export default function ScanResultsUI() {
           {darkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
+
       <button
         className="mt-2 px-4 py-2 bg-blue-600 text-white rounded flex items-center space-x-2 disabled:opacity-50"
         onClick={triggerScan}
@@ -159,7 +149,7 @@ export default function ScanResultsUI() {
 
       {results && (
         <>
-          <div className="flex flex-wrap items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-3 gap-2">
+          <div className="flex flex-wrap items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-3 gap-2 mt-4">
             <div className="flex items-center space-x-2">
               <GitBranch size={16} />
               <span>{repoDisplay}</span>
@@ -168,9 +158,14 @@ export default function ScanResultsUI() {
               {selectedCount} of {totalTextual} files selected
             </div>
           </div>
+
           <SummaryCard summary={results.summary} />
           <TreeViewer tree={results.tree} />
-          <FileTypeFilter filetypes={allExtensions} selected={filter.filetypes} onChange={handleTypeFilter} />
+          <FileTypeFilter
+            filetypes={allExtensions}
+            selected={filter.filetypes}
+            onChange={handleTypeFilter}
+          />
           <QuickFilterToggle
             checked={showSelectedOnly}
             onToggle={setShowSelectedOnly}
@@ -182,7 +177,8 @@ export default function ScanResultsUI() {
           >
             Deselect All
           </button>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div className="md:col-span-1">
               <FileTreeView
                 treeData={results.treeObject}
@@ -202,6 +198,7 @@ export default function ScanResultsUI() {
                 activePath={activeFilePath}
                 selectedFiles={selectedFiles}
                 showBadges={true}
+                manifest={results.manifest}
               />
             </div>
             <div className="md:col-span-2">
