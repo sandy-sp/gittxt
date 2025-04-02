@@ -4,12 +4,14 @@ import SummaryCard from './components/SummaryCard';
 import TreeViewer from './components/TreeViewer';
 import CategoryFilter from './components/CategoryFilter';
 import DownloadLinks from './components/DownloadLinks';
+import FileTreeView from './components/FileTreeView';
 
 export default function ScanResultsUI() {
   const [repoUrl, setRepoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [filter, setFilter] = useState({ languages: [], types: [] });
+  const [selectedFiles, setSelectedFiles] = useState(new Set());
 
   const triggerScan = async () => {
     setLoading(true);
@@ -32,6 +34,13 @@ export default function ScanResultsUI() {
 
   const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
+  };
+
+  const handleToggleSelect = (path, isSelected) => {
+    const updated = new Set(selectedFiles);
+    if (isSelected) updated.add(path);
+    else updated.delete(path);
+    setSelectedFiles(updated);
   };
 
   const filteredCategories = results?.categories
@@ -65,6 +74,7 @@ export default function ScanResultsUI() {
         <>
           <SummaryCard summary={results.summary} />
           <TreeViewer tree={results.tree} />
+          <FileTreeView treeData={results.treeObject} selected={selectedFiles} onToggle={handleToggleSelect} />
           <CategoryFilter
             categories={results.categories}
             selected={filter.languages}
