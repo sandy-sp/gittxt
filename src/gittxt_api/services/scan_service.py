@@ -1,6 +1,8 @@
 import tempfile
 import asyncio
+import subprocess
 import time
+from pathlib import Path
 from src.gittxt.core.scanner import Scanner
 from src.gittxt.core.config import ConfigManager
 from src.gittxt_api.models.scan import ScanRequest
@@ -9,41 +11,64 @@ from src.gittxt_api.utils.task_registry import update_task, TaskStatus
 
 logger = get_logger("scan_service")
 
+
 async def scan_repo_logic(request: ScanRequest) -> dict:
     temp_dir = tempfile.mkdtemp()
     try:
-        # Create config for Gittxt Scanner
+        # Step 1: Clone repo into temp_dir
+        logger.info(f"⏬ Cloning {request.repo_url} into {temp_dir}")
+        subprocess.run(
+            ["git", "clone", request.repo_url, temp_dir],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        # Step 2: Build scan path
+        scan_path = Path(temp_dir)
+        if request.subdir:
+            scan_path = scan_path / request.subdir
+
+        if not scan_path.exists():
+            raise FileNotFoundError(f"Scan path does not exist: {scan_path}")
+
+        # Step 3: Load and override config
         config = ConfigManager.load_config()
+        logger.debug(f"🔧 Base config: {config}")
 
-        # Override dynamic runtime config
-        config["output_dir"] = temp_dir
-        config["output_format"] = request.output_format
-        config["auto_zip"] = request.zip
-        config["lite"] = request.lite
-        config["branch"] = request.branch
-        config["subdir"] = request.subdir
-        config["include_patterns"] = request.include_patterns
-        config["exclude_patterns"] = request.exclude_patterns
-        config["size_limit"] = request.size_limit
-        config["tree_depth"] = request.tree_depth
-        config["logging_level"] = request.log_level or config.get("logging_level", "info")
-        config["sync"] = request.sync
+        scanner = Scanner(
+            root_path=scan_path,
+            exclude_dirs=config["filters"]["excluded_dirs"],
+            size_limit=request.size_limit,
+            include_patterns=request.include_patterns,
+            exclude_patterns=request.exclude_patterns,
+            verbose=(request.log_level == "debug"),
+            use_ignore_file=True,
+        )
 
-        scanner = Scanner(config=config)
+        logger.info(f"🧪 Scanning path: {scan_path}")
 
-        # Run scan in a thread-safe async way
-        result = await asyncio.to_thread(scanner.scan, request.repo_url)
+        # Step 4: Run the scan (async safe)
+        accepted_files, non_textual_files = await scanner.scan_directory()
 
         return {
             "message": "Scan completed successfully",
-            "output_dir": temp_dir,
-            "summary": result.summary,
-            "manifest": result.manifest,
+            "output_dir": str(temp_dir),
+            "summary": {
+                "accepted_count": len(accepted_files),
+                "non_textual_count": len(non_textual_files),
+                "scanned_path": str(scan_path),
+            },
+            "manifest": {
+                "accepted_files": [str(p) for p in accepted_files],
+                "non_textual_files": [str(p) for p in non_textual_files],
+            },
         }
 
     except Exception as e:
         logger.error(f"Scan failed: {e}", exc_info=True)
         raise
+
 
 async def scan_repo_logic_async(request: ScanRequest, task_id: str):
     try:
@@ -54,5 +79,6 @@ async def scan_repo_logic_async(request: ScanRequest, task_id: str):
         result["__cleanup_path__"] = result["output_dir"]
         result["__timestamp__"] = time.time()
         update_task(task_id, TaskStatus.COMPLETED, result=result)
+
     except Exception as e:
         update_task(task_id, TaskStatus.FAILED, error=str(e))
