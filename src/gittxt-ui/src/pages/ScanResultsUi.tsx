@@ -8,7 +8,7 @@ import FileTreeView from './components/FileTreeView';
 import FilePreview from './components/FilePreview';
 import FileTypeFilter from './components/FileTypeFilter';
 import QuickFilterToggle from './components/QuickFilterToggle';
-import { Loader2 } from 'lucide-react';
+import { Loader2, GitBranch } from 'lucide-react';
 
 export default function ScanResultsUI() {
   const [repoUrl, setRepoUrl] = useState('');
@@ -91,6 +91,16 @@ export default function ScanResultsUI() {
       )
     : {};
 
+  const repoInfo = results?.summary?.repo_url
+    ? new URL(results.summary.repo_url)
+    : null;
+  const repoDisplay = repoInfo ? `${repoInfo.pathname.slice(1)}${results.summary.branch ? ` @ ${results.summary.branch}` : ''}` : '';
+
+  const totalTextual = results?.manifest
+    ? Object.keys(results.manifest).length
+    : 0;
+  const selectedCount = selectedFiles.size;
+
   return (
     <div className="p-4 max-w-7xl mx-auto">
       <div className="mb-4">
@@ -119,6 +129,15 @@ export default function ScanResultsUI() {
 
       {results && (
         <>
+          <div className="flex flex-wrap items-center justify-between text-sm text-gray-600 mb-3 gap-2">
+            <div className="flex items-center space-x-2">
+              <GitBranch size={16} />
+              <span>{repoDisplay}</span>
+            </div>
+            <div className="text-xs text-gray-500">
+              {selectedCount} of {totalTextual} files selected
+            </div>
+          </div>
           <SummaryCard summary={results.summary} />
           <TreeViewer tree={results.tree} />
           <FileTypeFilter filetypes={allExtensions} selected={filter.filetypes} onChange={handleTypeFilter} />
