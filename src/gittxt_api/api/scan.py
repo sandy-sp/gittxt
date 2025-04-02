@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
-from gittxt_api.models.scan import ScanRequest, ScanResponse
-from gittxt_api.services.scan_service import perform_scan
-from gittxt_api.utils.task_registry import create_task, update_task, get_task, TaskStatus
+from src.gittxt_api.models.scan import ScanRequest, ScanResponse
+from src.gittxt_api.services.scan_service import perform_scan, scan_repo_logic_async
+from src.gittxt_api.utils.task_registry import create_task, update_task, get_task, TaskStatus, task_registry
 
 router = APIRouter()
 
@@ -36,3 +36,11 @@ async def scan_result(task_id: str):
         raise HTTPException(status_code=404, detail="Result not available yet.")
 
     return ScanResponse(**task["result"])
+
+
+@router.get("/list")
+async def list_tasks():
+    return [
+        {"task_id": task_id, "status": data["status"]}
+        for task_id, data in task_registry.items()
+    ]
