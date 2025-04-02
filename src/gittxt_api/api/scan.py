@@ -26,7 +26,10 @@ async def scan_status(task_id: str):
     if not task:
         raise HTTPException(status_code=404, detail="Task ID not found")
 
-    return {"status": task["status"]}
+    return {
+        "status": task["status"],
+        "error": task.get("error")
+    }
 
 
 @router.get("/result/{task_id}", response_model=ScanResponse)
