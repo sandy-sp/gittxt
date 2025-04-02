@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import React from 'react';
 import SummaryCard from '../components/SummaryCard';
 import TreeViewer from '../components/RawTreeView';
 import CategoryFilter from '../components/CategoryFilter';
