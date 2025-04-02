@@ -1,9 +1,11 @@
 import { useState } from 'react';
 
-function TreeNode({ node, path, onToggle, selected }) {
+function TreeNode({ node, path, onToggle, selected, onFileClick, activePath }) {
   const [expanded, setExpanded] = useState(true);
   const fullPath = path ? `${path}/${node.name}` : node.name;
   const isSelected = selected.has(fullPath);
+  const isFile = !node.children;
+  const isActive = fullPath === activePath;
 
   const toggleSelect = () => onToggle(fullPath, !isSelected);
   const toggleExpand = () => setExpanded(!expanded);
@@ -21,7 +23,14 @@ function TreeNode({ node, path, onToggle, selected }) {
           checked={isSelected}
           onChange={toggleSelect}
         />
-        <span className="text-sm font-mono">{node.name}</span>
+        <span
+          className={`text-sm font-mono ${
+            isFile ? 'cursor-pointer hover:underline text-blue-700' : ''
+          } ${isActive ? 'bg-yellow-100 px-1 rounded' : ''}`}
+          onClick={() => isFile && onFileClick(fullPath)}
+        >
+          {node.name}
+        </span>
       </div>
       {expanded && node.children && (
         <ul className="mt-1">
@@ -32,6 +41,8 @@ function TreeNode({ node, path, onToggle, selected }) {
               path={fullPath}
               onToggle={onToggle}
               selected={selected}
+              onFileClick={onFileClick}
+              activePath={activePath}
             />
           ))}
         </ul>
@@ -40,12 +51,19 @@ function TreeNode({ node, path, onToggle, selected }) {
   );
 }
 
-export default function FileTreeView({ treeData, selected, onToggle }) {
+export default function FileTreeView({ treeData, selected, onToggle, onFileClick, activePath }) {
   return (
     <div className="bg-white shadow-md rounded-xl p-4 mb-4">
       <h2 className="text-lg font-semibold mb-2">📁 Repository Structure</h2>
       <ul className="text-sm">
-        <TreeNode node={treeData} path="" selected={selected} onToggle={onToggle} />
+        <TreeNode
+          node={treeData}
+          path=""
+          selected={selected}
+          onToggle={onToggle}
+          onFileClick={onFileClick}
+          activePath={activePath}
+        />
       </ul>
     </div>
   );
