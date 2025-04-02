@@ -1,90 +1,93 @@
+import tempfile
+import asyncio
+import subprocess
+import time
 from pathlib import Path
-from fastapi import HTTPException
-from gittxt.core.repository import RepositoryHandler
 from gittxt.core.scanner import Scanner
+from gittxt.core.config import ConfigManager
 from gittxt.core.output_builder import OutputBuilder
-from gittxt.utils.file_utils import load_gittxtignore
+from gittxt.core.repository import RepositoryHandler
 from gittxt.utils.summary_utils import generate_summary
+from gittxt.utils.cleanup_utils import cleanup_temp_folder
+from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from gittxt.utils.filetype_utils import FiletypeConfigManager
-from gittxt.utils.cleanup_utils import cleanup_temp_folder
-from gittxt_api.models.scan import ScanRequest
-from gittxt_api.models.scan import ScanResponse
 
-import asyncio
-import logging
-from collections import defaultdict
+from gittxt_api.models.scan import ScanRequest, ScanResponse
+from gittxt_api.utils.logger import get_logger
+from gittxt_api.utils.task_registry import update_task, TaskStatus
 
-logger = logging.getLogger("gittxt_api")
+logger = get_logger("scan_service")
 
 
-async def perform_scan(scan_req: ScanRequest) -> ScanResponse:
+async def perform_scan(request: ScanRequest) -> ScanResponse:
     try:
-        # Resolve repo (local or remote)
+        # Step 1: Clone or resolve repo
         handler = RepositoryHandler(
-            source=scan_req.repo_url,
-            branch=scan_req.branch,
+            source=request.repo_url,
+            branch=request.branch,
         )
         await handler.resolve()
         repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
 
         scan_root = Path(repo_path)
-        if subdir:
-            scan_root = scan_root / subdir
+        if request.subdir:
+            scan_root = scan_root / request.subdir
 
-        # Merge exclude dirs
-        dynamic_ignores = load_gittxtignore(scan_root) if scan_req.sync_ignore else []
+        if not scan_root.exists():
+            raise FileNotFoundError(f"Scan path does not exist: {scan_root}")
+
+        # Step 2: Exclusions
+        dynamic_ignores = load_gittxtignore(scan_root) if request.sync_ignore else []
         exclude_dirs = list(
-            set(scan_req.exclude_dirs or [])
+            set(request.exclude_dirs or [])
             | set(dynamic_ignores)
             | set(EXCLUDED_DIRS_DEFAULT)
         )
 
-        # Warn if include-patterns target non-textual files
-        for pattern in scan_req.include_patterns or []:
+        for pattern in request.include_patterns or []:
             ext = Path(pattern).suffix.lower()
             if ext and not FiletypeConfigManager.is_known_textual_ext(ext):
                 logger.warning(f"Include pattern targets non-textual extension: {ext}")
 
-        # Run scanner
+        # Step 3: Scan
         scanner = Scanner(
             root_path=scan_root,
             exclude_dirs=exclude_dirs,
-            size_limit=scan_req.size_limit,
-            include_patterns=scan_req.include_patterns,
-            exclude_patterns=scan_req.exclude_patterns,
+            size_limit=request.size_limit,
+            include_patterns=request.include_patterns,
+            exclude_patterns=request.exclude_patterns,
             progress=False,
-            use_ignore_file=scan_req.sync_ignore,
+            use_ignore_file=request.sync_ignore,
         )
         textual_files, non_textual_files = await scanner.scan_directory()
         skipped_files = scanner.skipped_files
 
         if not textual_files:
-            raise HTTPException(status_code=400, detail="No valid textual files found.")
+            raise Exception("No valid textual files found.")
 
-        # Build output
-        output_dir = Path(scan_req.output_dir).resolve()
+        # Step 4: Build output
+        output_dir = Path(request.output_dir).resolve()
         builder = OutputBuilder(
             repo_name=repo_name,
             output_dir=output_dir,
-            output_format=scan_req.output_format,
-            repo_url=scan_req.repo_url if is_remote else None,
+            output_format=request.output_format,
+            repo_url=request.repo_url if is_remote else None,
             branch=used_branch,
             subdir=subdir,
-            mode="lite" if scan_req.lite_mode else "rich",
+            mode="lite" if request.lite_mode else "rich",
         )
         output_files = await builder.generate_output(
             textual_files,
             non_textual_files,
             repo_path,
-            create_zip=scan_req.create_zip,
-            tree_depth=scan_req.tree_depth,
+            create_zip=request.create_zip,
+            tree_depth=request.tree_depth,
         )
 
-        # Generate summary
+        # Step 5: Summary
         summary = await generate_summary(textual_files + non_textual_files)
 
-        # Package response
         return ScanResponse(
             repo_name=repo_name,
             output_dir=str(output_dir),
@@ -100,3 +103,15 @@ async def perform_scan(scan_req: ScanRequest) -> ScanResponse:
     finally:
         if is_remote:
             cleanup_temp_folder(Path(repo_path))
+
+
+async def scan_repo_logic_async(request: ScanRequest, task_id: str):
+    try:
+        update_task(task_id, TaskStatus.RUNNING)
+        result = await perform_scan(request)
+        result_dict = result.dict()
+        result_dict["__cleanup_path__"] = result.output_dir
+        result_dict["__timestamp__"] = time.time()
+        update_task(task_id, TaskStatus.COMPLETED, result=result_dict)
+    except Exception as e:
+        update_task(task_id, TaskStatus.FAILED, error=str(e))
