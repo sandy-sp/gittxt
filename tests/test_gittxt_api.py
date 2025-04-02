@@ -25,8 +25,14 @@ async def test_sync_scan():
         data = r.json()
         print("✅ Sync Scan Completed")
         print("Output Dir:", data.get("output_dir"))
-        assert "summary" not in data  # simplified response
-        assert "output_files" in data
+        assert "output_files" in data and isinstance(data["output_files"], list)
+        assert isinstance(data.get("repo_name"), str)
+        assert isinstance(data.get("total_files"), int)
+        assert isinstance(data.get("total_size_bytes"), int)
+        assert isinstance(data.get("estimated_tokens"), int)
+        assert isinstance(data.get("file_type_breakdown"), dict)
+        assert isinstance(data.get("tokens_by_type"), dict)
+        assert isinstance(data.get("skipped_files"), list)
 
 async def test_async_scan_and_status():
     async with httpx.AsyncClient(follow_redirects=True) as client:
@@ -43,7 +49,10 @@ async def test_async_scan_and_status():
             if data["status"] == "completed":
                 result_resp = await client.get(f"{BASE_URL}/scan/result/{task_id}")
                 assert result_resp.status_code == 200
-                print("✅ Async Scan Result:", result_resp.json()["repo_name"])
+                result_data = result_resp.json()
+                print("✅ Async Scan Result:", result_data["repo_name"])
+                assert isinstance(result_data.get("output_files"), list)
+                assert isinstance(result_data.get("total_files"), int)
                 break
             elif data["status"] == "failed":
                 print("❌ Failed Scan:", data.get("error"))
