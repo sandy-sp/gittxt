@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
-from gittxt_api.models.scan import ScanRequest, ScanResponse
-from gittxt_api.services.scan_service import scan_repo_logic
+from src.gittxt_api.models.scan import ScanRequest, ScanResponse
+from src.gittxt_api.services.scan_service import scan_repo_logic
 from fastapi import BackgroundTasks
-from gittxt_api.utils.task_registry import create_task, update_task, get_task, TaskStatus
-from gittxt_api.services.scan_service import scan_repo_logic_async
+from src.gittxt_api.utils.task_registry import create_task, update_task, get_task, TaskStatus
+from src.gittxt_api.services.scan_service import scan_repo_logic_async
 
 router = APIRouter()
 
