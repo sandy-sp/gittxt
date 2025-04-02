@@ -1,33 +1,22 @@
 import asyncio
-import shutil
-import time
-from gittxt_api.utils.task_registry import task_registry, TaskStatus
-from gittxt_api.config import settings
+import os
+from gittxt_api.utils.logger import get_logger
 
-TTL_SECONDS = settings.ttl_seconds
+logger = get_logger("cleanup")
 
+# Background cleanup loop
 async def cleanup_worker():
+    from gittxt_api.utils.task_registry import task_registry
     while True:
-        now = time.time()
-        to_delete = []
-
-        for task_id, task in task_registry.items():
+        await asyncio.sleep(600)  # every 10 minutes
+        for task_id, task in list(task_registry.items()):
             result = task.get("result")
             if not isinstance(result, dict):
-                continue  
-            path = result.get("__cleanup_path__")
-
-            if task["status"] == TaskStatus.COMPLETED and path:
-                created_at = result.get("__timestamp__", now)
-                if now - created_at > TTL_SECONDS:
-                    to_delete.append((task_id, path))
-
-        for task_id, path in to_delete:
-            try:
-                shutil.rmtree(path, ignore_errors=True)
-                task_registry[task_id]["result"]["__cleanup_path__"] = None
-                print(f"[CLEANUP] Deleted: {path}")
-            except Exception as e:
-                print(f"[CLEANUP ERROR] Failed to delete {path}: {e}")
-
-        await asyncio.sleep(60)  # Run cleanup every minute
+                continue
+            path = result.get("__cleanup_path")
+            if path and os.path.exists(path):
+                try:
+                    os.system(f"rm -rf '{path}'")
+                    logger.info(f"Cleaned up temp dir for task {task_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to cleanup for {task_id}: {e}")
