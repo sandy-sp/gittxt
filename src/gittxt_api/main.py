@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import FastAPI
-from src.gittxt_api.api import scan, download, health
-from src.gittxt_api.utils.cleanup import cleanup_worker
+from gittxt_api.api import scan, download, health
+from gittxt_api.utils.cleanup import cleanup_worker
 
 app = FastAPI(
     title="Gittxt API",
