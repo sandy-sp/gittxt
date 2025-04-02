@@ -19,6 +19,7 @@ export default function ScanResultsUI() {
   const [activeFilePath, setActiveFilePath] = useState('');
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [scanError, setScanError] = useState('');
 
   useEffect(() => {
     const theme = localStorage.getItem('theme') || 'light';
@@ -38,6 +39,7 @@ export default function ScanResultsUI() {
   const triggerScan = async () => {
     setLoading(true);
     setResults(null);
+    setScanError('');
     try {
       const response = await axios.post('http://localhost:8000/scan', {
         repo_url: repoUrl,
@@ -49,10 +51,11 @@ export default function ScanResultsUI() {
       setResults(response.data);
     } catch (error) {
       console.error('Scan failed', error);
+      setScanError('⚠️ Scan failed. Please check the URL or try again.');
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   const handleFilterChange = (newFilter) => {
     setFilter((prev) => ({ ...prev, ...newFilter }));
@@ -126,6 +129,11 @@ export default function ScanResultsUI() {
           placeholder="Enter GitHub repo URL..."
           value={repoUrl}
           onChange={(e) => setRepoUrl(e.target.value)}
+          {scanError && (
+            <div className="mt-2 text-sm text-red-500">
+              {scanError}
+            </div>
+          )}          
         />
         <button
           onClick={toggleDarkMode}
