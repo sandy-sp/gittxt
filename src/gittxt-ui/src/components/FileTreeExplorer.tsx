@@ -58,7 +58,12 @@ function TreeNode({
           {node.name}
         </span>
       </div>
-
+      <span
+        data-tooltip-id={`tooltip-${fullPath}`}
+        data-tooltip-content={getTooltipContent(fullPath, manifest)}>
+        {fullPath}
+      </span>
+      <Tooltip id={`tooltip-${fullPath}`} place="right" type="dark" effect="solid" />
       <AnimatePresence initial={false}>
         {expanded && node.children && (
           <motion.ul
@@ -115,12 +120,6 @@ export default function FileTreeExplorer({
           manifest={manifest}
         />
       </ul>
-      <span
-        data-tooltip-id={`tooltip-${file}`}
-        data-tooltip-content={getTooltipContent(file, manifest)}>
-        {file}
-      </span>
-      <Tooltip id={`tooltip-${file}`} place="right" type="dark" effect="solid" />
     </div>
   );
 }
