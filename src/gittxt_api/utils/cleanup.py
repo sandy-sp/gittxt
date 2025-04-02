@@ -12,7 +12,9 @@ async def cleanup_worker():
         to_delete = []
 
         for task_id, task in task_registry.items():
-            result = task.get("result", {})
+            result = task.get("result")
+            if not isinstance(result, dict):
+                continue  
             path = result.get("__cleanup_path__")
 
             if task["status"] == TaskStatus.COMPLETED and path:
