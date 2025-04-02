@@ -2,8 +2,9 @@ import asyncio
 import shutil
 import time
 from gittxt_api.utils.task_registry import task_registry, TaskStatus
+from gittxt_api.config import settings
 
-TTL_SECONDS = 600  # 10 minutes
+TTL_SECONDS = settings.ttl_seconds
 
 async def cleanup_worker():
     while True:
