@@ -13,13 +13,13 @@ sample_payload = {
 }
 
 async def test_health():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         r = await client.get(f"{BASE_URL}/health")
         assert r.status_code == 200
         print("✅ Health Check:", r.json())
 
 async def test_sync_scan():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         r = await client.post(f"{BASE_URL}/scan", json=sample_payload)
         assert r.status_code == 200
         data = r.json()
@@ -27,7 +27,7 @@ async def test_sync_scan():
         print("Output Dir:", data.get("output_dir"))
 
 async def test_async_scan_and_status():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         # Trigger scan
         r = await client.post(f"{BASE_URL}/scan/async", json=sample_payload)
         assert r.status_code == 200
@@ -52,7 +52,7 @@ async def test_invalid_repo_url():
     payload = sample_payload.copy()
     payload["repo_url"] = "ftp://invalid.url"
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         r = await client.post(f"{BASE_URL}/scan", json=payload)
         assert r.status_code == 422
         print("✅ Rejected invalid repo_url")
@@ -62,7 +62,7 @@ async def test_unsupported_output_format():
     payload = sample_payload.copy()
     payload["output_format"] = ["txt", "xml"]  # xml is unsupported
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         r = await client.post(f"{BASE_URL}/scan", json=payload)
         assert r.status_code == 422
         print("✅ Rejected unsupported output_format")
@@ -70,14 +70,14 @@ async def test_unsupported_output_format():
 
 async def test_invalid_task_id_status():
     invalid_id = "non-existent-id-123"
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         r = await client.get(f"{BASE_URL}/scan/status/{invalid_id}")
         assert r.status_code == 404
         print("✅ 404 on invalid task_id")
 
 
 async def test_missing_output_dir_download():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         r = await client.get(f"{BASE_URL}/download/zip?output_dir=/fake/path/to/nothing")
         assert r.status_code == 404
         print("✅ 404 on missing ZIP file")
