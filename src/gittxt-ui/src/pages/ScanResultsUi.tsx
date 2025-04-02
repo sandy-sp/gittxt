@@ -168,6 +168,12 @@ export default function ScanResultsUI() {
             onToggle={setShowSelectedOnly}
             onReset={handleResetFilters}
           />
+          <button
+            className="ml-2 px-3 py-1 text-sm rounded border bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
+            onClick={() => setSelectedFiles(new Set())}
+          >
+            Deselect All
+          </button>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
               <FileTreeView
