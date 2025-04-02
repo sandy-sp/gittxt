@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Tooltip } from 'react-tooltip';
 import axios from 'axios';
 import React from 'react';
 import SummaryCard from '../components/SummaryCard';
@@ -49,7 +50,11 @@ export default function ScanResultsUI() {
         lite_mode: false,
         tree_depth: 2
       });
-      setResults(response.data);
+      if (response.data) {
+        setResults(response.data);
+      } else {
+        setScanError('⚠️ No results returned. Please try again.');
+      }
     } catch (error) {
       console.error('Scan failed', error);
       setScanError('⚠️ Scan failed. Please check the URL or try again.');
@@ -148,7 +153,12 @@ export default function ScanResultsUI() {
         )}
       </button>
 
-      {results && (
+      {scanError && (
+        <div className="mt-4 text-center text-red-500">
+          {scanError}
+        </div>
+      )}
+      {results ? (
         <>
           <div className="flex flex-wrap items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-3 gap-2 mt-4">
             <div className="flex items-center space-x-2">
@@ -209,6 +219,12 @@ export default function ScanResultsUI() {
             </div>
           </div>
         </>
+      ) : (
+        !loading && (
+          <div className="mt-4 text-center text-gray-500">
+            No results to display. Start a scan to see results.
+          </div>
+        )
       )}
     </div>
   );
