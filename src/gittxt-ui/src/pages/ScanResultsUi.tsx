@@ -56,6 +56,12 @@ export default function ScanResultsUI() {
     setActiveFilePath(path);
   };
 
+  const handleResetFilters = () => {
+    setFilter({ languages: [], filetypes: [] });
+    setSelectedFiles(new Set());
+    setShowSelectedOnly(false);
+  };
+
   const allExtensions = results?.manifest
     ? Array.from(
         new Set(
@@ -108,7 +114,11 @@ export default function ScanResultsUI() {
           <SummaryCard summary={results.summary} />
           <TreeViewer tree={results.tree} />
           <FileTypeFilter filetypes={allExtensions} selected={filter.filetypes} onChange={handleTypeFilter} />
-          <QuickFilterToggle checked={showSelectedOnly} onToggle={setShowSelectedOnly} />
+          <QuickFilterToggle
+            checked={showSelectedOnly}
+            onToggle={setShowSelectedOnly}
+            onReset={handleResetFilters}
+          />
           <FileTreeView
             treeData={results.treeObject}
             selected={selectedFiles}
