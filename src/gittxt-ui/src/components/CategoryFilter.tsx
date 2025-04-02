@@ -1,4 +1,4 @@
-export default function CategoryFilter({ categories, selected, onChange }) {
+export default function CategoryFilter({ categories, selected, onChange, onFileClick }) {
   const languages = Object.keys(categories || {});
 
   const toggle = (lang) => {
@@ -30,7 +30,11 @@ export default function CategoryFilter({ categories, selected, onChange }) {
                     <strong className="text-gray-600">{subcat}</strong>
                     <ul className="ml-4 list-[circle]">
                       {files.map((f) => (
-                        <li key={f} className="truncate text-xs text-gray-600">
+                        <li
+                          key={f}
+                          className="truncate text-xs text-blue-700 cursor-pointer hover:underline"
+                          onClick={() => onFileClick(f)}
+                        >
                           {f}
                         </li>
                       ))}
