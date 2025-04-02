@@ -13,20 +13,21 @@ async def scan_repo_logic(request: ScanRequest) -> dict:
     temp_dir = tempfile.mkdtemp()
     try:
         # Create config for Gittxt Scanner
-        config = ConfigManager(
-            output_dir=temp_dir,
-            output_format=request.output_format,
-            zip=request.zip,
-            lite=request.lite,
-            branch=request.branch,
-            subdir=request.subdir,
-            include_patterns=request.include_patterns,
-            exclude_patterns=request.exclude_patterns,
-            size_limit=request.size_limit,
-            tree_depth=request.tree_depth,
-            log_level=request.log_level or "info",
-            sync=request.sync,
-        )
+        config = ConfigManager.load_config()
+
+        # Override dynamic runtime config
+        config["output_dir"] = temp_dir
+        config["output_format"] = request.output_format
+        config["auto_zip"] = request.zip
+        config["lite"] = request.lite
+        config["branch"] = request.branch
+        config["subdir"] = request.subdir
+        config["include_patterns"] = request.include_patterns
+        config["exclude_patterns"] = request.exclude_patterns
+        config["size_limit"] = request.size_limit
+        config["tree_depth"] = request.tree_depth
+        config["logging_level"] = request.log_level or config.get("logging_level", "info")
+        config["sync"] = request.sync
 
         scanner = Scanner(config=config)
 
@@ -41,7 +42,7 @@ async def scan_repo_logic(request: ScanRequest) -> dict:
         }
 
     except Exception as e:
-        logger.error(f"Scan failed: {e}")
+        logger.error(f"Scan failed: {e}", exc_info=True)
         raise
 
 async def scan_repo_logic_async(request: ScanRequest, task_id: str):
