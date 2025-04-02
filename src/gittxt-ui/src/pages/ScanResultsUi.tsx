@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import SummaryCard from './components/SummaryCard';
 import TreeViewer from './components/TreeViewer';
@@ -8,7 +8,7 @@ import FileTreeView from './components/FileTreeView';
 import FilePreview from './components/FilePreview';
 import FileTypeFilter from './components/FileTypeFilter';
 import QuickFilterToggle from './components/QuickFilterToggle';
-import { Loader2, GitBranch } from 'lucide-react';
+import { Loader2, GitBranch, Sun, Moon } from 'lucide-react';
 
 export default function ScanResultsUI() {
   const [repoUrl, setRepoUrl] = useState('');
@@ -18,6 +18,22 @@ export default function ScanResultsUI() {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [activeFilePath, setActiveFilePath] = useState('');
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const theme = localStorage.getItem('theme') || 'light';
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      setDarkMode(true);
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newMode);
+  };
 
   const triggerScan = async () => {
     setLoading(true);
@@ -103,7 +119,7 @@ export default function ScanResultsUI() {
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <input
           className="w-full p-2 border rounded"
           type="text"
@@ -112,29 +128,35 @@ export default function ScanResultsUI() {
           onChange={(e) => setRepoUrl(e.target.value)}
         />
         <button
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded flex items-center space-x-2 disabled:opacity-50"
-          onClick={triggerScan}
-          disabled={loading}
+          onClick={toggleDarkMode}
+          className="ml-4 p-2 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
-          {loading ? (
-            <>
-              <Loader2 className="animate-spin" size={16} />
-              <span>Scanning...</span>
-            </>
-          ) : (
-            <span>Scan Repo</span>
-          )}
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
+      <button
+        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded flex items-center space-x-2 disabled:opacity-50"
+        onClick={triggerScan}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="animate-spin" size={16} />
+            <span>Scanning...</span>
+          </>
+        ) : (
+          <span>Scan Repo</span>
+        )}
+      </button>
 
       {results && (
         <>
-          <div className="flex flex-wrap items-center justify-between text-sm text-gray-600 mb-3 gap-2">
+          <div className="flex flex-wrap items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-3 gap-2">
             <div className="flex items-center space-x-2">
               <GitBranch size={16} />
               <span>{repoDisplay}</span>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {selectedCount} of {totalTextual} files selected
             </div>
           </div>
