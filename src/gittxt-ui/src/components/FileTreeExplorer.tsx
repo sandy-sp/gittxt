@@ -1,56 +1,57 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, FolderOpen, FileText } from 'lucide-react';
 import { Tooltip } from 'react-tooltip';
 import { getTooltipContent } from '../utils/tooltipHelpers';
+import { TreeNode, FileManifestEntry } from '../types/api';
 
-function TreeNode({
+interface Props {
+  treeData: TreeNode | null;
+  selected: Set<string>;
+  onToggle: (path: string, selected: boolean) => void;
+  onFileClick: (path: string) => void;
+  activePath: string;
+  filterTypes: string[];
+  showSelectedOnly: boolean;
+  manifest: Record<string, FileManifestEntry>;
+}
+
+function TreeNodeItem({
   node,
   path,
-  onToggle,
   selected,
+  onToggle,
   onFileClick,
   activePath,
   filterTypes,
   showSelectedOnly,
-  manifest
-}) {
-  if (!node) {
-    console.error("TreeNode received an undefined node:", { path });
-    return null;
-  }
-
-  console.log("Rendering TreeNode:", { node, path });
-
+  manifest,
+}: Props & { node: TreeNode; path: string }) {
   const [expanded, setExpanded] = useState(true);
   const fullPath = path ? `${path}/${node.name}` : node.name;
-  const isSelected = selected?.has(fullPath) || false; // Defensive check
+  const isSelected = selected.has(fullPath);
   const isFile = !node.children;
   const isActive = fullPath === activePath;
 
-  const fileExt = isFile ? node.name.split('.').pop() : '';
-  const shouldRender = !isFile || !filterTypes?.length || filterTypes.includes(fileExt); // Defensive check
-  if (!shouldRender) return null;
-  if (showSelectedOnly && isFile && !selected?.has(fullPath)) return null; // Defensive check
+  const ext = isFile ? node.name.split('.').pop() || '' : '';
+  const matchesFilter = !filterTypes.length || filterTypes.includes(ext);
+  if (isFile && !matchesFilter) return null;
+  if (showSelectedOnly && isFile && !isSelected) return null;
 
-  const toggleSelect = () => onToggle?.(fullPath, !isSelected); // Defensive check
-  const toggleExpand = () => setExpanded(!expanded);
-
-  const meta = manifest?.[fullPath];
-  const tooltip = meta
-    ? `Size: ${meta.human_readable_size || meta.size} • Tokens: ${meta.token_count || '?'}`
-    : '';
+  const toggleExpand = () => setExpanded((prev) => !prev);
+  const toggleSelect = () => onToggle(fullPath, !isSelected);
+  const tooltip = getTooltipContent(fullPath, manifest);
 
   return (
     <li className="ml-4">
-      <div className="flex items-center space-x-2" data-tip={tooltip}>
-        {node.children && (
-          <button onClick={toggleExpand} className="text-sm">
+      <div className="flex items-center gap-2" data-tooltip-id={`tooltip-${fullPath}`}>
+        {node.children ? (
+          <button onClick={toggleExpand}>
             {expanded ? <FolderOpen size={16} /> : <Folder size={16} />}
           </button>
+        ) : (
+          <FileText size={16} className="text-gray-500 dark:text-gray-400" />
         )}
-        {!node.children && <FileText size={16} className="text-gray-600" />}
         <input
           type="checkbox"
           checked={isSelected}
@@ -58,38 +59,38 @@ function TreeNode({
         />
         <span
           className={`text-sm font-mono ${
-            isFile ? 'cursor-pointer hover:underline text-blue-700' : ''
-          } ${isActive ? 'bg-yellow-100 px-1 rounded' : ''}`}
-          onClick={() => isFile && onFileClick?.(fullPath)} // Defensive check
+            isFile ? 'cursor-pointer text-blue-700 hover:underline' : ''
+          } ${isActive ? 'bg-yellow-100 dark:bg-yellow-900 px-1 rounded' : ''}`}
+          onClick={() => isFile && onFileClick(fullPath)}
         >
           {node.name}
         </span>
       </div>
-      <span
-        data-tooltip-id={`tooltip-${fullPath}`}
-        data-tooltip-content={getTooltipContent(fullPath, manifest)}>
-        {fullPath}
-      </span>
-      <Tooltip id={`tooltip-${fullPath}`} place="right" type="dark" effect="solid" />
+      <Tooltip
+        id={`tooltip-${fullPath}`}
+        place="right"
+        effect="solid"
+        content={tooltip}
+      />
       <AnimatePresence initial={false}>
         {expanded && node.children && (
           <motion.ul
-            className="mt-1"
+            className="ml-4 mt-1"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
           >
             {node.children.map((child) => (
-              <TreeNode
-                key={child.name} // Add a unique key for each child
-                node={child} // Pass the correct child node
-                path={fullPath} // Update the path for the child
+              <TreeNodeItem
+                key={`${fullPath}/${child.name}`}
+                node={child}
+                path={fullPath}
                 selected={selected}
                 onToggle={onToggle}
                 onFileClick={onFileClick}
                 activePath={activePath}
-                filterTypes={filterTypes || []}
+                filterTypes={filterTypes}
                 showSelectedOnly={showSelectedOnly}
                 manifest={manifest}
               />
@@ -101,35 +102,40 @@ function TreeNode({
   );
 }
 
-export default function FileTreeExplorer({
-  treeData,
-  selected,
-  onToggle,
-  onFileClick,
-  activePath,
-  filterTypes,
-  showSelectedOnly,
-  manifest
-}) {
-  console.log("Rendering FileTreeExplorer:", { treeData });
+export default function FileTreeExplorer(props: Props) {
+  const {
+    treeData,
+    selected,
+    onToggle,
+    onFileClick,
+    activePath,
+    filterTypes,
+    showSelectedOnly,
+    manifest,
+  } = props;
 
   if (!treeData) {
-    console.error("FileTreeExplorer received undefined treeData");
-    return <div>Error: No tree data available</div>;
+    return (
+      <div className="bg-white dark:bg-gray-800 shadow rounded p-4 text-red-500">
+        ⚠️ No tree structure available.
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white shadow-md rounded-xl p-4 mb-4">
-      <h2 className="text-lg font-semibold mb-2">📁 Repository Structure</h2>
+    <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 mb-4">
+      <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
+        📁 Repository Structure
+      </h2>
       <ul className="text-sm">
-        <TreeNode
+        <TreeNodeItem
           node={treeData}
           path=""
           selected={selected}
           onToggle={onToggle}
           onFileClick={onFileClick}
           activePath={activePath}
-          filterTypes={filterTypes || []}
+          filterTypes={filterTypes}
           showSelectedOnly={showSelectedOnly}
           manifest={manifest}
         />
