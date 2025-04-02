@@ -5,6 +5,7 @@ import TreeViewer from './components/TreeViewer';
 import CategoryFilter from './components/CategoryFilter';
 import DownloadLinks from './components/DownloadLinks';
 import FileTreeView from './components/FileTreeView';
+import FilePreview from './components/FilePreview';
 
 export default function ScanResultsUI() {
   const [repoUrl, setRepoUrl] = useState('');
@@ -12,6 +13,7 @@ export default function ScanResultsUI() {
   const [results, setResults] = useState(null);
   const [filter, setFilter] = useState({ languages: [], types: [] });
   const [selectedFiles, setSelectedFiles] = useState(new Set());
+  const [activeFilePath, setActiveFilePath] = useState('');
 
   const triggerScan = async () => {
     setLoading(true);
@@ -41,6 +43,10 @@ export default function ScanResultsUI() {
     if (isSelected) updated.add(path);
     else updated.delete(path);
     setSelectedFiles(updated);
+  };
+
+  const handleFileClick = (path) => {
+    setActiveFilePath(path);
   };
 
   const filteredCategories = results?.categories
@@ -79,7 +85,9 @@ export default function ScanResultsUI() {
             categories={results.categories}
             selected={filter.languages}
             onChange={handleFilterChange}
+            onFileClick={handleFileClick}
           />
+          <FilePreview filePath={activeFilePath} />
           <DownloadLinks downloads={results.downloads} />
         </>
       )}
