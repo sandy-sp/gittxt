@@ -1,11 +1,11 @@
 import tempfile
 import asyncio
 import time
-from gittxt.core.scanner import Scanner
-from gittxt.core.config import GittxtConfig
-from gittxt_api.models.scan import ScanRequest
-from gittxt_api.utils.logger import get_logger
-from gittxt_api.utils.task_registry import update_task, TaskStatus
+from src.gittxt.core.scanner import Scanner
+from src.gittxt.core.config import ConfigManager
+from src.gittxt_api.models.scan import ScanRequest
+from src.gittxt_api.utils.logger import get_logger
+from src.gittxt_api.utils.task_registry import update_task, TaskStatus
 
 logger = get_logger("scan_service")
 
@@ -13,7 +13,7 @@ async def scan_repo_logic(request: ScanRequest) -> dict:
     temp_dir = tempfile.mkdtemp()
     try:
         # Create config for Gittxt Scanner
-        config = GittxtConfig(
+        config = ConfigManager(
             output_dir=temp_dir,
             output_format=request.output_format,
             zip=request.zip,
