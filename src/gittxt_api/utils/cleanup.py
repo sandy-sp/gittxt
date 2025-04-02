@@ -1,8 +1,8 @@
 import asyncio
 import shutil
 import time
-from src.gittxt_api.utils.task_registry import task_registry, TaskStatus
-from src.gittxt_api.config import settings
+from gittxt_api.utils.task_registry import task_registry, TaskStatus
+from gittxt_api.config import settings
 
 TTL_SECONDS = settings.ttl_seconds
 
