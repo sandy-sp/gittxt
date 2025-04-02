@@ -8,6 +8,7 @@ import FileTreeView from './components/FileTreeView';
 import FilePreview from './components/FilePreview';
 import FileTypeFilter from './components/FileTypeFilter';
 import QuickFilterToggle from './components/QuickFilterToggle';
+import { Loader2 } from 'lucide-react';
 
 export default function ScanResultsUI() {
   const [repoUrl, setRepoUrl] = useState('');
@@ -101,11 +102,18 @@ export default function ScanResultsUI() {
           onChange={(e) => setRepoUrl(e.target.value)}
         />
         <button
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded flex items-center space-x-2 disabled:opacity-50"
           onClick={triggerScan}
           disabled={loading}
         >
-          {loading ? 'Scanning...' : 'Scan Repo'}
+          {loading ? (
+            <>
+              <Loader2 className="animate-spin" size={16} />
+              <span>Scanning...</span>
+            </>
+          ) : (
+            <span>Scan Repo</span>
+          )}
         </button>
       </div>
 
