@@ -1,8 +1,19 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, FolderOpen, FileText } from 'lucide-react';
+import ReactTooltip from 'react-tooltip';
 
-function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, filterTypes, showSelectedOnly }) {
+function TreeNode({
+  node,
+  path,
+  onToggle,
+  selected,
+  onFileClick,
+  activePath,
+  filterTypes,
+  showSelectedOnly,
+  manifest
+}) {
   const [expanded, setExpanded] = useState(true);
   const fullPath = path ? `${path}/${node.name}` : node.name;
   const isSelected = selected.has(fullPath);
@@ -17,9 +28,14 @@ function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, fil
   const toggleSelect = () => onToggle(fullPath, !isSelected);
   const toggleExpand = () => setExpanded(!expanded);
 
+  const meta = manifest?.[fullPath];
+  const tooltip = meta
+    ? `Size: ${meta.human_readable_size || meta.size} • Tokens: ${meta.token_count || '?'}`
+    : '';
+
   return (
     <li className="ml-4">
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2" data-tip={tooltip}>
         {node.children && (
           <button onClick={toggleExpand} className="text-sm">
             {expanded ? <FolderOpen size={16} /> : <Folder size={16} />}
@@ -40,6 +56,7 @@ function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, fil
           {node.name}
         </span>
       </div>
+
       <AnimatePresence initial={false}>
         {expanded && node.children && (
           <motion.ul
@@ -60,6 +77,7 @@ function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, fil
                 activePath={activePath}
                 filterTypes={filterTypes}
                 showSelectedOnly={showSelectedOnly}
+                manifest={manifest}
               />
             ))}
           </motion.ul>
@@ -69,7 +87,16 @@ function TreeNode({ node, path, onToggle, selected, onFileClick, activePath, fil
   );
 }
 
-export default function FileTreeView({ treeData, selected, onToggle, onFileClick, activePath, filterTypes, showSelectedOnly }) {
+export default function FileTreeExplorer({
+  treeData,
+  selected,
+  onToggle,
+  onFileClick,
+  activePath,
+  filterTypes,
+  showSelectedOnly,
+  manifest
+}) {
   return (
     <div className="bg-white shadow-md rounded-xl p-4 mb-4">
       <h2 className="text-lg font-semibold mb-2">📁 Repository Structure</h2>
@@ -83,8 +110,10 @@ export default function FileTreeView({ treeData, selected, onToggle, onFileClick
           activePath={activePath}
           filterTypes={filterTypes || []}
           showSelectedOnly={showSelectedOnly}
+          manifest={manifest}
         />
       </ul>
+      <ReactTooltip place="right" type="dark" effect="solid" />
     </div>
   );
 }
