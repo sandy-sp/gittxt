@@ -189,6 +189,7 @@ export default function ScanResultsUI() {
                 filterTypes={filter.filetypes}
                 showSelectedOnly={showSelectedOnly}
                 showBadges={true}
+                manifest={results.manifest}
               />
               <CategoryFilter
                 categories={filteredCategories}
