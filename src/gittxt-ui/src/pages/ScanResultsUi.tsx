@@ -6,12 +6,13 @@ import CategoryFilter from './components/CategoryFilter';
 import DownloadLinks from './components/DownloadLinks';
 import FileTreeView from './components/FileTreeView';
 import FilePreview from './components/FilePreview';
+import FileTypeFilter from './components/FileTypeFilter';
 
 export default function ScanResultsUI() {
   const [repoUrl, setRepoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
-  const [filter, setFilter] = useState({ languages: [], types: [] });
+  const [filter, setFilter] = useState({ languages: [], filetypes: [] });
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [activeFilePath, setActiveFilePath] = useState('');
 
@@ -35,7 +36,11 @@ export default function ScanResultsUI() {
   };
 
   const handleFilterChange = (newFilter) => {
-    setFilter(newFilter);
+    setFilter((prev) => ({ ...prev, ...newFilter }));
+  };
+
+  const handleTypeFilter = (filetypes) => {
+    setFilter((prev) => ({ ...prev, filetypes }));
   };
 
   const handleToggleSelect = (path, isSelected) => {
@@ -49,11 +54,30 @@ export default function ScanResultsUI() {
     setActiveFilePath(path);
   };
 
+  const allExtensions = results?.manifest
+    ? Array.from(
+        new Set(
+          Object.values(results.manifest)
+            .map((f) => f.file_type)
+            .filter(Boolean)
+        )
+      )
+    : [];
+
   const filteredCategories = results?.categories
     ? Object.fromEntries(
-        Object.entries(results.categories).filter(([lang]) =>
-          filter.languages.length ? filter.languages.includes(lang) : true
-        )
+        Object.entries(results.categories).map(([lang, cats]) => [
+          lang,
+          Object.fromEntries(
+            Object.entries(cats).map(([cat, files]) => [
+              cat,
+              files.filter((f) => {
+                const ext = results.manifest?.[f]?.file_type;
+                return !filter.filetypes.length || filter.filetypes.includes(ext);
+              })
+            ])
+          )
+        ])
       )
     : {};
 
@@ -80,12 +104,20 @@ export default function ScanResultsUI() {
         <>
           <SummaryCard summary={results.summary} />
           <TreeViewer tree={results.tree} />
-          <FileTreeView treeData={results.treeObject} selected={selectedFiles} onToggle={handleToggleSelect} />
+          <FileTypeFilter filetypes={allExtensions} selected={filter.filetypes} onChange={handleTypeFilter} />
+          <FileTreeView
+            treeData={results.treeObject}
+            selected={selectedFiles}
+            onToggle={handleToggleSelect}
+            onFileClick={handleFileClick}
+            activePath={activeFilePath}
+          />
           <CategoryFilter
-            categories={results.categories}
+            categories={filteredCategories}
             selected={filter.languages}
             onChange={handleFilterChange}
             onFileClick={handleFileClick}
+            activePath={activeFilePath}
           />
           <FilePreview filePath={activeFilePath} />
           <DownloadLinks downloads={results.downloads} />
