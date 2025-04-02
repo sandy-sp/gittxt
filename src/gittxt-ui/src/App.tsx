@@ -3,7 +3,7 @@ import InputSection from './components/InputSection';
 import Summary from './components/Summary';
 import DirectoryTree from './components/DirectoryTree';
 import CategorizedFiles from './components/CategorizedFiles';
-import DownloadButtons from './components/DownloadButtons';
+import DownloadButtons from '/components/DownloadButtons';
 import { scanRepository } from './utils/api';
 import { parseGitHubURL } from './utils/github';
 
