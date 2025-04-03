@@ -61,8 +61,9 @@ class TextFormatter:
                 for text_file in ordered_files:
                     rel_path = text_file.resolve().relative_to(self.repo_root)
                     raw = await async_read_text(text_file) or "[no content]"
+                    raw = raw.strip()
                     await txt_file.write(f"---> File: {rel_path} <---\n")
-                    await txt_file.write(f"{raw.strip()}\n\n")
+                    await txt_file.write(f"{raw}\n\n")
                 return output_file
 
             else:
@@ -97,6 +98,7 @@ class TextFormatter:
                         self.repo_url, rel_path, self.branch, self.subdir
                     )
                     raw = await async_read_text(text_file) or "[no content]"
+                    raw = raw.strip()
                     size_fmt = format_size_short(text_file.stat().st_size)
                     tokens_fmt = format_number_short(
                         await estimate_tokens_from_file(text_file)
@@ -105,7 +107,7 @@ class TextFormatter:
                     await txt_file.write(
                         f"\n\n---> FILE: {rel_path} | TYPE: {subcat} | SIZE: {size_fmt} | TOKENS: {tokens_fmt} <---\n"
                     )
-                    await txt_file.write(f"{raw.strip()}\n")
+                    await txt_file.write(f"{raw}\n")
 
                 if non_textual_files:
                     await txt_file.write("\n=== 🎨 Non-Textual Assets ===\n")
