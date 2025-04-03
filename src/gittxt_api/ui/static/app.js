@@ -1,5 +1,3 @@
-// src/gittxt_api/ui/static/app.js
-
 const initialForm = document.getElementById("initialForm");
 const filterForm = document.getElementById("filterForm");
 
@@ -9,6 +7,7 @@ const resultDiv = document.getElementById("result");
 const summarySection = document.getElementById("summarySection");
 const summaryOutput = document.getElementById("summaryOutput");
 const filePreview = document.getElementById("filePreview");
+const defaultExcludes = [".git", "node_modules", "__pycache__", ".venv"];
 
 let repo_url = "";
 let latest_output_dir = "";
@@ -35,6 +34,14 @@ initialForm.addEventListener("submit", async (e) => {
 });
 
 // ======== PHASE 2: FILTERED SCAN ========
+
+// Collect folder checkboxes
+const checkedFolders = [...document.querySelectorAll(".folder-checkbox:checked")]
+  .map(cb => cb.value);
+
+if (checkedFolders.length > 0) {
+  payload.exclude_dirs = checkedFolders;
+}
 
 filterForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -103,6 +110,20 @@ async function fetchResult(taskId, phase) {
     summarySection.classList.remove("hidden");
     filterForm.classList.remove("hidden");
     await loadPreviewFile(data.output_files);
+    async function loadDirectoryTree(outputDir) {
+      const container = document.getElementById("treeContainer");
+      container.innerHTML = "Loading tree...";
+    
+      try {
+        const res = await fetch(`/scan/tree?output_dir=${encodeURIComponent(outputDir)}`);
+        const treeData = await res.json();
+        const treeHTML = buildTreeHTML(treeData.tree);
+        container.innerHTML = `<ul class="folder-tree">${treeHTML}</ul>`;
+      } catch (err) {
+        container.innerHTML = "❌ Failed to load tree.";
+      }
+    }
+    await loadDirectoryTree(data.output_dir);
   }
 
   if (phase === 2) {
@@ -141,6 +162,19 @@ async function loadPreviewFile(outputFiles) {
   } catch (err) {
     filePreview.innerText = "❌ Failed to load preview.";
   }
+}
+
+function buildTreeHTML(nodes) {
+  return nodes.map(node => `
+    <li>
+      <label>
+        <input type="checkbox" class="folder-checkbox" value="${node.path}"
+          ${defaultExcludes.includes(node.name) ? "checked" : ""}>
+        ${node.name}
+      </label>
+      ${node.children?.length ? `<ul>${buildTreeHTML(node.children)}</ul>` : ""}
+    </li>
+  `).join("");
 }
 
 function parseCSV(val) {
