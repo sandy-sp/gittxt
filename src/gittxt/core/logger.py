@@ -20,9 +20,8 @@ class Logger:
     Handles logging configuration for Gittxt, including optional JSON or colored logs.
     """
 
-    BASE_DIR = Path(__file__).parent.parent.parent  # e.g., root of the repo
-    LOG_DIR = BASE_DIR / "gittxt-logs"
-    LOG_FILE = LOG_DIR / "gittxt.log"
+    SRC_DIR = Path(__file__).resolve().parent.parent  # points to src/gittxt
+    LOG_FILE = SRC_DIR / "gittxt.log"
 
     @staticmethod
     def _colorize(level, msg):
@@ -41,7 +40,6 @@ class Logger:
     @staticmethod
     def setup_logger(force_stdout=False):
         config = ConfigManager.load_config()
-        Logger.LOG_DIR.mkdir(parents=True, exist_ok=True)
 
         log_level_str = os.getenv("GITTXT_LOGGING_LEVEL", config["logging_level"])
         log_format_style = os.getenv("GITTXT_LOG_FORMAT", config["log_format"]).lower()
