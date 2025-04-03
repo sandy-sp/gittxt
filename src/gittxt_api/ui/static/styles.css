@@ -80,3 +80,52 @@ body {
     border: 1px solid #c8e6c9;
   }
   
+  .folder-tree {
+    list-style-type: none;
+    padding-left: 1rem;
+  }
+  
+  .folder-tree input[type="checkbox"] {
+    margin-right: 0.5rem;
+  }
+
+  .folder-tree {
+    list-style-type: none;
+    padding-left: 1rem;
+    margin: 0;
+  }
+  
+  .folder-tree li {
+    margin: 4px 0;
+    padding-left: 1rem;
+    position: relative;
+  }
+  
+  .folder-tree li::before {
+    content: "📁";
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  
+  .folder-tree label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+  }
+  
+  .folder-tree input[type="checkbox"] {
+    margin-right: 6px;
+    transform: scale(1.1);
+  }
+  
+  #treeContainer {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: #f9f9f9;
+  }
+  
