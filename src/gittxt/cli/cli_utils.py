@@ -40,6 +40,7 @@ def _print_summary(repo_name, summary_data, final_output_dir, output_format):
     console.print(table)
     console.print(f"[bold yellow]Output directory:[/] {output_path}")
 
+
 @click.command(help="🔄 Remove previous scan outputs (including text/json/md/zips).")
 @click.option("--output-dir", "-o", type=click.Path(), default=None)
 def clean(output_dir):
