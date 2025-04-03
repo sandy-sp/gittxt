@@ -1,6 +1,9 @@
 from rich.console import Console
 from rich.table import Table
 from gittxt.core.config import ConfigManager
+import click
+from pathlib import Path
+from gittxt.utils.cleanup_utils import cleanup_old_outputs
 
 config = ConfigManager.load_config()
 console = Console()
@@ -36,3 +39,17 @@ def _print_summary(repo_name, summary_data, final_output_dir, output_format):
 
     console.print(table)
     console.print(f"[bold yellow]Output directory:[/] {output_path}")
+
+@click.command(help="🔄 Remove previous scan outputs (including text/json/md/zips).")
+@click.option("--output-dir", "-o", type=click.Path(), default=None)
+def clean(output_dir):
+    target_dir = (
+        Path(output_dir).resolve()
+        if output_dir
+        else Path(config.get("output_dir")).resolve()
+    )
+    cleanup_old_outputs(target_dir)
+    console.print(f"[bold green]Cleaned output directory: {target_dir}")
+    if not target_dir.exists():
+        console.print(f"[red]❌ Output directory does not exist: {target_dir}[/red]")
+        return
