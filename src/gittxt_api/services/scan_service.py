@@ -1,10 +1,6 @@
-import os
-import tempfile
-import asyncio
 import time
 from pathlib import Path
 from gittxt.core.scanner import Scanner
-from gittxt.core.config import ConfigManager
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.core.repository import RepositoryHandler
 from gittxt.utils.summary_utils import generate_summary
