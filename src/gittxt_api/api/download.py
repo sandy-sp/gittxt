@@ -1,31 +1,30 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pathlib import Path
+import mimetypes
 
 router = APIRouter()
 
 @router.get("/download")
 def download_output_file(
-    output_dir: str = Query(..., description="Full output directory path"),
-    file_name: str = Query(..., description="Name of the file to download")
+    output_dir: str = Query(..., description="Output directory path"),
+    file_name: str = Query(..., description="Exact filename to download (e.g., repo.txt, repo.zip)")
 ):
-    full_path = Path(output_dir) / file_name
-    if not full_path.exists():
-        raise HTTPException(status_code=404, detail=f"File not found: {file_name}")
+    # Resolve path safely
+    base_path = Path(output_dir).resolve()
+    target_file = base_path / file_name
+
+    # Prevent directory traversal
+    if not target_file.is_file() or not target_file.resolve().is_relative_to(base_path):
+        raise HTTPException(status_code=404, detail=f"File not found or invalid path: {file_name}")
 
     return FileResponse(
-        path=str(full_path),
-        filename=file_name,
-        media_type=_guess_mime(file_name)
+        path=str(target_file),
+        filename=target_file.name,
+        media_type=_guess_mime_type(target_file)
     )
 
-def _guess_mime(filename: str) -> str:
-    if filename.endswith(".zip"):
-        return "application/zip"
-    elif filename.endswith(".json"):
-        return "application/json"
-    elif filename.endswith(".md"):
-        return "text/markdown"
-    elif filename.endswith(".txt"):
-        return "text/plain"
-    return "application/octet-stream"
+
+def _guess_mime_type(file_path: Path) -> str:
+    mime, _ = mimetypes.guess_type(file_path.name)
+    return mime or "application/octet-stream"
