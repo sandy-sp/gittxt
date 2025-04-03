@@ -4,6 +4,33 @@ All notable changes to **Gittxt** will be documented in this file.
 
 ---
 
+## [1.7.0] - 2025-04-03
+
+### 🧠 Config & Logging Enhancements
+- Config file (`gittxt-config.json`) is now consistently stored in `src/gittxt/` instead of a nested `config/` folder.
+- Log file (`gittxt.log`) is now created inside `src/gittxt/` and uses a rotating file handler for stability.
+- CLI installer (`gittxt install`) updated to write to the correct config location using `ConfigManager`.
+- Logging system now includes both stream and file output, and supports flexible format styles (`plain`, `json`, `colored`).
+
+### ⚙️ CLI Restructure
+- Combined `cli_install.py` and `cli_filters.py` into a new `cli_config.py` group with:
+  - `gittxt config install` → interactive installer
+  - `gittxt config filters` → subcommands for managing include/exclude patterns
+
+### 📦 Formatter & ZIP Behavior
+- Updated `text_formatter.py` and `markdown_formatter.py`:
+  - Fixed missing `.strip()` on raw file content
+  - Fixed malformed Markdown links for non-textual assets
+- Validated that ZIP formatter bundles only current scan session outputs (no stale content), and follows expected behavior of full output capture per scan.
+
+### 🧹 Repository & Scanner Improvements
+- GitHub repositories now auto-detect their default branch (e.g., `main`, `master`, `dev`) if `--branch` is not specified.
+- Scanner now logs a summary of accepted/skipped/non-textual files.
+- Added warning when no textual files pass filters to prevent empty outputs.
+- Cleaned up pattern matching explanations (glob-only, no regex) for better CLI usability.
+
+---
+
 ## [1.6.0] - 2025-03-31
 
 ### ✨ Features
