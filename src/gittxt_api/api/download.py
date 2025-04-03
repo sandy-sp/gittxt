@@ -8,15 +8,13 @@ router = APIRouter()
 @router.get("/download")
 def download_output_file(
     output_dir: str = Query(..., description="Output directory path"),
-    file_name: str = Query(..., description="Exact filename to download (e.g., repo.txt, repo.zip)")
+    file_name: str = Query(..., description="Exact filename to download")
 ):
-    # Resolve path safely
     base_path = Path(output_dir).resolve()
-    target_file = base_path / file_name
+    target_file = find_file_recursive(base_path, file_name)
 
-    # Prevent directory traversal
-    if not target_file.is_file() or not target_file.resolve().is_relative_to(base_path):
-        raise HTTPException(status_code=404, detail=f"File not found or invalid path: {file_name}")
+    if not target_file or not target_file.is_file():
+        raise HTTPException(status_code=404, detail=f"File not found: {file_name}")
 
     return FileResponse(
         path=str(target_file),
@@ -24,6 +22,11 @@ def download_output_file(
         media_type=_guess_mime_type(target_file)
     )
 
+def find_file_recursive(output_dir: Path, file_name: str):
+    for path in output_dir.rglob("*"):
+        if path.name == file_name and path.is_file():
+            return path
+    return None
 
 def _guess_mime_type(file_path: Path) -> str:
     mime, _ = mimetypes.guess_type(file_path.name)
