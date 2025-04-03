@@ -1,5 +1,8 @@
 from pathlib import Path
 import asyncio
+import re
+import hashlib
+from urllib.parse import urlparse
 from gittxt.core.logger import Logger
 from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR
 from gittxt.utils.tree_utils import generate_tree
@@ -38,7 +41,12 @@ class OutputBuilder:
         self.subdir = subdir
         self.mode = mode.lower()
         self.output_dir = Path(output_dir).resolve()
-        self.output_formats = [fmt.strip().lower() for fmt in output_format.split(",")]
+        if isinstance(output_format, str):
+            self.output_formats = [fmt.strip().lower() for fmt in output_format.split(',')]
+        elif isinstance(output_format, list):
+            self.output_formats = [fmt.strip().lower() for fmt in output_format]
+        else:
+            raise TypeError(f"Invalid output_format type: {type(output_format)}")
         self.repo_path = None
 
         # Validate mode and formats
@@ -60,6 +68,34 @@ class OutputBuilder:
         }
         for folder in self.directories.values():
             folder.mkdir(parents=True, exist_ok=True)
+
+    def _get_dynamic_basename(self):
+        def sanitize(name):
+            return re.sub(r'[^a-zA-Z0-9]', '_', name)
+
+        def truncate_or_hash(name, max_len=50):
+            if len(name) > max_len:
+                suffix = hashlib.md5(name.encode()).hexdigest()[:8]
+                return f"{name[:max_len - 9]}_{suffix}"
+            return name
+
+        base_name = self.repo_name
+
+        if self.repo_url and self.repo_url.startswith("http"):
+            # GitHub URL
+            parsed_url = urlparse(self.repo_url)
+            parts = Path(parsed_url.path).parts
+            if "tree" in parts:
+                tree_idx = parts.index("tree")
+                subdir_parts = parts[tree_idx + 2:]  # skip 'tree' and branch
+                if subdir_parts:
+                    base_name = f"{base_name}_{'_'.join(subdir_parts)}"
+        elif self.repo_url:
+            # Local path
+            local_root = Path(self.repo_url).resolve()
+            base_name = local_root.parts[-1]
+
+        return truncate_or_hash(sanitize(base_name))
 
     async def generate_output(
         self,
@@ -84,7 +120,7 @@ class OutputBuilder:
                 continue
 
             formatter = FormatterClass(
-                repo_name=self.repo_name,
+                repo_name=self._get_dynamic_basename(),
                 output_dir=self.directories[fmt],
                 repo_path=self.repo_path,
                 tree_summary=tree_summary,
@@ -116,7 +152,7 @@ class OutputBuilder:
             for fmt in self.output_formats:
                 FormatterClass = self.FORMATTERS[fmt]
                 formatter = FormatterClass(
-                    repo_name=self.repo_name,
+                    repo_name=self._get_dynamic_basename(),
                     output_dir=self.directories[fmt],
                     repo_path=self.repo_path,
                     tree_summary=tree_summary,
@@ -137,7 +173,7 @@ class OutputBuilder:
                     logger.error(f"❌ Formatter {fmt} failed for ZIP bundle: {e}")
 
             zip_formatter = ZipFormatter(
-                repo_name=self.repo_name,
+                repo_name=self._get_dynamic_basename(),
                 output_dir=self.directories["zip"],
                 output_files=full_output_files,
                 non_textual_files=non_textual_files,
