@@ -7,6 +7,7 @@ from gittxt.core.config import ConfigManager
 
 console = Console()
 
+
 # === CLI GROUP ===
 @click.group(help="⚙️ Configure Gittxt settings and filters.")
 def config():
@@ -45,7 +46,10 @@ def list_filters():
     for key in FILTER_KEYS:
         title = FILTER_EMOJIS.get(key, key)
         values = filters.get(key, [])
-        content = Text(", ".join(sorted(values)) if values else "-", style="green" if values else "dim")
+        content = Text(
+            ", ".join(sorted(values)) if values else "-",
+            style="green" if values else "dim",
+        )
         console.print(Panel(content, title=title, expand=False, border_style="blue"))
 
 
@@ -60,12 +64,16 @@ def add_filter(filter_type, values):
         non_textual.difference_update(values)
         ConfigManager.update_filter_list("non_textual_exts", list(non_textual))
         if removed:
-            console.print(f"[yellow]⚠️ Removed from non_textual_exts: {', '.join(sorted(removed))}[/yellow]")
+            console.print(
+                f"[yellow]⚠️ Removed from non_textual_exts: {', '.join(sorted(removed))}[/yellow]"
+            )
     elif filter_type == "non_textual_exts":
         textual = set(ConfigManager.get_filter_list("textual_exts"))
         conflict = textual.intersection(values)
         if conflict:
-            console.print(f"[red]❌ Cannot move from textual to non-textual: {', '.join(conflict)}[/red]")
+            console.print(
+                f"[red]❌ Cannot move from textual to non-textual: {', '.join(conflict)}[/red]"
+            )
             return
 
     current.update(values)
@@ -83,7 +91,9 @@ def remove_filter(filter_type, values):
     console.print(f"[green]✅ Removed from {filter_type}[/green]")
     skipped = set(values) - current
     if skipped:
-        console.print(f"[dim]⏭️ Not found in {filter_type}: {', '.join(sorted(skipped))}[/dim]")
+        console.print(
+            f"[dim]⏭️ Not found in {filter_type}: {', '.join(sorted(skipped))}[/dim]"
+        )
 
 
 @filters.command("clear", help="🗑️ Clear all filters in all categories.")
