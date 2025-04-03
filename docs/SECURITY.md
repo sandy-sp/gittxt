@@ -2,11 +2,11 @@
 
 ## Supported Versions
 
-As Gittxt is currently in **v1.6.0**, we aim to provide security updates for the latest release only.
+As Gittxt is currently in **v1.7.0**, we aim to provide security updates for the latest release only.
 
 | Version | Supported          |
 |---------|--------------------|
-| 1.6.0   | ✅ Actively supported |
+| 1.7.0   | ✅ Actively supported |
 
 ---
 # 🔐 Gittxt Security Practices

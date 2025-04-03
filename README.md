@@ -16,7 +16,7 @@
 ---
 
 ## ✨ What is Gittxt?
-![](./docs/run_gittxt.gif)
+![](./docs/gittxt-demo.gif)
 
 **Gittxt** is a modular and configurable CLI tool that converts Git repositories into clean, AI-ready textual datasets. It is built for developers, researchers, and ML engineers who need structured, filtered, and summarized content from codebases and technical documentation.
 
@@ -47,22 +47,21 @@ It supports both local folders and GitHub URLs with branch/subdir targeting.
 
 ## 🏗️ Installation
 
-### 📦 Using Poetry
-
-```bash
-git clone https://github.com/sandy-sp/gittxt.git
-cd gittxt
-poetry install
-# Optional setup
-poetry run gittxt install
-```
-
 ### 🐍 Using pip (stable)
 
 ```bash
 pip install gittxt
 ```
 
+### 📦 Using Poetry
+
+```bash
+git clone https://github.com/sandy-sp/gittxt.git
+cd gittxt
+poetry install
+# Optional Gittxt setup
+poetry run gittxt install
+```
 ---
 
 ## ⚙️ Quickstart Example
@@ -144,7 +143,7 @@ See [Formats Guide](docs/FORMATS.md)
 Run the interactive installer to configure Gittxt preferences:
 
 ```bash
-gittxt install
+gittxt config install
 ```
 
 This command lets you:
