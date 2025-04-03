@@ -1,10 +1,11 @@
-from pydantic import BaseModel, HttpUrl, validator, field_validator
+from pydantic import BaseModel, HttpUrl, validator
 from typing import List, Optional, Dict, Union, Tuple
 from pathlib import Path
 import os
 import uuid
 
 VALID_FORMATS = {"txt", "json", "md", "zip"}
+
 
 class ScanRequest(BaseModel):
     repo_url: Union[str, HttpUrl]
@@ -27,9 +28,13 @@ class ScanRequest(BaseModel):
     def validate_repo_url(cls, v):
         # Allow HTTPS, git@, and local paths
         if isinstance(v, str):
-            if v.startswith(("http://", "https://", "git@", "ssh://")) or os.path.exists(v):
+            if v.startswith(
+                ("http://", "https://", "git@", "ssh://")
+            ) or os.path.exists(v):
                 return v
-        raise ValueError("Invalid repo_url: must be a GitHub URL, SSH-style git URL, or valid local path.")
+        raise ValueError(
+            "Invalid repo_url: must be a GitHub URL, SSH-style git URL, or valid local path."
+        )
 
     @validator("output_format", each_item=True)
     def validate_output_format(cls, v):
