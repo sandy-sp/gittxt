@@ -41,6 +41,7 @@ filetype_config.json
 subcategory_config.json
 poetry.lock
 package-lock.json
+gittxt.log
 
 # Frontend UI node modules
 node_modules
