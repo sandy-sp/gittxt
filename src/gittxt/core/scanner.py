@@ -76,7 +76,17 @@ class Scanner:
                     self._record_skip(path, f"processing error: ({e})")
 
         await asyncio.gather(*[process_path(p) for p in all_items])
+        # 📊 Post-scan summary
+        accepted = len(self.accepted_files)
+        skipped = len(self.skipped_files)
+        nontext = len(self.non_textual_files)
+
+        if accepted == 0:
+            logger.warning("⚠️ No textual files were accepted after filtering.")
+
+        logger.info(f"✅ Scan complete: {accepted} accepted, {nontext} non-textual, {skipped} skipped.")
         return self.accepted_files, self.non_textual_files
+
 
     def _record_skip(self, path: Path, reason: str):
         resolved = path.resolve()
