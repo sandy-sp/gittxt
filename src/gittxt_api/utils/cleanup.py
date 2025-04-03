@@ -2,9 +2,10 @@ import asyncio
 import os
 import shutil
 from gittxt_api.utils.logger import get_logger
-from gittxt_api.utils.task_registry import task_registry, TaskStatus
+from gittxt_api.utils.task_registry import task_registry
 
 logger = get_logger("cleanup")
+
 
 # Background cleanup loop
 async def cleanup_worker():
