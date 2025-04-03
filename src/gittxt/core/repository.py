@@ -5,6 +5,9 @@ from gittxt.core.logger import Logger
 from gittxt.utils.repo_url_parser import parse_github_url
 from gittxt.utils.cleanup_utils import delete_directory
 
+import subprocess
+import re
+
 logger = Logger.get_logger(__name__)
 
 
@@ -64,10 +67,9 @@ class RepositoryHandler:
 
         self.repo_path = temp_dir
         self.subdir = subdir
-        self.branch = branch
-
+        # self.branch is now always valid
         logger.info(
-            f"🔄 Remote repo cloned: {repo_name}, subdir={subdir}, branch={branch}"
+            f"🔄 Remote repo cloned: {repo_name}, subdir={subdir}, branch={self.branch}"
         )
         return temp_dir
 
@@ -90,11 +92,26 @@ class RepositoryHandler:
             logger.info("🔁 Retrying without branch specification...")
             try:
                 git.Repo.clone_from(git_url, str(temp_dir), depth=1)
-                self.branch = "main"  # fallback assumption (could be refined)
+                # Detect default branch
+                result = subprocess.run(
+                    ["git", "remote", "show", "origin"],
+                    cwd=temp_dir,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                match = re.search(r"HEAD branch:\s+(\S+)", result.stdout)
+                detected_branch = match.group(1) if match else "main"
+                logger.info(f"🧭 Default branch detected: {detected_branch}")
+                self.branch = detected_branch
+
+                # Checkout correct branch
+                repo = git.Repo(temp_dir)
+                repo.git.checkout(self.branch)
             except Exception as fallback_error:
                 delete_directory(temp_dir)
                 raise RuntimeError(
-                    f"❌ Both clone attempts failed.\nGit URL: {git_url}\nBranch attempted: {branch}\n"
+                    f"❌ Clone attempts failed.\nGit URL: {git_url}\n"
                     f"Original error: {e}\nFallback error: {fallback_error}"
                 ) from fallback_error
 
