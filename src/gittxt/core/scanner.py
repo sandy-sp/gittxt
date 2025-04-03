@@ -84,9 +84,10 @@ class Scanner:
         if accepted == 0:
             logger.warning("⚠️ No textual files were accepted after filtering.")
 
-        logger.info(f"✅ Scan complete: {accepted} accepted, {nontext} non-textual, {skipped} skipped.")
+        logger.info(
+            f"✅ Scan complete: {accepted} accepted, {nontext} non-textual, {skipped} skipped."
+        )
         return self.accepted_files, self.non_textual_files
-
 
     def _record_skip(self, path: Path, reason: str):
         resolved = path.resolve()
