@@ -1,8 +1,6 @@
-
 import os
 import tempfile
 import asyncio
-import subprocess
 import time
 from pathlib import Path
 from gittxt.core.scanner import Scanner
@@ -11,7 +9,7 @@ from gittxt.core.output_builder import OutputBuilder
 from gittxt.core.repository import RepositoryHandler
 from gittxt.utils.summary_utils import generate_summary
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
-from gittxt.utils.file_utils import load_gittxtignore
+from gittxt.utils.file_utils import load_gittxtignore  # <-- centralized
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from gittxt.utils.filetype_utils import FiletypeConfigManager
 
@@ -24,22 +22,23 @@ logger = get_logger("scan_service")
 
 async def perform_scan(request: ScanRequest) -> ScanResponse:
     try:
-        # Step 1: Clone or resolve repo
-        handler = RepositoryHandler(
-            source=request.repo_url,
-            branch=request.branch,
-        )
+        # Step 1: Clone/resolve repository
+        handler = RepositoryHandler(source=request.repo_url, branch=request.branch)
         await handler.resolve()
         repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
 
         scan_root = Path(repo_path)
         if request.subdir:
             scan_root = scan_root / request.subdir
+            try:
+                scan_root.resolve().relative_to(Path(repo_path).resolve())
+            except ValueError:
+                raise Exception(f"Invalid subdir: {request.subdir} is outside repo")
 
         if not scan_root.exists():
             raise FileNotFoundError(f"Scan path does not exist: {scan_root}")
 
-        # Step 2: Exclusions
+        # Step 2: Filters & exclusions
         dynamic_ignores = load_gittxtignore(scan_root) if request.sync_ignore else []
         exclude_dirs = list(
             set(request.exclude_dirs or [])
@@ -68,7 +67,10 @@ async def perform_scan(request: ScanRequest) -> ScanResponse:
         if not textual_files:
             raise Exception("No valid textual files found.")
 
-        # Step 4: Build output
+        # Step 4: Summary BEFORE output
+        summary = await generate_summary(textual_files + non_textual_files)
+
+        # Step 5: Build output
         output_dir = Path(request.output_dir).resolve()
         builder = OutputBuilder(
             repo_name=repo_name,
@@ -86,9 +88,6 @@ async def perform_scan(request: ScanRequest) -> ScanResponse:
             create_zip=request.create_zip,
             tree_depth=request.tree_depth,
         )
-
-        # Step 5: Summary
-        summary = await generate_summary(textual_files + non_textual_files)
 
         return ScanResponse(
             repo_name=repo_name,
@@ -117,20 +116,3 @@ async def scan_repo_logic_async(request: ScanRequest, task_id: str):
         update_task(task_id, TaskStatus.COMPLETED, result=result_dict)
     except Exception as e:
         update_task(task_id, TaskStatus.FAILED, error=str(e))
-
-def load_gittxtignore(repo_root):
-    """
-    Load .gittxtignore file from the repo root and return patterns.
-    Returns empty list if file does not exist or fails to load.
-    """
-    ignore_file = os.path.join(repo_root, ".gittxtignore")
-    if not os.path.isfile(ignore_file):
-        return []
-
-    try:
-        with open(ignore_file, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
-        return lines
-    except Exception as e:
-        print(f"[WARN] Failed to load .gittxtignore: {e}")
-        return []
