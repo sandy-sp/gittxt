@@ -71,8 +71,8 @@ node_modules/
 Manage filetype detection rules with CLI commands:
 
 ```bash
-gittxt filters add textual_exts .ipynb
-gittxt filters remove textual_exts .txt
+gittxt config filters add textual_exts .ipynb
+gittxt config filters remove textual_exts .txt
 ```
 
 Filter categories:
@@ -92,18 +92,6 @@ Manual editing via configuration (`config/gittxt-config.json`):
   }
 }
 ```
-
----
-
-## 🧪 Testing Your Configuration
-
-Preview scan results with verbose logging and progress indicators:
-
-```bash
-gittxt scan . --verbose --progress
-```
-
-Files skipped due to size, exclusion patterns, or file-type filters will be logged with clear reasons.
 
 ---
 
