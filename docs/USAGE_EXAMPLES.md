@@ -97,8 +97,8 @@ gittxt scan https://github.com/user/sample-repo --branch develop
 Add or remove file types from detection filters:
 
 ```bash
-gittxt filters add textual_exts .ipynb
-gittxt filters remove textual_exts .log
+gittxt config filters add textual_exts .ipynb
+gittxt config filters remove textual_exts .log
 ```
 
 ---
