@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from gittxt_api.models.scan import ScanRequest, ScanResponse
 from gittxt_api.services.scan_service import perform_scan, scan_repo_logic_async
-from gittxt_api.utils.task_registry import create_task, update_task, get_task, TaskStatus, task_registry
+from gittxt_api.utils.task_registry import (
+    create_task,
+    get_task,
+    TaskStatus,
+    task_registry,
+)
 from gittxt_api.utils.logger import get_logger
 
 router = APIRouter()
 logger = get_logger("scan_api")
+
 
 @router.post("/", response_model=ScanResponse)
 async def scan_repo(request: ScanRequest):
