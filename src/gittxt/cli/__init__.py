@@ -1,7 +1,7 @@
 import click
 from .cli_scan import scan
-from .cli_filters import filters
-from .cli_install import install, clean
+from gittxt.cli.cli_config import config
+from gittxt.cli.cli_utils import clean
 from gittxt.__init__ import __version__
 
 
@@ -15,7 +15,7 @@ class CustomGroup(click.Group):
 
     def list_commands(self, ctx):
         # Custom order instead of alphabetical
-        return ["scan", "install", "filters", "clean"]
+        return ["scan", "config", "clean"]
 
 
 @click.group(cls=CustomGroup)
@@ -25,6 +25,5 @@ def cli():
 
 
 cli.add_command(scan)
-cli.add_command(install)
-cli.add_command(filters)
+cli.add_command(config)
 cli.add_command(clean)
