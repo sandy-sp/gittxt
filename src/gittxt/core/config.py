@@ -25,8 +25,7 @@ class ConfigManager:
     """
 
     SRC_DIR = Path(__file__).resolve().parent
-    CONFIG_DIR = SRC_DIR.parent / "config"
-    CONFIG_FILE = CONFIG_DIR / "gittxt-config.json"
+    CONFIG_FILE = SRC_DIR.parent / "gittxt-config.json"
 
     @staticmethod
     def _determine_default_output_dir():
