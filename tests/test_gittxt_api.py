@@ -80,11 +80,14 @@ async def test_invalid_task_id_status():
         assert r.status_code == 404
         print("✅ 404 on invalid task_id")
 
-async def test_missing_output_dir_download():
+async def test_missing_output_file_download():
     async with httpx.AsyncClient(follow_redirects=True) as client:
-        r = await client.get(f"{BASE_URL}/download/zip?output_dir=/fake/path/to/nothing")
+        r = await client.get(
+            f"{BASE_URL}/download",
+            params={"output_dir": "/fake/path/to/nothing", "file_name": "fake.zip"}
+        )
         assert r.status_code == 404
-        print("✅ 404 on missing ZIP file")
+        print("✅ 404 on missing file in download endpoint")
 
 async def run_all_tests():
     await test_health()
