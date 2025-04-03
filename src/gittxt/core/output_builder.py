@@ -42,7 +42,9 @@ class OutputBuilder:
         self.mode = mode.lower()
         self.output_dir = Path(output_dir).resolve()
         if isinstance(output_format, str):
-            self.output_formats = [fmt.strip().lower() for fmt in output_format.split(',')]
+            self.output_formats = [
+                fmt.strip().lower() for fmt in output_format.split(",")
+            ]
         elif isinstance(output_format, list):
             self.output_formats = [fmt.strip().lower() for fmt in output_format]
         else:
@@ -71,7 +73,7 @@ class OutputBuilder:
 
     def _get_dynamic_basename(self):
         def sanitize(name):
-            return re.sub(r'[^a-zA-Z0-9]', '_', name)
+            return re.sub(r"[^a-zA-Z0-9]", "_", name)
 
         def truncate_or_hash(name, max_len=50):
             if len(name) > max_len:
@@ -87,7 +89,7 @@ class OutputBuilder:
             parts = Path(parsed_url.path).parts
             if "tree" in parts:
                 tree_idx = parts.index("tree")
-                subdir_parts = parts[tree_idx + 2:]  # skip 'tree' and branch
+                subdir_parts = parts[tree_idx + 2 :]  # skip 'tree' and branch
                 if subdir_parts:
                     base_name = f"{base_name}_{'_'.join(subdir_parts)}"
         elif self.repo_url:
