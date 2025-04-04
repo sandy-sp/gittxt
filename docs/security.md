@@ -1,12 +1,3 @@
-I’ve already parsed the full `docs/SECURITY.md` from your project — no need to upload it again.
-
-I’ll reformat it now as `security.md` for MkDocs.
-
-Here’s the final `security.md`, structured for clarity and MkDocs readability. It includes best practices, contact steps, and vulnerability reporting instructions:
-
----
-
-```markdown
 # 🔐 Security Policy
 
 We take security seriously and are committed to keeping Gittxt safe for all users.
@@ -139,12 +130,4 @@ We’re happy to acknowledge researchers who report responsibly (unless anonymit
 Thank you for helping keep **Gittxt** safe and secure for everyone! 🙏
 
 ---
-```
 
----
-
-✅ That wraps up all the refactored documentation pages!
-
-Let me know when you’re ready and I’ll help you:
-- Build the docs locally using `mkdocs serve`
-- Deploy to GitHub Pages with a clean GitHub Action or `gh-pages` branch config
