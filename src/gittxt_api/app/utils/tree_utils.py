@@ -1,11 +1,13 @@
 import os
 from gittxt_api.app.models.response import TreeNode
 
-
 def build_tree_from_path(base_path: str, max_depth: int = 3) -> TreeNode:
     def walk(path: str, depth: int) -> TreeNode:
+        if not os.path.isdir(path):
+            return TreeNode(name=os.path.basename(path))
+
         node = TreeNode(name=os.path.basename(path), children=[])
-        if depth == 0 or not os.path.isdir(path):
+        if depth == 0:
             return node
 
         try:
