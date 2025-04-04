@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from uuid import uuid4
 
-from gittxt_api.app.models.request import ScanRequest
-from gittxt_api.app.models.response import ScanResponse, ErrorResponse
-from gittxt_api.app.services.scan_service import run_scan_job
+from  .app.models.request import ScanRequest
+from  .app.models.response import ScanResponse, ErrorResponse
+from  .app.services.scan_service import run_scan_job
 
 router = APIRouter()
 
