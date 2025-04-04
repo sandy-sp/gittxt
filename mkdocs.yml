@@ -1,0 +1,50 @@
+site_name: Gittxt
+site_description: AI-ready text extractor for Git repositories
+site_url: https://sandy-sp.github.io/gittxt/
+repo_url: https://github.com/sandy-sp/gittxt
+repo_name: sandy-sp/gittxt
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.instant
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: indigo
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: indigo
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Usage Guide: usage.md
+  - Configuration: configuration.md
+  - Output Formats: formats.md
+  - API Reference: api-reference.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+  - Code of Conduct: code-of-conduct.md
+  - Security Policy: security.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.details
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
