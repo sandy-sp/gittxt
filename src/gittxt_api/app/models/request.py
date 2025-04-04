@@ -11,7 +11,7 @@ class ScanRequest(BaseModel):
     exclude_patterns: Optional[List[str]] = Field(default_factory=list, description="File patterns to exclude (e.g. '*.md')")
     include_patterns: Optional[List[str]] = Field(default_factory=list, description="File patterns to include (e.g. '*.py')")
 
-    size_limit_kb: Optional[int] = Field(0, description="Max file size in KB (0 means no limit)")
+    size_limit_kb: Optional[int] = Field(0, description="Max file size in KB (0 = unlimited)")
     tree_depth: Optional[int] = Field(3, description="Depth of directory tree to return")
     output_formats: Optional[List[str]] = Field(default_factory=lambda: ["json"], description="List of output formats (txt, json, md)")
 
