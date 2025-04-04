@@ -1,0 +1,1 @@
+from gittxt_api.app.main import handler
