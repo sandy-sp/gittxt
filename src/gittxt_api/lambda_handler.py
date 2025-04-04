@@ -1,1 +1,1 @@
-from  .app.main import handler
+from gittxt_api.app.main import handler
