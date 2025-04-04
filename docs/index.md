@@ -116,6 +116,5 @@ gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json --zip --
 ---
 
 Made with ❤️ by [Sandeep Paidipati](https://github.com/sandy-sp) • MIT Licensed
-```
 
 ---
