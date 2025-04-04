@@ -91,6 +91,3 @@ We follow [Semantic Versioning](https://semver.org/) — breaking changes increa
 - Extension-based file filtering
 
 ---
-```
-
----
