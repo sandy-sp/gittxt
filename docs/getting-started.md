@@ -9,11 +9,13 @@ Welcome to **Gittxt** — your CLI companion for extracting clean, AI-ready data
 Gittxt supports both PyPI and Poetry-based installation.
 
 === "📌 Install from PyPI (recommended)"
+
     ```bash
     pip install gittxt
     ```
 
 === "🐍 Clone and Install with Poetry"
+
     ```bash
     git clone https://github.com/sandy-sp/gittxt.git
     cd gittxt
@@ -74,6 +76,7 @@ gittxt scan https://github.com/user/repo --branch main --subdir src
 You can manage default behavior using:
 
 === "🧾 CLI Flags"
+
     ```bash
     gittxt scan . \
       --output-dir reports/ \
@@ -85,6 +88,7 @@ You can manage default behavior using:
     ```
 
 === "🌍 Environment Variables"
+
     ```bash
     export GITTXT_OUTPUT_DIR=~/gittxt_reports
     export GITTXT_LITE_MODE=true
@@ -93,6 +97,7 @@ You can manage default behavior using:
 
 === "📄 .gittxtignore File"
     Exclude paths using Git-like syntax:
+    
     ```
     *.log
     secrets/
