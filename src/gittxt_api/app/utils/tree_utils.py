@@ -1,5 +1,5 @@
 import os
-from gittxt_api.app.models.response import TreeNode
+from  .app.models.response import TreeNode
 
 
 def build_tree_from_path(base_path: str, max_depth: int = 3) -> TreeNode:
