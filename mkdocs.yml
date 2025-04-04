@@ -17,10 +17,19 @@ theme:
       scheme: default
       primary: blue
       accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: blue
-      accent: indigo
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  custom_dir: docs/overrides
+  extra_css:
+    - docs/overrides/extra.css
 
 nav:
   - Home: index.md
