@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from mangum import Mangum
-from  .app.routes import scan
-from  .app.routes import scan, download
+from gittxt_api.app.routes import scan
+from gittxt_api.app.routes import scan, download
 
 app = FastAPI(
     title="Gittxt API",
