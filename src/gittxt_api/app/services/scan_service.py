@@ -2,14 +2,14 @@ import os
 import tempfile
 import shutil
 from typing import Optional
-from gittxt_api.app.models.request import ScanRequest
-from gittxt_api.app.models.response import (
+from  .app.models.request import ScanRequest
+from  .app.models.response import (
     ScanResponse, ScanSummary, FileMetadata, TreeNode
 )
-from gittxt_api.app.core.gittxt_runner import run_gittxt_scan
-from gittxt_api.app.utils.tree_utils import build_tree_from_path
-from gittxt_api.app.services.zip_utils import generate_download_links
-from gittxt_api.app.utils.json_loader import load_json
+from  .app.core.gittxt_runner import run_gittxt_scan
+from  .app.utils.tree_utils import build_tree_from_path
+from  .app.services.zip_utils import generate_download_links
+from  .app.utils.json_loader import load_json
 
 async def run_scan_job(request: ScanRequest, scan_id: str) -> Optional[ScanResponse]:
     try:
