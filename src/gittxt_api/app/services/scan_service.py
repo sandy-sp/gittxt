@@ -13,19 +13,18 @@ from gittxt_api.app.utils.json_loader import load_json
 
 async def run_scan_job(request: ScanRequest, scan_id: str) -> Optional[ScanResponse]:
     try:
-        # 1. Create a temp working directory for this scan
-        work_dir = tempfile.mkdtemp(prefix=f"scan_{scan_id}_")
+        # Standardized output directory
+        output_dir = f"/tmp/scan_{scan_id}_output"
 
-        # 2. Run the actual scan using the CLI-wrapped core
-        output_dir = os.path.join(work_dir, "output")
+        # Run the actual scan using the CLI-wrapped core
         run_gittxt_scan(request, output_dir)
 
-        # 3. Load outputs
+        # Load outputs
         summary_data = load_json(os.path.join(output_dir, "summary.json"))
         manifest_data = load_json(os.path.join(output_dir, "manifest.json"))
         subcat_data = load_json(os.path.join(output_dir, "file_subcategories.json"))
 
-        # 4. Build response objects
+        # Build response objects
         summary = ScanSummary(
             file_count=summary_data.get("file_count", 0),
             token_count=summary_data.get("token_count", 0),
@@ -39,7 +38,7 @@ async def run_scan_job(request: ScanRequest, scan_id: str) -> Optional[ScanRespo
                 size_kb=item.get("size_kb", 0),
                 token_count=item.get("token_count", 0)
             )
-            for item in manifest_data.get("files", [])
+            for item in (manifest_data.get("files") or [])
         ]
 
         tree = build_tree_from_path(output_dir, max_depth=request.tree_depth or 3)
@@ -62,4 +61,4 @@ async def run_scan_job(request: ScanRequest, scan_id: str) -> Optional[ScanRespo
     finally:
         # Optional: clean up temp files if not zipping
         if not request.zip:
-            shutil.rmtree(work_dir, ignore_errors=True)
+            shutil.rmtree(output_dir, ignore_errors=True)
