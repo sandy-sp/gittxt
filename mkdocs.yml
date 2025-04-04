@@ -7,6 +7,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.tabs
     - navigation.top
@@ -15,22 +16,19 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: blue
-      accent: indigo
+      primary: light blue
+      accent: grey
       toggle:
         icon: material/weather-sunny
-        name: Switch to dark mode
+        name: Switch to light mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: custom
-      accent: custom
+      primary: red
+      accent: indigo
       toggle:
         icon: material/weather-night
-        name: Switch to light mode
-  custom_dir: docs/overrides
-  extra_css:
-    - docs/overrides/extra.css
-
+        name: Switch to dark mode
+  
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
@@ -57,3 +55,6 @@ plugins:
   - search
   - git-revision-date-localized:
       enable_creation_date: true
+
+extra:
+  generator: false
