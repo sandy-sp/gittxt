@@ -99,6 +99,21 @@ class OutputBuilder:
 
         return truncate_or_hash(sanitize(base_name))
 
+    def _generate_file_metadata(self, file_path, repo_path):
+        """
+        Generate metadata for a single file.
+        """
+        # Adjust relative path to include subdir if applicable
+        relative_path = file_path.relative_to(repo_path)
+        if self.subdir:
+            github_path = f"{self.subdir.rstrip('/')}/{relative_path.as_posix()}"
+        else:
+            github_path = relative_path.as_posix()
+
+        return {
+            "raw_url": f"{self.repo_url}/blob/{self.branch}/{github_path}",
+        }
+
     async def generate_output(
         self,
         textual_files,
