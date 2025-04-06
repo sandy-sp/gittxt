@@ -9,7 +9,7 @@ import shutil
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.utils.tree_utils import generate_tree
-from gittxt.api.dependencies.validate_size import validate_zip_size
+from gittxt.api.dependencies.validate_size import validate_file_size
 from gittxt.api.schemas.upload import UploadResponse, UploadRequest
 from gittxt.__init__ import OUTPUT_DIR  
 
@@ -21,7 +21,7 @@ OUTPUT_BASE = OUTPUT_DIR  # Use OUTPUT_DIR for output base
 @router.post("/upload", response_model=UploadResponse)
 async def upload_zip(
     request: Request,
-    file: UploadFile = Depends(validate_zip_size),
+    file: UploadFile = Depends(validate_file_size),
     lite: bool = Form(False),
     include_patterns: Optional[List[str]] = Query(None, description="Glob patterns to include"),
     exclude_patterns: Optional[List[str]] = Query(None, description="Glob patterns to exclude"),
