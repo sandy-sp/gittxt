@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pathlib import Path
 
-from gittxt.utils.tree_utils import DirectoryTreeBuilder 
+from gittxt.utils.tree_utils import generate_tree
 from gittxt.api.schemas.inspect import InspectRequest
 
 router = APIRouter()
