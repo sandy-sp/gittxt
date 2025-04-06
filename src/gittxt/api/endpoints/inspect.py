@@ -1,30 +1,39 @@
 from fastapi import APIRouter, HTTPException
-from gittxt.api.services.gittxt_runner import run_gittxt_inspect
-from gittxt.api.schemas.inspect import InspectRequest, InspectResponse, PreviewSnippet
+from pathlib import Path
+
+from gittxt.utils.tree_utils import DirectoryTreeBuilder 
+from gittxt.api.schemas.inspect import InspectRequest
 
 router = APIRouter()
 
-@router.post("/inspect", response_model=InspectResponse)
-async def inspect_repo(request: InspectRequest):
-    try:
-        result = run_gittxt_inspect(
-            repo_url=request.repo_url,
-            branch=request.branch,
-            subdir=request.subdir
-        )
+@router.post("/inspect")
+async def inspect_repo(payload: InspectRequest):
+    """
+    Generate a lightweight directory tree and basic info from a local repo path.
 
-        return InspectResponse(
-            repo_name=result["repo_name"],
-            branch=result["branch"],
-            tree=result.get("tree", []),
-            textual_files=result.get("textual_files", []),
-            non_textual_files=result.get("non_textual_files", []),
-            summary=result.get("summary", {}),
-            preview_snippets=[
-                PreviewSnippet(path=k, preview=v)
-                for k, v in result.get("preview_snippets", {}).items()
-            ]
-        )
+    Args:
+        payload (InspectRequest): Contains repo_path
+
+    Returns:
+        dict: repo_name, tree structure, file/folder counts
+    """
+    try:
+        repo_path = Path(payload.repo_path)
+
+        if not repo_path.exists() or not repo_path.is_dir():
+            raise HTTPException(status_code=400, detail="Invalid repository path.")
+
+        tree = DirectoryTreeBuilder(repo_path).build()
+
+        file_count = sum(1 for p in repo_path.rglob("*") if p.is_file())
+        dir_count = sum(1 for p in repo_path.rglob("*") if p.is_dir())
+
+        return {
+            "repo_name": repo_path.name,
+            "tree": tree,
+            "file_count": file_count,
+            "folder_count": dir_count,
+        }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Inspect failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
