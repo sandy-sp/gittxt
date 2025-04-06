@@ -1,7 +1,7 @@
 services:
   api:
     build:
-      context: ..                   # use the repo root
+      context: .
       dockerfile: api/Dockerfile
     container_name: gittxt-api
     ports:
