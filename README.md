@@ -15,7 +15,7 @@
 
 ---
 
-## ✨ What is Gittxt?
+## ✨ What is Gittxt? 
 ![](./docs/assets/gittxt-demo.gif)
 
 **Gittxt** is a modular and configurable CLI tool that converts Git repositories into clean, AI-ready textual datasets. It is built for developers, researchers, and ML engineers who need structured, filtered, and summarized content from codebases and technical documentation.
