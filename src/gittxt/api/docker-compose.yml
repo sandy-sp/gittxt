@@ -1,0 +1,11 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gittxt-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs:/app/api/outputs  # persist output artifacts only
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
