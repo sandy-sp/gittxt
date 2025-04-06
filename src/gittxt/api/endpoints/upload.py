@@ -30,9 +30,6 @@ async def upload_zip(
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only .zip files are supported.")
 
-    # Parse lite flag into UploadRequest schema
-    upload_request = UploadRequest(lite=lite)
-
     scan_id = str(uuid4())
     upload_dir = UPLOAD_BASE / scan_id
     output_dir = OUTPUT_BASE / scan_id
@@ -45,12 +42,12 @@ async def upload_zip(
     with zip_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Extract ZIP
+    # Extract ZIP contents
     try:
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(upload_dir)
     except zipfile.BadZipFile:
-        raise HTTPException(status_code=400, detail="Invalid or corrupted zip file.")
+        raise HTTPException(status_code=400, detail="Invalid ZIP file.")
 
     # Detect repo root (assume top-level folder inside zip)
     extracted_items = list(upload_dir.iterdir())
@@ -64,7 +61,7 @@ async def upload_zip(
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
             exclude_dirs=exclude_dirs,
-            lite=upload_request.lite,
+            lite=lite,
             non_interactive=True
         )
         textual_files, non_textual_files = await scanner.scan_directory()
@@ -74,7 +71,7 @@ async def upload_zip(
             repo_name=repo_name,
             output_dir=str(output_dir),
             output_format="txt,json,md",
-            mode="lite" if upload_request.lite else "rich",
+            mode="lite" if lite else "rich",
             scan_results=textual_files,
             scan_id=scan_id,
             repo_path=str(repo_root),
