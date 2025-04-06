@@ -1,7 +1,7 @@
 from pathlib import Path
 from gittxt.core.logger import Logger
 from gittxt.core.config import ConfigManager
-from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR, TEMP_DIR
+from gittxt.core.constants import TEXT_DIR, JSON_DIR, MD_DIR, ZIP_DIR, TEMP_DIR, REVERSE_DIR
 
 __version__ = "1.7.0"
 __author__ = "Sandeep Paidipati"
@@ -19,6 +19,7 @@ OUTPUT_JSON_DIR = OUTPUT_DIR / JSON_DIR
 OUTPUT_MD_DIR = OUTPUT_DIR / MD_DIR
 OUTPUT_ZIP_DIR = OUTPUT_DIR / ZIP_DIR
 OUTPUT_TEMP_DIR = OUTPUT_DIR / TEMP_DIR
+OUTPUT_REVERSE_DIR = OUTPUT_DIR / REVERSE_DIR
 
 for directory in [
     LOG_DIR,
@@ -28,6 +29,7 @@ for directory in [
     OUTPUT_MD_DIR,
     OUTPUT_ZIP_DIR,
     OUTPUT_TEMP_DIR,
+    OUTPUT_REVERSE_DIR,
 ]:
     try:
         directory.mkdir(parents=True, exist_ok=True)
