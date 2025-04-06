@@ -7,15 +7,12 @@ from gittxt.core.reverse_engineer import reverse_from_report
 console = Console()
 
 @click.command("re")
-@click.argument("report_file", type=click.Path(exists=False), help="Path to the Gittxt report file (.txt, .md, or .json)")
+@click.argument("report_file", type=click.Path(exists=False))
 def reverse_command(report_file):
     """
     Reverse engineer a Gittxt report into reconstructed source files.
     
     Takes a Gittxt-generated report (.txt, .md, or .json) and reconstructs
-    the original file structure as a ZIP archive.
-    
-    REPORT_FILE: Path to the Gittxt report file (.txt, .md, or .json)
     """
     if not os.path.exists(report_file):
         console.print(f"[bold red]ERROR:[/bold red] Report file not found: {report_file}")
