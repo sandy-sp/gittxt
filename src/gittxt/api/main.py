@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from gittxt import OUTPUT_DIR
 from gittxt.api.endpoints import (
@@ -9,7 +10,7 @@ from gittxt.api.endpoints import (
     upload,
     scan,
     download,
-    summary,
+    summary,  # Add summary endpoint
     cleanup,
 )
 
@@ -41,10 +42,18 @@ app.include_router(inspect.router, tags=["Inspect"])
 app.include_router(upload.router, tags=["Upload"])
 app.include_router(scan.router, tags=["Scan"])
 app.include_router(download.router, tags=["Download"])
-app.include_router(summary.router, tags=["Summary"])
+app.include_router(summary.router, tags=["Summary"])  # Include summary router
 app.include_router(cleanup.router, tags=["Cleanup"])
 
-# Health check
-@app.get("/", tags=["Meta"])
-def healthcheck():
-    return {"status": "ok", "message": "Gittxt API is running"}
+# Root endpoint
+@app.get("/", tags=["General"])
+async def read_root():
+    return {"message": "Welcome to the Gittxt API"}
+
+# Custom exception handler
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
