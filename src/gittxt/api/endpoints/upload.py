@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Query, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Query, Depends, Form
 from fastapi.responses import JSONResponse
 from typing import Optional, List
 from uuid import uuid4
@@ -10,7 +10,7 @@ from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.utils.tree_utils import generate_tree
 from gittxt.api.dependencies.validate_size import validate_zip_size
-from gittxt.api.schemas.upload import UploadResponse
+from gittxt.api.schemas.upload import UploadResponse, UploadRequest
 from gittxt.__init__ import OUTPUT_DIR  
 
 router = APIRouter()
@@ -22,13 +22,16 @@ OUTPUT_BASE = OUTPUT_DIR  # Use OUTPUT_DIR for output base
 async def upload_zip(
     request: Request,
     file: UploadFile = Depends(validate_zip_size),
-    lite: bool = Query(False, description="Enable lite mode"),
+    lite: bool = Form(False),
     include_patterns: Optional[List[str]] = Query(None, description="Glob patterns to include"),
     exclude_patterns: Optional[List[str]] = Query(None, description="Glob patterns to exclude"),
     exclude_dirs: Optional[List[str]] = Query(None, description="Directories to exclude")
 ):
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only .zip files are supported.")
+
+    # Parse lite flag into UploadRequest schema
+    upload_request = UploadRequest(lite=lite)
 
     scan_id = str(uuid4())
     upload_dir = UPLOAD_BASE / scan_id
@@ -61,7 +64,7 @@ async def upload_zip(
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
             exclude_dirs=exclude_dirs,
-            lite=lite,
+            lite=upload_request.lite,
             non_interactive=True
         )
         textual_files, non_textual_files = await scanner.scan_directory()
@@ -71,7 +74,7 @@ async def upload_zip(
             repo_name=repo_name,
             output_dir=str(output_dir),
             output_format="txt,json,md",
-            mode="lite" if lite else "rich",
+            mode="lite" if upload_request.lite else "rich",
             scan_results=textual_files,
             scan_id=scan_id,
             repo_path=str(repo_root),

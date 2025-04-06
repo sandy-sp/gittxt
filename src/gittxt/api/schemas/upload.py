@@ -6,3 +6,6 @@ class UploadResponse(BaseModel):
     repo_name: str
     summary: Dict
     download_urls: Dict[str, Optional[str]]
+
+class UploadRequest(BaseModel):
+    lite: bool = False
