@@ -24,7 +24,12 @@ async def get_summary(scan_id: str = Path(..., description="Scan ID")):
         summary_data["scan_id"] = scan_id
 
         # Validate and return the structured response
-        return SummaryResponse(**summary_data)
+        try:
+            validated_summary = SummaryResponse.parse_obj(summary_data)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Invalid summary schema: {str(e)}")
+
+        return validated_summary
 
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON format in summary file.")
