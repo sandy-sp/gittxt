@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from gittxt.core.constants import OUTPUT_SUBDIRS
+from gittxt.core.constants import OUTPUT_SUBDIRS, REVERSE_DIR
 from gittxt.core.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -26,5 +26,5 @@ def cleanup_old_outputs(output_dir: Path) -> None:
     """
     Cleanup previous outputs before running a new scan, including ZIPs and temp folders.
     """
-    for subdir in OUTPUT_SUBDIRS:
+    for subdir in OUTPUT_SUBDIRS + [REVERSE_DIR]:
         delete_directory(output_dir / subdir)
