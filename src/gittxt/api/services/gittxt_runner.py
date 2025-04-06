@@ -31,7 +31,8 @@ async def run_gittxt_scan(
     # Scan repository
     scanner = Scanner(
         root_path=repo_path,
-        progress=False
+        progress=False,
+        non_interactive=True
     )
     textual_files, non_textual_files = await scanner.scan_directory()
 
@@ -48,6 +49,8 @@ async def run_gittxt_scan(
         non_textual_files=non_textual_files,
         repo_path=repo_path
     )
+    builder.build_outputs()
+    summary = builder.summary
 
     # Generate directory tree
     tree = generate_tree(repo_path)
@@ -55,10 +58,18 @@ async def run_gittxt_scan(
     return {
         "scan_id": scan_id,
         "repo_name": repo_path.name,
+        "branch": "main",  # Placeholder or dynamic if needed
+        "summary": summary,
         "textual_files": [str(f.relative_to(repo_path)) for f in textual_files],
         "non_textual_files": [str(f.relative_to(repo_path)) for f in non_textual_files],
         "tree": tree,
         "output_dir": str(output_dir),
+        "outputs": {
+            "txt": (output_dir / "gittxt_output.txt").exists(),
+            "md": (output_dir / "gittxt_output.md").exists(),
+            "json": (output_dir / "gittxt_output.json").exists(),
+            "zip": True
+        }
     }
 
 def run_gittxt_inspect(repo_url: str, branch: str = None, subdir: str = None):
