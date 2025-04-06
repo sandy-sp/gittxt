@@ -19,9 +19,6 @@ async def download_file(
     scan_id: str = Path(..., description="Scan ID"),
     format: OutputFormat = Query(..., description="Output format: txt, md, json, or zip")
 ):
-    if format not in VALID_FORMATS:
-        raise HTTPException(status_code=400, detail="Invalid format requested.")
-
     filename, media_type = VALID_FORMATS[format]
     file_path = BASE_OUTPUT_DIR / scan_id / filename
 
