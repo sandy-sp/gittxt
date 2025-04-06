@@ -1,5 +1,5 @@
 fastapi
-uvicorn
-gittxt==1.7.0
+uvicorn[standard]
 python-multipart
-python-dotenv
+pydantic
+gittxt==1.7.0
