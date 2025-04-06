@@ -6,6 +6,14 @@ We follow [Semantic Versioning](https://semver.org/) — breaking changes increa
 
 ---
 
+## [Unreleased - 1.7.2]
+
+### Added
+- New CLI command: `gittxt re` to reverse engineer source files from `.txt`, `.md`, or `.json` reports.
+- Added `reverse_engineer.md` doc page and MkDocs nav entry.
+
+---
+
 ## [1.7.0] - 2025-04-03
 
 ### 🧠 Config & Logging Enhancements
