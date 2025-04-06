@@ -3,9 +3,9 @@ from typing import Optional, List, Dict
 
 class ScanRequest(BaseModel):
     """Request model for repository scanning"""
-    repo_url: str = Field(..., description="URL of the GitHub repository to scan")
+    repo_paths: List[str] = Field(..., description="List of repository paths to scan")
+    lite: bool = Field(..., description="Whether to use lite mode")
     output_formats: List[str] = Field(default=["txt"], description="Output formats to generate")
-    lite: bool = Field(default=False, description="Whether to use lite mode")
     include_patterns: Optional[List[str]] = Field(None, description="Glob patterns to include")
     exclude_patterns: Optional[List[str]] = Field(None, description="Glob patterns to exclude")
     exclude_dirs: Optional[List[str]] = Field(None, description="Directories to exclude")
