@@ -1,14 +1,13 @@
-version: "3.8"
-
 services:
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: api/Dockerfile
     container_name: gittxt-api
     ports:
       - "8000:8000"
     volumes:
-      - .:/app              # Mount local code for live reload (optional)
-      - ./outputs:/app/outputs  # Persisted scan outputs or logs (if used)
+      - ../src:/app/src             # Mount local Gittxt CLI code
+      - ../api:/app                 # Mount FastAPI source
+      - ./outputs:/app/outputs      # Persist scan outputs
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
