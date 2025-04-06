@@ -40,6 +40,7 @@ async def upload_zip(
         raise HTTPException(status_code=400, detail="Only .zip files are supported")
 
     # Parse lite flag into UploadRequest schema
+    lite = lite if isinstance(lite, bool) else lite.lower() == "true"
     upload_request = UploadRequest(lite=lite)
 
     scan_id = str(uuid4())
@@ -78,7 +79,7 @@ async def upload_zip(
 
         # Initialize scanner and scan files
         scanner = Scanner(
-            repo_paths=[str(repo_root)],
+            repo_path=str(repo_root),  # Updated from repo_paths to repo_path
             output_dir=str(output_dir),
             include_patterns=include_patterns or [],
             exclude_patterns=exclude_patterns or [],
@@ -86,7 +87,7 @@ async def upload_zip(
             lite_mode=lite
         )
 
-        textual_files, non_textual_files = await scanner.scan_directories()
+        textual_files, non_textual_files = await scanner.scan_directory()
         logger.info(f"Scan completed: {len(textual_files)} textual files, {len(non_textual_files)} non-textual files")
 
         # Generate outputs
