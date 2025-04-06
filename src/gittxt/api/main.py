@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from gittxt import OUTPUT_DIR
 from gittxt.api.endpoints import (
     inspect,
     upload,
@@ -13,25 +15,28 @@ from gittxt.api.endpoints import (
 
 app = FastAPI(
     title="Gittxt API",
-    description="API backend for Gittxt: scan, preview, and export GitHub repositories or local folders.",
+    description="API backend for Gittxt: scan, preview, and export GitHub repositories or uploaded ZIPs.",
     version="1.0.0"
 )
 
-# Optional: Allow cross-origin access for frontend
+# Enable CORS for frontend dev (replace with domains in production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace with frontend domain in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Ensure required directories exist at startup
-required_dirs = ["/app/api/outputs", "/app/api/uploads"]
-for directory in required_dirs:
-    os.makedirs(directory, exist_ok=True)
+# Ensure output/upload folders exist
+startup_dirs = [
+    OUTPUT_DIR,
+    Path("uploads")  # For uploaded ZIPs (used in /upload)
+]
+for d in startup_dirs:
+    os.makedirs(d, exist_ok=True)
 
-# Register endpoints
+# Register routers
 app.include_router(inspect.router, tags=["Inspect"])
 app.include_router(upload.router, tags=["Upload"])
 app.include_router(scan.router, tags=["Scan"])
@@ -39,7 +44,7 @@ app.include_router(download.router, tags=["Download"])
 app.include_router(summary.router, tags=["Summary"])
 app.include_router(cleanup.router, tags=["Cleanup"])
 
-# Optional healthcheck
+# Health check
 @app.get("/", tags=["Meta"])
 def healthcheck():
-    return {"status": "ok", "message": "Gittxt API running"}
+    return {"status": "ok", "message": "Gittxt API is running"}
