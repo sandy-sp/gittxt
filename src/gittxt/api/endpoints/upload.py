@@ -6,8 +6,8 @@ from pathlib import Path
 import zipfile
 import shutil
 
-from gittxt.core.scanner import scan_repo
-from gittxt.core.output_builder import build_outputs
+from gittxt.core.scanner import  Scanner
+from gittxt.core.output_builder import OutputBuilder
 from gittxt.api.dependencies.validate_size import validate_zip_size
 from gittxt.api.schemas.upload import UploadResponse
 
@@ -52,7 +52,7 @@ async def upload_zip(
 
     # Run full scan
     try:
-        scan_result = scan_repo(
+        scan_result =  Scanner(
             repo_path=str(repo_root),
             output_dir=str(output_dir),
             include_patterns=include_patterns,
@@ -62,7 +62,7 @@ async def upload_zip(
             non_interactive=True
         )
 
-        output_files = build_outputs(
+        output_files = OutputBuilder(
             scan_result=scan_result,
             output_dir=str(output_dir),
             to_txt=True,
