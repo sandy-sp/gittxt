@@ -2,13 +2,25 @@ import uuid
 import os
 from pathlib import Path
 from fastapi import BackgroundTasks
+from typing import Optional, List, Dict, Any, Union
+import asyncio
+import tempfile
+
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.core.repository import RepositoryHandler
 from gittxt.utils.tree_utils import generate_tree
+from gittxt.utils.cleanup_utils import cleanup_temp_folder
+from gittxt.core.logger import Logger
 from gittxt import OUTPUT_DIR
 
+logger = Logger.get_logger(__name__)
+
 BASE_OUTPUT_DIR = "outputs"
+
+class GittxtRunnerError(Exception):
+    """Exception raised for errors in the GittxtRunner."""
+    pass
 
 async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, options: dict):
     try:
