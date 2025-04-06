@@ -1,17 +1,26 @@
-from fastapi import UploadFile, HTTPException
-from starlette.requests import Request
+from fastapi import Request, HTTPException
+from starlette.datastructures import UploadFile
+from typing import Union
 
-MAX_ZIP_SIZE_MB = 50  # dynamic option if needed
+MAX_FILE_SIZE_MB = 50
+MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024
 
-async def validate_zip_size(file: UploadFile, request: Request):
-    contents = await file.read()
-    file_size_mb = len(contents) / (1024 * 1024)
+async def validate_file_size(request: Request):
+    """
+    Validate that uploaded file(s) do not exceed MAX_FILE_SIZE_MB.
 
-    if file_size_mb > MAX_ZIP_SIZE_MB:
-        raise HTTPException(
-            status_code=413,
-            detail=f"ZIP file exceeds max allowed size of {MAX_ZIP_SIZE_MB} MB"
-        )
-
-    file.file.seek(0)  # reset pointer
-    return file
+    Raises:
+        HTTPException: If any file exceeds the max size
+    """
+    form = await request.form()
+    for item in form.values():
+        if isinstance(item, UploadFile):
+            size = 0
+            async for chunk in item.read(1024 * 1024):  # Read in chunks
+                size += len(chunk)
+                if size > MAX_FILE_SIZE:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File too large. Max allowed is {MAX_FILE_SIZE_MB}MB."
+                    )
+            await item.seek(0)  # Reset stream position
