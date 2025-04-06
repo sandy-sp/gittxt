@@ -103,54 +103,86 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
 
 async def run_gittxt_scan(
     repo_url: str,
-    background_tasks: BackgroundTasks,
     branch: Optional[str] = None,
-    subdir: Optional[str] = None,
-    output_formats: Optional[List[APIOutputFormat]] = None,
-    exclude_dirs: Optional[List[str]] = None,
-    exclude_patterns: Optional[List[str]] = None,
-    include_patterns: Optional[List[str]] = None,
-    size_limit: Optional[int] = None,
-    use_sync: bool = False,
+    output_formats: List[str] = ["txt"],
     lite_mode: bool = False,
-    tree_depth: Optional[int] = None,
-) -> ScanResponse:
-    scan_id = str(uuid.uuid4())
-    logger.info(f"[{scan_id}] Queuing scan for {repo_url}")
-
+    include_patterns: Optional[List[str]] = None,
+    exclude_patterns: Optional[List[str]] = None,
+    exclude_dirs: Optional[List[str]] = None,
+    output_dir: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Run a Gittxt scan as a background task and return outputs.
+    
+    Args:
+        repo_url: URL of the GitHub repository to scan
+        branch: Git branch to scan (defaults to main/master)
+        output_formats: List of output formats to generate
+        lite_mode: Whether to use lite mode (file list only)
+        include_patterns: Glob patterns to include
+        exclude_patterns: Glob patterns to exclude
+        exclude_dirs: Directories to exclude
+        output_dir: Custom output directory
+        
+    Returns:
+        Dictionary with scan results
+    """
+    repo_path = None
+    
     try:
-        config = ConfigManager.load_config()
-        scan_options = {
-            "branch": branch,
-            "subdir": subdir,
-            "output_formats": output_formats or [APIOutputFormat.txt, APIOutputFormat.zip],
-            "exclude_dirs": exclude_dirs,
-            "exclude_patterns": exclude_patterns,
-            "include_patterns": include_patterns,
-            "size_limit": size_limit,
-            "use_sync": use_sync,
-            "lite_mode": lite_mode,
-            "tree_depth": tree_depth,
-        }
-        background_tasks.add_task(_perform_actual_scan, scan_id, repo_url, config, scan_options)
-
-        api_prefix = "/api/v1"
-        download_base = f"{api_prefix}/download/{scan_id}"
-        cleanup_url = f"{api_prefix}/cleanup/{scan_id}"
-        summary_url = f"{api_prefix}/summary/{scan_id}"
-
-        return ScanResponse(
-            scan_id=scan_id,
-            repo_name=Path(repo_url).stem,
-            status="initiated",
-            message="Scan task has been initiated and is running in the background.",
-            download_base_url=download_base,
-            cleanup_url=cleanup_url,
-            summary_url=summary_url
+        # Clone repository
+        logger.info(f"Starting scan of repository: {repo_url}")
+        repo_handler = RepositoryHandler(
+            repo_url=repo_url,
+            branch=branch
         )
+        
+        repo_path = await repo_handler.clone_repository()
+        repo_name = Path(repo_path).name
+        logger.debug(f"Cloned repository to {repo_path}")
+        
+        # Initialize scanner
+        scanner = Scanner(
+            repo_paths=[repo_path],
+            output_dir=str(output_dir) if output_dir else None,
+            include_patterns=include_patterns or [],
+            exclude_patterns=exclude_patterns or [],
+            exclude_dirs=exclude_dirs or [],
+            lite_mode=lite_mode
+        )
+        
+        # Scan files
+        textual_files, non_textual_files = await scanner.scan_directories()
+        logger.info(f"Scan found {len(textual_files)} textual files and {len(non_textual_files)} non-textual files")
+        
+        # Build outputs
+        builder = OutputBuilder(
+            output_formats=output_formats,
+            repo_name=repo_name,
+            output_dir=str(output_dir) if output_dir else None,
+            repo_url=repo_url,
+            branch=branch,
+            mode="lite" if lite_mode else "rich"
+        )
+        
+        outputs = builder.process_files(textual_files, non_textual_files)
+        logger.info(f"Generated outputs: {', '.join(output_formats)}")
+        
+        return {
+            "repo_name": repo_name,
+            "textual_files": len(textual_files),
+            "non_textual_files": len(non_textual_files),
+            "outputs": outputs
+        }
+    
     except Exception as e:
-        logger.error(f"[{scan_id}] Failed to initiate scan for {repo_url}: {e}", exc_info=True)
-        raise GittxtRunnerError(f"Failed to initiate scan task: {str(e)}", status_code=500)
+        logger.error(f"Scan failed: {str(e)}")
+        raise GittxtRunnerError(f"Scan failed: {str(e)}")
+        
+    finally:
+        # Clean up temp directory if needed
+        if repo_path and Path(repo_path).exists():
+            cleanup_temp_folder(Path(repo_path))
 
 async def get_gittxt_summary(scan_id: str) -> SummaryResponse:
     logger.debug(f"Attempting to retrieve summary for scan_id: {scan_id}")
