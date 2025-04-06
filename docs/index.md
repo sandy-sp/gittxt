@@ -22,6 +22,11 @@
     - Full or minimal `--lite` mode output
     - Optional ZIP bundles with manifest and asset metadata
 
+=== "🔄 Reverse Engineering"
+    - Restore original code files from `.txt`, `.md`, or `.json` reports
+    - Reconstructs directory tree and outputs a ZIP archive
+    - Supports programmatic reuse of Gittxt outputs
+
 === "⚡ Fast & Async"
     - Fully asynchronous file I/O for high-speed scans
     - Optimized for both small projects and large monorepos
@@ -92,6 +97,7 @@ gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json --zip --
 - 📘 [Output Formats](formats.md)
 - 🧠 [API Reference](api-reference.md)
 - 🛠 [Contributing](contributing.md)
+- 🔁 [Reverse Engineering](reverse_engineer.md)
 
 ---
 
