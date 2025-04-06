@@ -1,16 +1,29 @@
 import os
 from fastapi import FastAPI
-from gittxt.api.endpoints.inspect import router as inspect_router
-from gittxt.api.endpoints.upload import router as upload_router
-from gittxt.api.endpoints.scan import router as scan_router
-from gittxt.api.endpoints.download import router as download_router
-from gittxt.api.endpoints.summary import router as summary_router
-from gittxt.api.endpoints.cleanup import router as cleanup_router
+from fastapi.middleware.cors import CORSMiddleware
+
+from gittxt.api.endpoints import (
+    inspect,
+    upload,
+    scan,
+    download,
+    summary,
+    cleanup,
+)
 
 app = FastAPI(
     title="Gittxt API",
     description="API backend for Gittxt: scan, preview, and export GitHub repositories or local folders.",
     version="1.0.0"
+)
+
+# Optional: Allow cross-origin access for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace with frontend domain in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Ensure required directories exist at startup
@@ -19,9 +32,14 @@ for directory in required_dirs:
     os.makedirs(directory, exist_ok=True)
 
 # Register endpoints
-app.include_router(inspect_router, tags=["Inspect"])
-app.include_router(upload_router, tags=["Upload"])
-app.include_router(scan_router, tags=["Scan"])
-app.include_router(download_router, tags=["Download"])
-app.include_router(summary_router, tags=["Summary"])
-app.include_router(cleanup_router, tags=["Cleanup"])
+app.include_router(inspect.router, tags=["Inspect"])
+app.include_router(upload.router, tags=["Upload"])
+app.include_router(scan.router, tags=["Scan"])
+app.include_router(download.router, tags=["Download"])
+app.include_router(summary.router, tags=["Summary"])
+app.include_router(cleanup.router, tags=["Cleanup"])
+
+# Optional healthcheck
+@app.get("/", tags=["Meta"])
+def healthcheck():
+    return {"status": "ok", "message": "Gittxt API running"}
