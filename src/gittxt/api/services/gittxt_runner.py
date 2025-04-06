@@ -9,68 +9,188 @@ from gittxt import OUTPUT_DIR
 
 BASE_OUTPUT_DIR = "outputs"
 
+async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, options: dict):
+    try:
+        update_status("Initiating repository handling...")
+        repo_handler = RepositoryHandler(
+            source=repo_url,
+            branch=options.get('branch'),
+        )
+        await repo_handler.resolve()
+        repo_path, subdir_in_repo, is_remote, repo_name, used_branch = repo_handler.get_local_path()
+        update_status(f"Repository resolved: {repo_name}, Branch: {used_branch}, Path: {repo_path}")
+
+        scan_root = Path(repo_path)
+        if options.get('subdir'):
+            scan_root = scan_root / options['subdir']
+            if not scan_root.exists() or not scan_root.is_dir():
+                raise GittxtRunnerError(f"Subdirectory '{options['subdir']}' not found in repository.", status_code=404)
+            update_status(f"Scanning subdirectory: {options['subdir']}")
+
+        # Scanner setup
+        update_status("Configuring scanner...")
+        default_excludes = set(config.get("filters", {}).get("excluded_dirs", EXCLUDED_DIRS_DEFAULT))
+        request_excludes = set(options.get('exclude_dirs') or [])
+        merged_exclude_dirs = list(default_excludes | request_excludes)
+
+        scanner = Scanner(
+            root_path=scan_root,
+            exclude_dirs=merged_exclude_dirs,
+            size_limit=options.get('size_limit'),
+            include_patterns=options.get('include_patterns'),
+            exclude_patterns=options.get('exclude_patterns'),
+            use_ignore_file=options.get('use_sync', False),
+            progress=False
+        )
+
+        update_status("Scanning directory...")
+        textual_files, non_textual_files = await scanner.scan_directory()
+        skipped_files = scanner.skipped_files
+        update_status(f"Scan complete: {len(textual_files)} textual, {len(non_textual_files)} non-textual files found.")
+
+        # Output builder setup
+        core_output_formats = [fmt.value for fmt in options.get('output_formats', [])]
+        if core_output_formats:
+            update_status(f"Configuring output builder for formats: {core_output_formats}...")
+            builder = OutputBuilder(
+                repo_name=repo_name,
+                output_dir=scan_output_dir,
+                output_format=",".join(core_output_formats),
+                repo_url=repo_url if is_remote else None,
+                branch=used_branch,
+                subdir=options.get('subdir'),
+                mode='lite' if options.get('lite_mode') else 'rich',
+            )
+            await builder.generate_output(
+                textual_files=textual_files,
+                non_textual_files=non_textual_files,
+                repo_root_path=Path(repo_path),
+                create_zip='zip' in core_output_formats,
+                tree_depth=options.get('tree_depth'),
+            )
+            update_status("Output file generation complete.")
+
+        # Generate summary
+        if textual_files or non_textual_files:
+            update_status("Generating summary data...")
+            summary_data = await generate_summary(textual_files + non_textual_files)
+            summary_file = scan_output_dir / "summary.json"
+            with summary_file.open("w", encoding="utf-8") as f:
+                json.dump(summary_data, f, indent=2)
+            update_status(f"Summary data saved to {summary_file.name}")
+
+    except Exception as e:
+        update_status(f"Unhandled Exception during scan: {e}", level="error")
+        logger.error(f"[{scan_id}] Unhandled exception trace:", exc_info=True)
+    finally:
+        if is_remote and repo_handler and repo_path:
+            update_status(f"Cleaning up temporary clone directory: {repo_path}")
+            cleanup_temp_folder(Path(repo_path))
+        update_status("Background task finished.")
+
 async def run_gittxt_scan(
-    repo_path: Path,
-    scan_id: str,
-    lite: bool = False
-) -> dict:
-    """
-    Run a full Gittxt scan on a local path.
+    repo_url: str,
+    background_tasks: BackgroundTasks,
+    branch: Optional[str] = None,
+    subdir: Optional[str] = None,
+    output_formats: Optional[List[APIOutputFormat]] = None,
+    exclude_dirs: Optional[List[str]] = None,
+    exclude_patterns: Optional[List[str]] = None,
+    include_patterns: Optional[List[str]] = None,
+    size_limit: Optional[int] = None,
+    use_sync: bool = False,
+    lite_mode: bool = False,
+    tree_depth: Optional[int] = None,
+) -> ScanResponse:
+    scan_id = str(uuid.uuid4())
+    logger.info(f"[{scan_id}] Queuing scan for {repo_url}")
 
-    Args:
-        repo_path (Path): Path to the repository root
-        scan_id (str): Unique identifier for the scan session
-        lite (bool): If True, generates lite outputs only
-
-    Returns:
-        dict: scan summary including files, tree, and output directory
-    """
-    output_dir = OUTPUT_DIR / scan_id / "artifacts"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Scan repository
-    scanner = Scanner(
-        root_path=repo_path,
-        progress=False,
-        non_interactive=True
-    )
-    textual_files, non_textual_files = await scanner.scan_directory()
-
-    # Generate outputs
-    builder = OutputBuilder(
-        repo_name=repo_path.name,
-        output_dir=output_dir,
-        output_format="txt,json,md",
-        repo_path=repo_path,
-        mode="lite" if lite else "rich"
-    )
-    await builder.generate_output(
-        textual_files=textual_files,
-        non_textual_files=non_textual_files,
-        repo_path=repo_path
-    )
-    builder.build_outputs()
-    summary = builder.summary
-
-    # Generate directory tree
-    tree = generate_tree(repo_path)
-
-    return {
-        "scan_id": scan_id,
-        "repo_name": repo_path.name,
-        "branch": "main",  # Placeholder or dynamic if needed
-        "summary": summary,
-        "textual_files": [str(f.relative_to(repo_path)) for f in textual_files],
-        "non_textual_files": [str(f.relative_to(repo_path)) for f in non_textual_files],
-        "tree": tree,
-        "output_dir": str(output_dir),
-        "outputs": {
-            "txt": (output_dir / "gittxt_output.txt").exists(),
-            "md": (output_dir / "gittxt_output.md").exists(),
-            "json": (output_dir / "gittxt_output.json").exists(),
-            "zip": True
+    try:
+        config = ConfigManager.load_config()
+        scan_options = {
+            "branch": branch,
+            "subdir": subdir,
+            "output_formats": output_formats or [APIOutputFormat.txt, APIOutputFormat.zip],
+            "exclude_dirs": exclude_dirs,
+            "exclude_patterns": exclude_patterns,
+            "include_patterns": include_patterns,
+            "size_limit": size_limit,
+            "use_sync": use_sync,
+            "lite_mode": lite_mode,
+            "tree_depth": tree_depth,
         }
-    }
+        background_tasks.add_task(_perform_actual_scan, scan_id, repo_url, config, scan_options)
+
+        api_prefix = "/api/v1"
+        download_base = f"{api_prefix}/download/{scan_id}"
+        cleanup_url = f"{api_prefix}/cleanup/{scan_id}"
+        summary_url = f"{api_prefix}/summary/{scan_id}"
+
+        return ScanResponse(
+            scan_id=scan_id,
+            repo_name=Path(repo_url).stem,
+            status="initiated",
+            message="Scan task has been initiated and is running in the background.",
+            download_base_url=download_base,
+            cleanup_url=cleanup_url,
+            summary_url=summary_url
+        )
+    except Exception as e:
+        logger.error(f"[{scan_id}] Failed to initiate scan for {repo_url}: {e}", exc_info=True)
+        raise GittxtRunnerError(f"Failed to initiate scan task: {str(e)}", status_code=500)
+
+async def get_gittxt_summary(scan_id: str) -> SummaryResponse:
+    logger.debug(f"Attempting to retrieve summary for scan_id: {scan_id}")
+    try:
+        config = ConfigManager.load_config()
+        output_dir_base = Path(config.get("output_dir", "./gittxt_output"))
+        scan_output_dir = output_dir_base / scan_id
+        summary_file = scan_output_dir / "summary.json"
+        status_file = scan_output_dir / "status.log"
+
+        if not scan_output_dir.exists():
+            raise GittxtRunnerError(f"Scan ID '{scan_id}' output directory not found.", status_code=404)
+
+        if status_file.exists():
+            status_content = status_file.read_text(encoding="utf-8")
+            if "Scan completed successfully." not in status_content:
+                if "Error" in status_content:
+                    raise GittxtRunnerError(f"Scan '{scan_id}' failed. Check status.log for details.", status_code=409)
+                else:
+                    raise GittxtRunnerError(f"Scan '{scan_id}' is still in progress.", status_code=202)
+
+        if not summary_file.exists():
+            raise GittxtRunnerError(f"Summary file not found for scan '{scan_id}'.", status_code=404)
+
+        with summary_file.open("r", encoding="utf-8") as f:
+            summary_data = json.load(f)
+
+        formatted_summary = summary_data.get("formatted", {})
+        tokens_by_type_fmt = formatted_summary.get("tokens_by_type", {})
+        file_breakdown_raw = summary_data.get("file_type_breakdown", {})
+
+        breakdown_list = [
+            FileBreakdown(
+                file_type=type_name,
+                count=count,
+                estimated_tokens_formatted=tokens_by_type_fmt.get(type_name, f"{summary_data.get('tokens_by_type', {}).get(type_name, 0):,}")
+            )
+            for type_name, count in file_breakdown_raw.items()
+        ]
+
+        return SummaryResponse(
+            scan_id=scan_id,
+            repo_name=summary_data.get("repo_name", "Unknown"),
+            total_files=summary_data.get("total_files", 0),
+            total_size_bytes=summary_data.get("total_size", 0),
+            total_size_formatted=formatted_summary.get("total_size", "N/A"),
+            estimated_tokens=summary_data.get("estimated_tokens", 0),
+            estimated_tokens_formatted=formatted_summary.get("estimated_tokens", "N/A"),
+            file_type_breakdown=breakdown_list
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error retrieving summary for {scan_id}: {e}", exc_info=True)
+        raise GittxtRunnerError(f"Internal server error retrieving summary: {str(e)}", status_code=500)
 
 def run_gittxt_inspect(repo_url: str, branch: str = None, subdir: str = None):
     """
