@@ -1,15 +1,17 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+import logging
 from pathlib import Path
 import uuid
-from gittxt.api.services.gittxt_runner import run_gittxt_scan
+from gittxt.api.services.gittxt_runner import run_gittxt_scan, GittxtRunnerError
 from gittxt.api.schemas.scan import ScanRequest, ScanResponse, DownloadURLs
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-@router.post("/scan", response_model=ScanResponse)
-async def scan_repo(request: Request, payload: ScanRequest):
+@router.post("/scan", response_model=ScanResponse, tags=["Scan"])
+async def start_scan(request: Request, payload: ScanRequest, background_tasks: BackgroundTasks):
     """
-    Perform a scan of a repository.
+    Initiate a Gittxt scan on a repository.
 
     Args:
         payload (ScanRequest): Contains repository details and scan options.
@@ -17,11 +19,14 @@ async def scan_repo(request: Request, payload: ScanRequest):
     Returns:
         ScanResponse: Scan results including download URLs.
     """
+    logger.info(f"Received scan request for repo_path: {payload.repo_path}, branch: {payload.branch}")
+
     try:
         scan_id = str(uuid.uuid4())
         repo_path = Path(payload.repo_path)
 
         if not repo_path.exists() or not repo_path.is_dir():
+            logger.warning(f"Invalid repository path: {payload.repo_path}")
             raise HTTPException(status_code=400, detail="Invalid repository path.")
 
         result = await run_gittxt_scan(
@@ -37,10 +42,13 @@ async def scan_repo(request: Request, payload: ScanRequest):
                 "lite": payload.lite,
             },
             scan_id=scan_id,
+            background_tasks=background_tasks
         )
 
         base_url = str(request.base_url).rstrip("/") + f"/download/{scan_id}"
         outputs = result["outputs"]
+
+        logger.info(f"Scan completed for repo_path: {payload.repo_path}, scan_id: {scan_id}")
 
         return ScanResponse(
             scan_id=scan_id,
@@ -55,5 +63,9 @@ async def scan_repo(request: Request, payload: ScanRequest):
             ),
         )
 
+    except GittxtRunnerError as runner_exc:
+        logger.error(f"Gittxt Runner Error for {payload.repo_path}: {runner_exc}", exc_info=True)
+        raise HTTPException(status_code=runner_exc.status_code, detail=str(runner_exc))
     except Exception as e:
+        logger.error(f"Unexpected error initiating scan for {payload.repo_path}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
