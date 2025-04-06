@@ -1,6 +1,7 @@
 import uuid
 import os
 from pathlib import Path
+from fastapi import BackgroundTasks
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.core.repository import RepositoryHandler
