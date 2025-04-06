@@ -45,7 +45,7 @@ async def scan_repository(scan_request: ScanRequest):
         
         # Scan repository
         scanner = Scanner(
-            repo_paths=[repo_path],
+            repo_path=repo_path,  # Changed from repo_paths=[repo_path]
             output_dir=str(output_dir),
             include_patterns=scan_request.include_patterns or [],
             exclude_patterns=scan_request.exclude_patterns or [],
