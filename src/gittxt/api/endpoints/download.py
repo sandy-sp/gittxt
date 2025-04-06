@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path, Query
 from fastapi.responses import FileResponse
-from pathlib import Path
+from pathlib import Path as FilePath
 import shutil
 
 from gittxt import OUTPUT_DIR
@@ -32,7 +32,7 @@ async def download_file(
         FileResponse: Streamed file response
     """
     filename, media_type = VALID_FORMATS[format]
-    scan_path = OUTPUT_DIR / scan_id
+    scan_path = FilePath(OUTPUT_DIR) / scan_id
 
     # Handle ZIP bundling logic
     if format == OutputFormat.zip:
@@ -57,7 +57,7 @@ async def download_file(
 
     return FileResponse(
         path=file_path,
-        filename=Path(filename).name,
+        filename=FilePath(filename).name,
         media_type=media_type,
     )
 
@@ -74,7 +74,7 @@ async def download_artifacts(scan_id: str = Path(..., description="Scan ID")):
         FileResponse: ZIP file of the scan outputs
     """
     try:
-        scan_path = OUTPUT_DIR / scan_id
+        scan_path = FilePath(OUTPUT_DIR) / scan_id
         artifacts_dir = scan_path / "artifacts"
         zip_path = scan_path / f"{scan_id}_artifacts.zip"
 
