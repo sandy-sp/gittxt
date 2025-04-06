@@ -1,0 +1,38 @@
+# Ignore Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Ignore project clutter
+.git
+.gitattributes
+.github
+.gitignore
+.vscode
+.mypy_cache
+.pytest_cache
+
+# Ignore docs, tests, reports
+docs/
+tests/
+mkdocs.yml
+Makefile
+
+# Ignore built artifacts
+*.zip
+*.tar.gz
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Ignore dev cache
+*.DS_Store
+*.coverage
+
+# Ignore local outputs
+src/gittxt/gittxt-outputs/
+src/gittxt/gittxt.log
+api/outputs/
