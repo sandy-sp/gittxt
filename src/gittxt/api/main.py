@@ -20,7 +20,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for frontend dev (replace with domains in production)
+# Enable CORS for frontend development (replace with specific domains in production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,10 +45,10 @@ app.include_router(download.router, tags=["Download"])
 app.include_router(summary.router, tags=["Summary"])  # Include summary router
 app.include_router(cleanup.router, tags=["Cleanup"])
 
-# Root endpoint
-@app.get("/", tags=["General"])
-async def read_root():
-    return {"message": "Welcome to the Gittxt API"}
+# Health check endpoint
+@app.get("/", tags=["Meta"])
+async def healthcheck():
+    return {"status": "ok", "message": "Gittxt API is running"}
 
 # Custom exception handler
 @app.exception_handler(HTTPException)
