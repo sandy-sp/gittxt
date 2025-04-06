@@ -6,7 +6,7 @@ from uuid import uuid4
 from pathlib import Path
 import traceback
 import logging
-
+from gittxt.core.config import ConfigManager
 from gittxt.core.repository import RepositoryHandler
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
@@ -45,7 +45,8 @@ async def scan_repository(scan_request: ScanRequest):
         
         # Scan repository
         scanner = Scanner(
-            repo_path=repo_path,  # Changed from repo_paths=[repo_path]
+            repo_paths=[repo_path],  # Fixed variable name
+            config=ConfigManager.load_config(),
             output_dir=str(output_dir),
             include_patterns=scan_request.include_patterns or [],
             exclude_patterns=scan_request.exclude_patterns or [],
