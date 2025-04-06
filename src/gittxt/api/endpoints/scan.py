@@ -1,71 +1,106 @@
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
-import logging
+from fastapi import APIRouter, HTTPException, Depends, Query, Request, BackgroundTasks
+from fastapi.responses import JSONResponse
+from typing import Optional, List
+import asyncio
+from uuid import uuid4
 from pathlib import Path
-import uuid
-from gittxt.api.services.gittxt_runner import run_gittxt_scan, GittxtRunnerError
+import traceback
+import logging
+
+from gittxt.core.repository import RepositoryHandler
+from gittxt.core.scanner import Scanner
+from gittxt.core.output_builder import OutputBuilder
+from gittxt.utils.tree_utils import generate_tree
 from gittxt.api.schemas.scan import ScanRequest, ScanResponse, DownloadURLs
+from gittxt import OUTPUT_DIR
+from gittxt.core.logger import Logger
+from gittxt.utils.cleanup_utils import cleanup_temp_folder
+from gittxt.api.services.gittxt_runner import run_gittxt_scan, GittxtRunnerError
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = Logger.get_logger(__name__)
 
 @router.post("/scan", response_model=ScanResponse, tags=["Scan"])
-async def start_scan(request: Request, payload: ScanRequest, background_tasks: BackgroundTasks):
+async def scan_repository(scan_request: ScanRequest):
     """
-    Initiate a Gittxt scan on a repository.
-
-    Args:
-        payload (ScanRequest): Contains repository details and scan options.
-
-    Returns:
-        ScanResponse: Scan results including download URLs.
+    Scan a GitHub repository
     """
-    logger.info(f"Received scan request for repo_path: {payload.repo_path}, branch: {payload.branch}")
-
+    logger.info(f"Scanning repository: {scan_request.repo_url}")
+    
+    scan_id = str(uuid4())
+    output_dir = OUTPUT_DIR / scan_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     try:
-        scan_id = str(uuid.uuid4())
-        repo_path = Path(payload.repo_path)
-
-        if not repo_path.exists() or not repo_path.is_dir():
-            logger.warning(f"Invalid repository path: {payload.repo_path}")
-            raise HTTPException(status_code=400, detail="Invalid repository path.")
-
-        result = await run_gittxt_scan(
-            repo_path=repo_path,
-            options={
-                "branch": payload.branch,
-                "subdir": payload.subdir,
-                "exclude_dirs": payload.exclude_dirs,
-                "include_patterns": payload.include_patterns,
-                "exclude_patterns": payload.exclude_patterns,
-                "size_limit": payload.size_limit,
-                "tree_depth": payload.tree_depth,
-                "lite": payload.lite,
-            },
-            scan_id=scan_id,
-            background_tasks=background_tasks
+        # Clone repository
+        repo_handler = RepositoryHandler(
+            repo_url=scan_request.repo_url,
+            branch=scan_request.branch
         )
-
-        base_url = str(request.base_url).rstrip("/") + f"/download/{scan_id}"
-        outputs = result["outputs"]
-
-        logger.info(f"Scan completed for repo_path: {payload.repo_path}, scan_id: {scan_id}")
-
-        return ScanResponse(
-            scan_id=scan_id,
-            repo_name=result.get("repo_name"),
-            branch=result.get("branch", "main"),
-            summary=result.get("summary", {}),
-            download_urls=DownloadURLs(
-                txt=f"{base_url}?format=txt" if outputs.get("txt") else None,
-                md=f"{base_url}?format=md" if outputs.get("md") else None,
-                json=f"{base_url}?format=json" if outputs.get("json") else None,
-                zip=f"{base_url}?format=zip" if outputs.get("zip") else None,
-            ),
+        
+        repo_path = await repo_handler.clone_repository()
+        logger.debug(f"Cloned repository to {repo_path}")
+        
+        repo_name = Path(repo_path).name
+        
+        # Scan repository
+        scanner = Scanner(
+            repo_paths=[repo_path],
+            output_dir=str(output_dir),
+            include_patterns=scan_request.include_patterns or [],
+            exclude_patterns=scan_request.exclude_patterns or [],
+            exclude_dirs=scan_request.exclude_dirs or [],
+            lite_mode=scan_request.lite
         )
-
-    except GittxtRunnerError as runner_exc:
-        logger.error(f"Gittxt Runner Error for {payload.repo_path}: {runner_exc}", exc_info=True)
-        raise HTTPException(status_code=runner_exc.status_code, detail=str(runner_exc))
+        
+        textual_files, non_textual_files = await scanner.scan_directories()
+        logger.info(f"Scan completed: {len(textual_files)} textual files, {len(non_textual_files)} non-textual files")
+        
+        # Generate outputs
+        outputs = scan_request.output_formats or ["txt"]
+        builder = OutputBuilder(
+            output_formats=outputs,
+            repo_name=repo_name,
+            output_dir=str(output_dir),
+            repo_url=scan_request.repo_url,
+            branch=scan_request.branch,
+            mode="lite" if scan_request.lite else "rich"
+        )
+        
+        # Build output files
+        builder.process_files(textual_files, non_textual_files)
+        
+        # Generate download URLs
+        host = scan_request.callback_host or "http://localhost:8000"
+        download_urls = {
+            fmt: f"{host}/download/{scan_id}/{fmt}" 
+            for fmt in outputs
+        }
+        download_urls["zip"] = f"{host}/download/{scan_id}/zip"
+        
+        # Clean up temporary repository
+        cleanup_temp_folder(Path(repo_path))
+        logger.debug(f"Cleaned up temporary repository: {repo_path}")
+        
+        response = ScanResponse(
+            scan_id=scan_id,
+            repo_name=repo_name,
+            file_count=len(textual_files) + len(non_textual_files),
+            download_urls=download_urls,
+            status="completed"
+        )
+        
+        return response
+        
     except Exception as e:
-        logger.error(f"Unexpected error initiating scan for {payload.repo_path}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
+        logger.error(f"Repository scan failed: {str(e)}\n{traceback.format_exc()}")
+        
+        # Clean up on error
+        if output_dir.exists():
+            import shutil
+            shutil.rmtree(output_dir)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to scan repository: {str(e)}"
+        )
