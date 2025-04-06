@@ -4,20 +4,20 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from gittxt import OUTPUT_DIR
+from gittxt import OUTPUT_DIR, __version__
 from gittxt.api.endpoints import (
     inspect,
     upload,
     scan,
     download,
-    summary,  # Add summary endpoint
+    summary,
     cleanup,
 )
 
 app = FastAPI(
     title="Gittxt API",
     description="API backend for Gittxt: scan, preview, and export GitHub repositories or uploaded ZIPs.",
-    version="1.0.0"
+    version=__version__
 )
 
 # Enable CORS for frontend development (replace with specific domains in production)
@@ -42,18 +42,40 @@ app.include_router(inspect.router, tags=["Inspect"])
 app.include_router(upload.router, tags=["Upload"])
 app.include_router(scan.router, tags=["Scan"])
 app.include_router(download.router, tags=["Download"])
-app.include_router(summary.router, tags=["Summary"])  # Include summary router
+app.include_router(summary.router, tags=["Summary"])
 app.include_router(cleanup.router, tags=["Cleanup"])
 
 # Health check endpoint
 @app.get("/", tags=["Meta"])
 async def healthcheck():
-    return {"status": "ok", "message": "Gittxt API is running"}
+    """API health check endpoint"""
+    return {
+        "status": "ok", 
+        "message": "Gittxt API is running",
+        "version": __version__
+    }
 
 # Custom exception handler
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    """Custom exception handler with more detailed error responses"""
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail},
+        content={
+            "error": True,
+            "message": str(exc.detail),
+            "status_code": exc.status_code
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handler for unexpected exceptions"""
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": True,
+            "message": f"An unexpected error occurred: {str(exc)}",
+            "status_code": 500
+        }
     )
