@@ -1,17 +1,21 @@
 FROM python:3.11-slim
 
-# Set working dir
+# Set working dir inside the container
 WORKDIR /app
 
-# Copy Gittxt CLI source and API
-COPY ./src ./src
-COPY ./api ./
+# Copy the full project repo (src/, api/, pyproject.toml, etc.)
+COPY . .
 
-# Install requirements and local package
+# Install core dependencies first
 RUN pip install --no-cache-dir --upgrade pip \
- && pip install -r requirements.txt \
- && pip install ./src
+ && pip install -r api/requirements.txt \
+ && pip install .
 
+# Set environment variables
+ENV PYTHONPATH=/app/api
+
+# Expose FastAPI port
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run the API app inside api/
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
