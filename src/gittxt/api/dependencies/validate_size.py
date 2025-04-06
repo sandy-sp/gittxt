@@ -1,34 +1,34 @@
-from fastapi import Request, HTTPException
-from starlette.datastructures import UploadFile
+from fastapi import Request, HTTPException, UploadFile
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from typing import Union
+from gittxt.core.logger import Logger
+from gittxt.core.config import ConfigManager
 
-MAX_FILE_SIZE_MB = 50
-MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024
+logger = Logger.get_logger(__name__)
+config = ConfigManager.load_config()
 
-async def validate_file_size(request: Request):
-    """
-    Validate that uploaded file(s) do not exceed MAX_FILE_SIZE_MB.
+# Default to 50MB if not specified
+MAX_UPLOAD_SIZE = config.get("max_upload_size", 52428800)
 
-    Raises:
-        HTTPException: If any file exceeds the max size
-    """
-    try:
-        form = await request.form()
-        for item in form.values():
-            if isinstance(item, UploadFile):
-                size = 0
-                async for chunk in item.read(1024 * 1024):  # Read in chunks
-                    size += len(chunk)
-                    if size > MAX_FILE_SIZE:
-                        raise HTTPException(
-                            status_code=413,
-                            detail=f"File too large. Max allowed is {MAX_FILE_SIZE_MB}MB."
-                        )
-                await item.seek(0)  # Reset stream position
-
-    except Exception as e:
-        # Catch potential errors during form parsing or file reading
-        raise HTTPException(
-            status_code=400,  # Bad Request might be more appropriate
-            detail=f"Error processing uploaded file: {str(e)}"
-        )
+async def validate_file_size(file: UploadFile) -> UploadFile:
+    """Validate that the uploaded file doesn't exceed max size"""
+    # Read and immediately seek to beginning
+    file_size = 0
+    chunk_size = 1024 * 1024  # 1MB chunks
+    
+    # Read in chunks to avoid loading entire file into memory
+    chunk = await file.read(chunk_size)
+    while chunk:
+        file_size += len(chunk)
+        if file_size > MAX_UPLOAD_SIZE:
+            logger.warning(f"Upload rejected: file size {file_size} exceeds limit {MAX_UPLOAD_SIZE}")
+            raise HTTPException(
+                status_code=413,
+                detail=f"File size exceeds the limit of {MAX_UPLOAD_SIZE/1024/1024:.1f}MB"
+            )
+        chunk = await file.read(chunk_size)
+    
+    # Reset file to beginning
+    await file.seek(0)
+    logger.debug(f"File size validation passed: {file_size} bytes")
+    return file
