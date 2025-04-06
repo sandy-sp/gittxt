@@ -1,10 +1,8 @@
 from pydantic import BaseModel
-from typing import List, Dict, Optional, Union
+from typing import Dict
 
 class InspectRequest(BaseModel):
-    repo_url: str
-    branch: Optional[str] = None
-    subdir: Optional[str] = None
+    repo_path: str  # Changed from repo_url to repo_path
 
 class PreviewSnippet(BaseModel):
     path: str
@@ -12,9 +10,6 @@ class PreviewSnippet(BaseModel):
 
 class InspectResponse(BaseModel):
     repo_name: str
-    branch: Optional[str]
-    tree: Union[Dict, List]  # List fallback in case of JSON-converted tree
-    textual_files: List[str]
-    non_textual_files: List[str]
-    summary: Dict[str, Union[int, str, Dict[str, int]]]
-    preview_snippets: List[PreviewSnippet]
+    tree: Dict  # Simplified to Dict
+    file_count: int
+    folder_count: int
