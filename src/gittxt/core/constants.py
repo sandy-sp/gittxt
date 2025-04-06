@@ -1,8 +1,9 @@
-TEXT_DIR = "text"
+TEXT_DIR = "txt"
 JSON_DIR = "json"
 MD_DIR = "md"
-ZIP_DIR = "zips"
+ZIP_DIR = "zip"
 TEMP_DIR = "temp"
+REVERSE_DIR = "reverse"
 
 # Potentially store default excludes in a single place, if you don’t want them in config.json
 EXCLUDED_DIRS_DEFAULT = [
