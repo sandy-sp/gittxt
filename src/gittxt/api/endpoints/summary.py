@@ -1,26 +1,42 @@
 from fastapi import APIRouter, HTTPException, Path
-from pathlib import Path as FilePath  # Alias pathlib.Path
-import json
-from gittxt import OUTPUT_DIR
-from gittxt.api.schemas.summary import SummaryResponse  # Import the schema
-from gittxt.api.services.gittxt_runner import get_gittxt_summary, GittxtRunnerError
-from gittxt.core.logger import Logger
-router = APIRouter()
+from pathlib import Path as PathLib
 
-@router.get("/summary/{scan_id}", response_model=SummaryResponse, tags=["Summary"])
-async def retrieve_summary(scan_id: str = Path(..., description="Unique identifier for the scan session")):
-    """
-    Retrieve the summary data for a completed Gittxt scan.
-    Returns 404 if scan ID not found, 202 if still processing, 409 if failed.
-    """
-    logger.info(f"Received request for summary of scan_id: {scan_id}")
+from gittxt import OUTPUT_DIR
+from gittxt.core.logger import Logger
+from gittxt.utils.summary_utils import generate_summary
+
+router = APIRouter()
+logger = Logger.get_logger(__name__)
+
+@router.get("/summary/{scan_id}")
+async def get_scan_summary(scan_id: str = Path(...)):
+    """Get summary information for a scan"""
+    logger.info(f"Summary requested for scan {scan_id}")
+    
+    output_dir = OUTPUT_DIR / scan_id
+    
+    if not output_dir.exists():
+        logger.warning(f"Output directory not found for scan {scan_id}")
+        raise HTTPException(status_code=404, detail=f"Scan {scan_id} not found")
+        
     try:
-        summary_data = await get_gittxt_summary(scan_id)
-        return summary_data
-    except GittxtRunnerError as runner_exc:
-        # Specific status codes are handled by the runner function exception
-        logger.warning(f"Summary retrieval issue for {scan_id}: {runner_exc.message} (Status: {runner_exc.status_code})")
-        raise HTTPException(status_code=runner_exc.status_code, detail=runner_exc.message)
+        # Find all files in the output directory
+        all_files = []
+        for root, _, files in PathLib(output_dir).walk():
+            for file in files:
+                if file.endswith(('.txt', '.json', '.md')):
+                    all_files.append(PathLib(root) / file)
+        
+        if not all_files:
+            raise HTTPException(status_code=404, detail="No files found for this scan")
+            
+        # Generate and return summary
+        summary = await generate_summary(all_files)
+        return summary
+        
     except Exception as e:
-        logger.error(f"Unexpected error retrieving summary for {scan_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal server error retrieving summary: {str(e)}")
+        logger.error(f"Failed to generate summary for scan {scan_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate summary: {str(e)}"
+        )
