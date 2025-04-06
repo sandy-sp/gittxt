@@ -32,9 +32,6 @@ async def upload_zip(
     upload_dir = UPLOAD_BASE / scan_id
     output_dir = OUTPUT_BASE / scan_id
 
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     zip_path = upload_dir / file.filename
     with zip_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -43,6 +40,9 @@ async def upload_zip(
     try:
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(upload_dir)
+        # Now create upload/output dirs
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
     except zipfile.BadZipFile:
         raise HTTPException(status_code=400, detail="Invalid or corrupted zip file.")
 
