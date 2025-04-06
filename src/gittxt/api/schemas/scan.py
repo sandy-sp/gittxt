@@ -14,10 +14,10 @@ class ScanRequest(BaseModel):
 
 class DownloadURLs(BaseModel):
     """URLs for downloading scan outputs"""
-    txt: Optional[str] = None
-    json: Optional[str] = None
-    md: Optional[str] = None
-    zip: Optional[str] = None
+    txt_url: Optional[str] = Field(None, description="URL to download TXT output")
+    json_url: Optional[str] = Field(None, description="URL to download JSON output")
+    md_url: Optional[str] = Field(None, description="URL to download Markdown output")
+    zip_url: Optional[str] = Field(None, description="URL to download ZIP archive")
 
 class ScanResponse(BaseModel):
     """Response model for repository scanning"""
