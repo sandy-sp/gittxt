@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Query, Depends
 from fastapi.responses import JSONResponse
+from typing import Optional, List
 from uuid import uuid4
 from pathlib import Path
 import zipfile
@@ -7,6 +8,7 @@ import shutil
 
 from gittxt.core.scanner import scan_repo
 from gittxt.core.output_builder import build_outputs
+from dependencies.validate_size import validate_zip_size
 
 router = APIRouter()
 
@@ -14,7 +16,14 @@ UPLOAD_BASE = Path("uploads")
 OUTPUT_BASE = Path("outputs")
 
 @router.post("/upload")
-async def upload_zip(request: Request, file: UploadFile = File(...)):
+async def upload_zip(
+    request: Request,
+    file: UploadFile = Depends(validate_zip_size),
+    lite: bool = Query(False, description="Enable lite mode"),
+    include_patterns: Optional[List[str]] = Query(None, description="Glob patterns to include"),
+    exclude_patterns: Optional[List[str]] = Query(None, description="Glob patterns to exclude"),
+    exclude_dirs: Optional[List[str]] = Query(None, description="Directories to exclude")
+):
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only .zip files are supported.")
 
@@ -45,7 +54,10 @@ async def upload_zip(request: Request, file: UploadFile = File(...)):
         scan_result = scan_repo(
             repo_path=str(repo_root),
             output_dir=str(output_dir),
-            lite=False,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            exclude_dirs=exclude_dirs,
+            lite=lite,
             non_interactive=True
         )
 
@@ -57,6 +69,12 @@ async def upload_zip(request: Request, file: UploadFile = File(...)):
             to_json=True,
             to_zip=True
         )
+
+        # Auto-clean uploads
+        try:
+            shutil.rmtree(upload_dir)
+        except Exception as e:
+            print(f"[WARN] Failed to clean up uploads: {e}")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
