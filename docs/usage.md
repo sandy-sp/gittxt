@@ -171,7 +171,29 @@ Check:
 - 🧠 [API Reference](api-reference.md)
 
 ---
+
+## 🔁 Reverse from Report
+
+You can reverse engineer a previously scanned Gittxt report into a full project structure:
+
+### Example
+
+```bash
+gittxt re exports/sample_summary.txt
 ```
 
----
+This will:
+
+- Parse the `sample_summary.txt` report (can also be `.md` or `.json`)
+- Reconstruct all code/text files from the report
+- Save the reconstructed repo as a ZIP archive
+
+### Output
+
+```plaintext
+Reconstructed 27 files.
+Output: sample_summary_reconstructed.zip
+```
+
+📘 See the Reverse Engineering Guide for full details.
 
