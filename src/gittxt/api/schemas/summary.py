@@ -10,3 +10,5 @@ class SummaryResponse(BaseModel):
     estimated_tokens: int
     file_type_breakdown: Dict[str, int]
     formatted: Dict[str, str]
+    summary: dict  # Detailed summary data
+    artifacts: Dict[str, Optional[str]]  # Paths to generated artifacts (e.g., JSON, TXT, MD)
