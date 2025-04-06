@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path
 from fastapi.responses import JSONResponse
-from pathlib import Path
+from pathlib import Path as FilePath
 import shutil
 
 from gittxt import OUTPUT_DIR
@@ -18,7 +18,7 @@ async def cleanup_scan(scan_id: str = Path(..., description="Scan ID")):
     Returns:
         dict: Cleanup status
     """
-    target_dir = OUTPUT_DIR / scan_id
+    target_dir = FilePath(OUTPUT_DIR) / scan_id
 
     if not target_dir.exists():
         raise HTTPException(status_code=404, detail="Scan ID not found.")
