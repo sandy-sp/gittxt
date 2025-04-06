@@ -1,9 +1,9 @@
 import uuid
 import os
 from pathlib import Path
-from gittxt.core.scanner import scan_repo
-from gittxt.core.output_builder import build_outputs
-from gittxt.core.repository import download_and_extract_repo
+from gittxt.core.scanner import Scanner
+from gittxt.core.output_builder import OutputBuilder
+from gittxt.core.repository import RepositoryHandler
 
 BASE_OUTPUT_DIR = "outputs"
 
@@ -16,13 +16,13 @@ def run_gittxt_scan(repo_url: str, options: dict):
     output_dir = Path(BASE_OUTPUT_DIR) / scan_id
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    repo_path, repo_meta = download_and_extract_repo(
+    repo_path, repo_meta = RepositoryHandler(
         repo_url,
         branch=options.get("branch"),
         subdir=options.get("subdir")
     )
 
-    scan_result = scan_repo(
+    scan_result = Scanner(
         repo_path=repo_path,
         output_dir=str(output_dir),
         subdir=options.get("subdir"),
@@ -35,7 +35,7 @@ def run_gittxt_scan(repo_url: str, options: dict):
         non_interactive=True
     )
 
-    output_files = build_outputs(
+    output_files = OutputBuilder(
         scan_result=scan_result,
         output_dir=str(output_dir),
         to_txt=True,
@@ -56,11 +56,11 @@ def run_gittxt_inspect(repo_url: str, branch: str = None, subdir: str = None):
     """
     Lightweight repo inspection without output file generation.
     """
-    repo_path, repo_meta = download_and_extract_repo(
+    repo_path, repo_meta = RepositoryHandler(
         repo_url, branch=branch, subdir=subdir
     )
 
-    scan_result = scan_repo(
+    scan_result = Scanner(
         repo_path=repo_path,
         output_dir=None,
         subdir=subdir,
