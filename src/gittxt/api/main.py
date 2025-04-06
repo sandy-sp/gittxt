@@ -3,8 +3,10 @@ from pathlib import Path
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import traceback
 
 from gittxt import OUTPUT_DIR, __version__
+from gittxt.core.logger import Logger
 from gittxt.api.endpoints import (
     inspect,
     upload,
@@ -13,6 +15,9 @@ from gittxt.api.endpoints import (
     summary,
     cleanup,
 )
+
+# Initialize logger for API
+logger = Logger.get_logger(__name__)
 
 app = FastAPI(
     title="Gittxt API",
@@ -36,6 +41,7 @@ startup_dirs = [
 ]
 for d in startup_dirs:
     os.makedirs(d, exist_ok=True)
+    logger.debug(f"Ensured directory exists: {d}")
 
 # Register routers
 app.include_router(inspect.router, tags=["Inspect"])
@@ -49,6 +55,7 @@ app.include_router(cleanup.router, tags=["Cleanup"])
 @app.get("/", tags=["Meta"])
 async def healthcheck():
     """API health check endpoint"""
+    logger.debug("Health check endpoint called")
     return {
         "status": "ok", 
         "message": "Gittxt API is running",
@@ -59,6 +66,7 @@ async def healthcheck():
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
     """Custom exception handler with more detailed error responses"""
+    logger.warning(f"HTTP exception: {exc.status_code} - {exc.detail}")
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -71,6 +79,7 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     """Handler for unexpected exceptions"""
+    logger.error(f"Unhandled exception: {str(exc)}\n{traceback.format_exc()}")
     return JSONResponse(
         status_code=500,
         content={
