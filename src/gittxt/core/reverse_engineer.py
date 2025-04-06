@@ -4,19 +4,43 @@ import zipfile
 import tempfile
 import shutil
 import re
-
+from datetime import datetime
 from pathlib import Path
+from gittxt.core.constants import REVERSE_DIR
+from gittxt.core.logger import Logger
 
-def reverse_from_report(report_path: str) -> str:
+logger = Logger.get_logger(__name__)
+
+def reverse_from_report(report_path: str, output_dir: Path = None) -> str:
+    """
+    Reverse engineer a Gittxt report into reconstructed source files.
+    
+    Args:
+        report_path: Path to the report file (.json, .txt, or .md)
+        output_dir: Optional output directory (uses default if not specified)
+    
+    Returns:
+        str: Path to the created ZIP file
+    """
+    # Determine output directory
+    if output_dir is None:
+        # Use the default output directory from configuration
+        from gittxt import OUTPUT_REVERSE_DIR
+        output_dir = OUTPUT_REVERSE_DIR
+    else:
+        output_dir = Path(output_dir)
+    
+    # Ensure output directory exists
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     ext = Path(report_path).suffix.lower()
     
     if ext == ".json":
         files = parse_json_report(report_path)
-    elif ext in ".txt":
+    elif ext == ".txt":
         files = parse_textual_report(report_path)
     elif ext == ".md":
         files = parse_markdown_report(report_path)
-
     else:
         raise ValueError("Unsupported report format. Use .json, .txt, or .md")
 
@@ -25,6 +49,9 @@ def reverse_from_report(report_path: str) -> str:
 
     # Infer top-level folder name (e.g., repo name)
     repo_name = infer_repo_name(files)
+    
+    # Add timestamp to zip name for uniqueness
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         root_dir = Path(temp_dir) / repo_name
@@ -35,11 +62,12 @@ def reverse_from_report(report_path: str) -> str:
             abs_path.parent.mkdir(parents=True, exist_ok=True)
             abs_path.write_text(content, encoding='utf-8')
 
-        # Create ZIP file in cwd
-        zip_filename = f"{repo_name}_reconstructed.zip"
-        zip_path = Path.cwd() / zip_filename
-        shutil.make_archive(zip_path.with_suffix(""), 'zip', root_dir)
-
+        # Create ZIP file in the output directory
+        zip_filename = f"{repo_name}_reconstructed_{timestamp}.zip"
+        zip_path = output_dir / zip_filename
+        shutil.make_archive(str(zip_path.with_suffix("")), 'zip', root_dir)
+        
+        logger.info(f"📦 Reconstructed repository written to: {zip_path}")
         return str(zip_path)
 
 def parse_json_report(report_path: str) -> dict:
