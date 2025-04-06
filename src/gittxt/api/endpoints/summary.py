@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Path
-from pathlib import Path
+from pathlib import Path as FilePath  # Alias pathlib.Path
 import json
 from gittxt import OUTPUT_DIR
 from gittxt.api.schemas.summary import SummaryResponse  # Import the schema
@@ -18,14 +18,14 @@ async def get_summary(scan_id: str = Path(..., description="Scan ID")):
         dict: Summary details and artifact paths
     """
     try:
-        artifacts_dir = OUTPUT_DIR / scan_id / "artifacts"
+        artifacts_dir = FilePath(OUTPUT_DIR) / scan_id / "artifacts"  # Use FilePath
         if not artifacts_dir.exists():
             raise HTTPException(status_code=404, detail="Scan artifacts not found.")
 
         # Locate output files
-        json_path = artifacts_dir / "gittxt_output.json"
-        txt_path = artifacts_dir / "gittxt_output.txt"
-        md_path = artifacts_dir / "gittxt_output.md"
+        json_path = artifacts_dir / "gittxt_output.json"  # Use FilePath
+        txt_path = artifacts_dir / "gittxt_output.txt"  # Use FilePath
+        md_path = artifacts_dir / "gittxt_output.md"  # Use FilePath
 
         if not json_path.exists():
             raise HTTPException(status_code=500, detail="Output summary missing.")
