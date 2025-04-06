@@ -4,52 +4,61 @@ from pathlib import Path
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.core.repository import RepositoryHandler
+from gittxt.utils.tree_utils import generate_tree
+from gittxt import OUTPUT_DIR
 
 BASE_OUTPUT_DIR = "outputs"
 
-def run_gittxt_scan(repo_url: str, options: dict):
+async def run_gittxt_scan(
+    repo_path: Path,
+    scan_id: str,
+    lite: bool = False
+) -> dict:
     """
-    Full scan: runs scan + builds output files.
-    Returns scan_id, summary, and file paths.
+    Run a full Gittxt scan on a local path.
+
+    Args:
+        repo_path (Path): Path to the repository root
+        scan_id (str): Unique identifier for the scan session
+        lite (bool): If True, generates lite outputs only
+
+    Returns:
+        dict: scan summary including files, tree, and output directory
     """
-    scan_id = str(uuid.uuid4())
-    output_dir = Path(BASE_OUTPUT_DIR) / scan_id
+    output_dir = OUTPUT_DIR / scan_id / "artifacts"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    repo_path, repo_meta = RepositoryHandler(
-        repo_url,
-        branch=options.get("branch"),
-        subdir=options.get("subdir")
+    # Scan repository
+    scanner = Scanner(
+        root_path=repo_path,
+        progress=False
     )
+    textual_files, non_textual_files = await scanner.scan_directory()
 
-    scan_result = Scanner(
+    # Generate outputs
+    builder = OutputBuilder(
+        repo_name=repo_path.name,
+        output_dir=output_dir,
+        output_format="txt,json,md",
         repo_path=repo_path,
-        output_dir=str(output_dir),
-        subdir=options.get("subdir"),
-        include_patterns=options.get("include_patterns"),
-        exclude_patterns=options.get("exclude_patterns"),
-        exclude_dirs=options.get("exclude_dirs"),
-        size_limit=options.get("size_limit"),
-        tree_depth=options.get("tree_depth"),
-        lite=options.get("lite", False),
-        non_interactive=True
+        mode="lite" if lite else "rich"
+    )
+    await builder.generate_output(
+        textual_files=textual_files,
+        non_textual_files=non_textual_files,
+        repo_path=repo_path
     )
 
-    output_files = OutputBuilder(
-        scan_result=scan_result,
-        output_dir=str(output_dir),
-        to_txt=True,
-        to_md=True,
-        to_json=True,
-        to_zip=True
-    )
+    # Generate directory tree
+    tree = generate_tree(repo_path)
 
     return {
         "scan_id": scan_id,
-        "repo_name": repo_meta["name"],
-        "branch": repo_meta["branch"],
-        "outputs": output_files,
-        "summary": scan_result["summary"]
+        "repo_name": repo_path.name,
+        "textual_files": [str(f.relative_to(repo_path)) for f in textual_files],
+        "non_textual_files": [str(f.relative_to(repo_path)) for f in non_textual_files],
+        "tree": tree,
+        "output_dir": str(output_dir),
     }
 
 def run_gittxt_inspect(repo_url: str, branch: str = None, subdir: str = None):
