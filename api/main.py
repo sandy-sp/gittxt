@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from endpoints.inspect import router as inspect_router
 from endpoints.upload import router as upload_router
@@ -11,6 +12,11 @@ app = FastAPI(
     description="API backend for Gittxt: scan, preview, and export GitHub repositories or local folders.",
     version="1.0.0"
 )
+
+# Ensure required directories exist at startup
+required_dirs = ["/app/api/outputs", "/app/api/uploads"]
+for directory in required_dirs:
+    os.makedirs(directory, exist_ok=True)
 
 # Register endpoints
 app.include_router(inspect_router, tags=["Inspect"])
