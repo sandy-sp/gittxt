@@ -9,13 +9,14 @@ import shutil
 from gittxt.core.scanner import scan_repo
 from gittxt.core.output_builder import build_outputs
 from dependencies.validate_size import validate_zip_size
+from schemas.upload import UploadResponse
 
 router = APIRouter()
 
 UPLOAD_BASE = Path("uploads")
 OUTPUT_BASE = Path("outputs")
 
-@router.post("/upload")
+@router.post("/upload", response_model=UploadResponse)
 async def upload_zip(
     request: Request,
     file: UploadFile = Depends(validate_zip_size),
