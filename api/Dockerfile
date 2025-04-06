@@ -1,18 +1,17 @@
-# Use an official Python base image
 FROM python:3.11-slim
 
-# Set working directory
+# Set working dir
 WORKDIR /app
 
-# Copy app files
-COPY . .
+# Copy Gittxt CLI source and API
+COPY ./src ./src
+COPY ./api ./
 
-# Install dependencies
+# Install requirements and local package
 RUN pip install --no-cache-dir --upgrade pip \
- && pip install -r requirements.txt
+ && pip install -r requirements.txt \
+ && pip install ./src
 
-# Expose FastAPI default port
 EXPOSE 8000
 
-# Run the API with Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
