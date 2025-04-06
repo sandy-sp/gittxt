@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+gittxt==1.7.0
+python-multipart
