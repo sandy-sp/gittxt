@@ -10,7 +10,7 @@ We only provide security updates for the latest release.
 
 | Version | Supported          |
 |---------|--------------------|
-| 1.7.0   | ✅ Actively maintained |
+|  1.7.2   | ✅ Actively maintained |
 
 ---
 
