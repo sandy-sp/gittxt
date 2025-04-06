@@ -2,4 +2,3 @@ fastapi
 uvicorn[standard]
 python-multipart
 pydantic
-gittxt== 1.7.2
