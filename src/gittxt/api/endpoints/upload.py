@@ -6,15 +6,17 @@ from pathlib import Path
 import zipfile
 import shutil
 
-from gittxt.core.scanner import  Scanner
+from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
+from gittxt.utils.tree_utils import generate_tree
 from gittxt.api.dependencies.validate_size import validate_zip_size
 from gittxt.api.schemas.upload import UploadResponse
+from gittxt.__init__ import OUTPUT_DIR  
 
 router = APIRouter()
 
 UPLOAD_BASE = Path("uploads")
-OUTPUT_BASE = Path("outputs")
+OUTPUT_BASE = OUTPUT_DIR  # Use OUTPUT_DIR for output base
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_zip(
@@ -32,6 +34,10 @@ async def upload_zip(
     upload_dir = UPLOAD_BASE / scan_id
     output_dir = OUTPUT_BASE / scan_id
 
+    # Ensure directories are created before file operations
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     zip_path = upload_dir / file.filename
     with zip_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -40,36 +46,41 @@ async def upload_zip(
     try:
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(upload_dir)
-        # Now create upload/output dirs
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        output_dir.mkdir(parents=True, exist_ok=True)
     except zipfile.BadZipFile:
         raise HTTPException(status_code=400, detail="Invalid or corrupted zip file.")
 
-    # Try to locate root folder inside zip
-    subdirs = [p for p in upload_dir.iterdir() if p.is_dir()]
-    repo_root = subdirs[0] if len(subdirs) == 1 else upload_dir
+    # Detect repo root (assume top-level folder inside zip)
+    extracted_items = list(upload_dir.iterdir())
+    repo_root = next((p for p in extracted_items if p.is_dir()), upload_dir)
+    repo_name = repo_root.name
 
-    # Run full scan
+    # Run scan
     try:
-        scan_result =  Scanner(
+        scanner = Scanner(
             repo_path=str(repo_root),
-            output_dir=str(output_dir),
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
             exclude_dirs=exclude_dirs,
             lite=lite,
             non_interactive=True
         )
+        textual_files, non_textual_files = await scanner.scan_directory()
 
-        output_files = OutputBuilder(
-            scan_result=scan_result,
+        # Build outputs
+        builder = OutputBuilder(
+            repo_name=repo_name,
             output_dir=str(output_dir),
-            to_txt=True,
-            to_md=True,
-            to_json=True,
-            to_zip=True
+            output_format="txt,json,md",
+            mode="lite" if lite else "rich",
+            scan_results=textual_files,
+            scan_id=scan_id,
+            repo_path=str(repo_root),
+            asset_files=non_textual_files,
         )
+        builder.build_outputs()
+
+        # Build directory tree
+        tree = generate_tree(repo_root)
 
         # Auto-clean uploads
         try:
@@ -80,18 +91,11 @@ async def upload_zip(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
 
-    # Build artifact links
-    base_url = str(request.base_url).rstrip("/") + f"/download/{scan_id}"
-    urls = {
-        "txt": f"{base_url}?format=txt" if output_files.get("txt") else None,
-        "md": f"{base_url}?format=md" if output_files.get("md") else None,
-        "json": f"{base_url}?format=json" if output_files.get("json") else None,
-        "zip": f"{base_url}?format=zip" if output_files.get("zip") else None,
-    }
-
+    # Build response
     return JSONResponse(content={
         "scan_id": scan_id,
-        "repo_name": file.filename.replace(".zip", ""),
-        "summary": scan_result.get("summary", {}),
-        "download_urls": urls
+        "repo_name": repo_name,
+        "textual_files": [str(f.relative_to(repo_root)) for f in textual_files],
+        "non_textual_files": [str(f.relative_to(repo_root)) for f in non_textual_files],
+        "tree": tree,
     })
