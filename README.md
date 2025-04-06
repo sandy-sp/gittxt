@@ -42,6 +42,7 @@ It supports both local folders and GitHub URLs with branch/subdir targeting.
 - ✅ **Rich Summary Tables** with size, token, and type breakdowns
 - ✅ **.gittxtignore** support for repo-specific exclusions
 - ✅ **Async File I/O** for efficient scanning
+- ✅ **Reverse Engineering** (`gittxt re`) to reconstruct repositories from reports
 
 ---
 
@@ -67,7 +68,11 @@ poetry run gittxt install
 ## ⚙️ Quickstart Example
 
 ```bash
+# Scan and bundle
 gittxt scan https://github.com/sandy-sp/gittxt.git --output-format txt,json --zip --lite
+
+# Reverse engineer from report
+gittxt re exports/gittxt_summary.txt
 ```
 
 👉 This will:
@@ -75,6 +80,7 @@ gittxt scan https://github.com/sandy-sp/gittxt.git --output-format txt,json --zi
 - Scan the repository root
 - Output `.txt` and `.json` summary files
 - Bundle outputs in a ZIP with manifest and summary
+- Reconstruct original files and structure from a Gittxt report
 
 More examples → [Usage Examples](docs/USAGE_EXAMPLES.md)
 
@@ -107,6 +113,36 @@ gittxt scan [OPTIONS] [REPOS]...
 | `--help`                                    | Show CLI help and exit                          |
 
 Run `gittxt scan --help` for the full reference.
+
+---
+
+### Reverse Engineer Command
+
+```bash
+gittxt re [OPTIONS] REPORT_FILE
+```
+
+🔄 Reconstruct original files and structure from Gittxt `.txt`, `.md`, or `.json` reports. Outputs a ZIP with recovered content.
+
+#### Options
+
+| Option                | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| `-o`, `--output-dir`  | Custom output directory for reconstructed files |
+
+#### Example Usage
+
+```bash
+gittxt re path/to/report.txt
+```
+
+This will:
+
+- Take a Gittxt-generated report (`.txt`, `.md`, or `.json`)
+- Reconstruct the original file structure as a ZIP archive
+- Save the ZIP to the specified output directory or the current directory by default
+
+📘 Learn more → [Reverse Engineering Guide](docs/reverse_engineer.md)
 
 ---
 
