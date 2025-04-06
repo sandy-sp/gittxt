@@ -19,13 +19,13 @@ async def scan_repo(request: Request, payload: ScanRequest):
     """
     try:
         scan_id = str(uuid.uuid4())
-        repo_path = Path(payload.repo_url)
+        repo_path = Path(payload.repo_path)
 
         if not repo_path.exists() or not repo_path.is_dir():
             raise HTTPException(status_code=400, detail="Invalid repository path.")
 
         result = await run_gittxt_scan(
-            repo_url=payload.repo_url,
+            repo_path=repo_path,
             options={
                 "branch": payload.branch,
                 "subdir": payload.subdir,
@@ -44,9 +44,9 @@ async def scan_repo(request: Request, payload: ScanRequest):
 
         return ScanResponse(
             scan_id=scan_id,
-            repo_name=result["repo_name"],
-            branch=result["branch"],
-            summary=result["summary"],
+            repo_name=result.get("repo_name"),
+            branch=result.get("branch", "main"),
+            summary=result.get("summary", {}),
             download_urls=DownloadURLs(
                 txt=f"{base_url}?format=txt" if outputs.get("txt") else None,
                 md=f"{base_url}?format=md" if outputs.get("md") else None,
