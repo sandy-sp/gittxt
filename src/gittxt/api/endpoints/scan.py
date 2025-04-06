@@ -5,7 +5,7 @@ from gittxt.api.schemas.scan import ScanRequest, ScanResponse, DownloadURLs
 router = APIRouter()
 
 @router.post("/scan", response_model=ScanResponse)
-async def scan_repo(request: Request, payload: ScanRequest):
+async def  Scanner(request: Request, payload: ScanRequest):
     try:
         result = run_gittxt_scan(
             repo_url=payload.repo_url,
