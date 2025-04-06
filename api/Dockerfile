@@ -11,12 +11,12 @@ RUN pip install --no-cache-dir poetry
 # Install dependencies using pyproject.toml
 RUN poetry install --no-root
 
-# Set PYTHONPATH so /api sees its own modules
-ENV PYTHONPATH=/app/api
+RUN mkdir -p /app/api/outputs /app/api/uploads
 
-# Set PYTHONPATH so gittxt sees its own modules
-ENV PYTHONPATH=/app/gittxt
+ENV PYTHONPATH=/app/api:/app/gittxt
 
 EXPOSE 8000
 
+WORKDIR /app/api
 CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
