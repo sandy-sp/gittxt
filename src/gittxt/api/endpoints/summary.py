@@ -1,37 +1,51 @@
 from fastapi import APIRouter, HTTPException, Path
-from fastapi.responses import JSONResponse
 from pathlib import Path
 import json
+from gittxt import OUTPUT_DIR
 from gittxt.api.schemas.summary import SummaryResponse  # Import the schema
 
 router = APIRouter()
 
-SUMMARY_FILENAME = "summary.json"
-BASE_OUTPUT_DIR = Path("outputs")
-
 @router.get("/summary/{scan_id}", response_model=SummaryResponse)
 async def get_summary(scan_id: str = Path(..., description="Scan ID")):
-    summary_path = BASE_OUTPUT_DIR / scan_id / SUMMARY_FILENAME
+    """
+    Return summary and available artifacts for a completed scan.
 
-    if not summary_path.exists():
-        raise HTTPException(status_code=404, detail="Summary not found.")
+    Args:
+        scan_id (str): ID of the scanned session
 
+    Returns:
+        dict: Summary details and artifact paths
+    """
     try:
-        with summary_path.open("r", encoding="utf-8") as f:
+        artifacts_dir = OUTPUT_DIR / scan_id / "artifacts"
+        if not artifacts_dir.exists():
+            raise HTTPException(status_code=404, detail="Scan artifacts not found.")
+
+        # Locate output files
+        json_path = artifacts_dir / "gittxt_output.json"
+        txt_path = artifacts_dir / "gittxt_output.txt"
+        md_path = artifacts_dir / "gittxt_output.md"
+
+        if not json_path.exists():
+            raise HTTPException(status_code=500, detail="Output summary missing.")
+
+        # Read summary content from JSON
+        with json_path.open("r", encoding="utf-8") as f:
             summary_data = json.load(f)
 
-        # Ensure scan_id is included in the response
-        summary_data["scan_id"] = scan_id
+        repo_name = summary_data.get("repo_name", "unknown")
 
-        # Validate and return the structured response
-        try:
-            validated_summary = SummaryResponse.parse_obj(summary_data)
-        except Exception as e:
-            raise HTTPException(status_code=422, detail=f"Invalid summary schema: {str(e)}")
+        return {
+            "scan_id": scan_id,
+            "repo_name": repo_name,
+            "summary": summary_data,
+            "artifacts": {
+                "json": str(json_path),
+                "txt": str(txt_path) if txt_path.exists() else None,
+                "md": str(md_path) if md_path.exists() else None,
+            },
+        }
 
-        return validated_summary
-
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON format in summary file.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to read summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
