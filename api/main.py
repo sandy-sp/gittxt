@@ -9,7 +9,7 @@ from endpoints.cleanup import router as cleanup_router
 app = FastAPI(
     title="Gittxt API",
     description="API backend for Gittxt: scan, preview, and export GitHub repositories or local folders.",
-    version="1.8.0"
+    version="1.0.0"
 )
 
 # Register endpoints
