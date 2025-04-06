@@ -8,7 +8,7 @@ class ScanRequest(BaseModel):
 class DownloadURLs(BaseModel):
     txt: Optional[str] = None
     md: Optional[str] = None
-    json: Optional[str] = None
+    json_url: Optional[str] = None  # Renamed from 'json'
     zip: Optional[str] = None
 
 class ScanResponse(BaseModel):
