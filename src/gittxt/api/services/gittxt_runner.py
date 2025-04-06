@@ -14,6 +14,9 @@ from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.core.logger import Logger
 from gittxt import OUTPUT_DIR
 
+# Add this import or definition
+from gittxt.api.schemas.summary import SummaryResponse
+
 logger = Logger.get_logger(__name__)
 
 BASE_OUTPUT_DIR = "outputs"
