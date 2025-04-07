@@ -16,11 +16,18 @@ from gittxt.api.dependencies.validate_size import validate_file_size
 from gittxt.api.schemas.upload import UploadResponse, UploadRequest
 from gittxt import OUTPUT_DIR
 from gittxt.core.logger import Logger
+from gittxt.core.config import ConfigManager
+
+# Load the config
+config = ConfigManager.load_config()
+
+# Define unified paths
+UPLOAD_DIR = Path(config.get("upload_dir", OUTPUT_DIR / "uploads"))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
 
 router = APIRouter()
 logger = Logger.get_logger(__name__)
 
-UPLOAD_BASE = Path("uploads")
 OUTPUT_BASE = OUTPUT_DIR
 
 @router.post("/upload", response_model=UploadResponse)
@@ -44,7 +51,7 @@ async def upload_zip(
     upload_request = UploadRequest(lite=lite)
 
     scan_id = str(uuid4())
-    upload_dir = UPLOAD_BASE / scan_id
+    upload_dir = UPLOAD_DIR / scan_id
     output_dir = OUTPUT_BASE / scan_id
     zip_path = None
     repo_root = None
