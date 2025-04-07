@@ -25,7 +25,7 @@ async def scan_repository(scan_request: ScanRequest):
     """
     Scan a GitHub repository
     """
-    logger.info(f"Scanning repository: {scan_request.repo_url}")
+    logger.info(f"Scanning repository: {scan_request.repo_path}")
     
     scan_id = str(uuid4())
     output_dir = OUTPUT_DIR / scan_id
@@ -45,13 +45,14 @@ async def scan_repository(scan_request: ScanRequest):
         
         # Scan repository
         scanner = Scanner(
-            repo_paths=[repo_path],  # Fixed variable name
-            config=ConfigManager.load_config(),
-            output_dir=str(output_dir),
-            include_patterns=scan_request.include_patterns or [],
-            exclude_patterns=scan_request.exclude_patterns or [],
-            exclude_dirs=scan_request.exclude_dirs or [],
-            lite_mode=scan_request.lite
+            repo_paths=[scan_request.repo_path],
+            lite=scan_request.lite,
+            output_formats=scan_request.output_formats,
+            include_patterns=scan_request.include_patterns,
+            exclude_patterns=scan_request.exclude_patterns,
+            exclude_dirs=scan_request.exclude_dirs,
+            branch=scan_request.branch,
+            callback_host=scan_request.callback_host,
         )
         
         textual_files, non_textual_files = await scanner.scan_directories()
