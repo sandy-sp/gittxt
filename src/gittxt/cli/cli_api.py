@@ -14,8 +14,8 @@ def app():
 @app.command("run")
 @click.option("--host", default="127.0.0.1", help="Host to bind the API server.")
 @click.option("--port", default=8000, type=int, help="Port to run the API server on.")
-@click.option("--reload", is_flag=True, default=False, help="Enable auto-reload during development.")
-@click.option("--log-level", default="info", 
+@click.option("--reload", is_flag=True, default=True, help="Enable auto-reload during development.")
+@click.option("--log-level", default="debug", 
              type=click.Choice(["debug", "info", "warning", "error"], case_sensitive=False),
              help="Set log verbosity level.")
 def run_api(host, port, reload, log_level):
