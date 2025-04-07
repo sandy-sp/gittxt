@@ -185,7 +185,7 @@ async def run_gittxt_scan(
             logger.info(f"Cleaning up temporary directory: {repo_path}")
             cleanup_temp_folder(Path(repo_path))
 
-async def get_gittxt_summary(scan_id: str) -> SummaryResponse:
+async def get_gittxt_summary(scan_id: str) -> Dict[str, Any]:
     logger.debug(f"Attempting to retrieve summary for scan_id: {scan_id}")
     try:
         config = ConfigManager.load_config()
@@ -211,29 +211,8 @@ async def get_gittxt_summary(scan_id: str) -> SummaryResponse:
         with summary_file.open("r", encoding="utf-8") as f:
             summary_data = json.load(f)
 
-        formatted_summary = summary_data.get("formatted", {})
-        tokens_by_type_fmt = formatted_summary.get("tokens_by_type", {})
-        file_breakdown_raw = summary_data.get("file_type_breakdown", {})
+        return summary_data  # Return raw summary data directly
 
-        breakdown_list = [
-            FileBreakdown(
-                file_type=type_name,
-                count=count,
-                estimated_tokens_formatted=tokens_by_type_fmt.get(type_name, f"{summary_data.get('tokens_by_type', {}).get(type_name, 0):,}")
-            )
-            for type_name, count in file_breakdown_raw.items()
-        ]
-
-        return SummaryResponse(
-            scan_id=scan_id,
-            repo_name=summary_data.get("repo_name", "Unknown"),
-            total_files=summary_data.get("total_files", 0),
-            total_size_bytes=summary_data.get("total_size", 0),
-            total_size_formatted=formatted_summary.get("total_size", "N/A"),
-            estimated_tokens=summary_data.get("estimated_tokens", 0),
-            estimated_tokens_formatted=formatted_summary.get("estimated_tokens", "N/A"),
-            file_type_breakdown=breakdown_list
-        )
     except Exception as e:
         logger.error(f"Unexpected error retrieving summary for {scan_id}: {e}", exc_info=True)
         raise GittxtRunnerError(f"Internal server error retrieving summary: {str(e)}", status_code=500)
