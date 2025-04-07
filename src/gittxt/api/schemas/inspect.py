@@ -10,6 +10,7 @@ class PreviewSnippet(BaseModel):
 
 class InspectResponse(BaseModel):
     repo_name: str
+    path: str  # Added path to the response schema
     tree: Dict  # Simplified to Dict
     file_count: int
     folder_count: int
