@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Dict
 
 class InspectRequest(BaseModel):
-    repo_path: str  # Changed from repo_url to repo_path
+    repo_path: str  # Path to the repository to inspect
 
 class PreviewSnippet(BaseModel):
     path: str
