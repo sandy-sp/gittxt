@@ -79,12 +79,14 @@ async def upload_zip(
 
         # Initialize scanner and scan files
         scanner = Scanner(
-            repo_path=str(repo_root),  # Updated from repo_paths to repo_path
-            output_dir=str(output_dir),
-            include_patterns=include_patterns or [],
-            exclude_patterns=exclude_patterns or [],
-            exclude_dirs=exclude_dirs or [],
-            lite_mode=lite
+            repo_paths=[str(repo_root)],
+            lite=lite,
+            output_formats=["txt", "json"],
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            exclude_dirs=exclude_dirs,
+            branch=None,  # Branch is not applicable for uploads
+            callback_host=None,  # Callback host is not applicable for uploads
         )
 
         textual_files, non_textual_files = await scanner.scan_directory()
