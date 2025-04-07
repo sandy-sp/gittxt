@@ -86,8 +86,8 @@ async def upload_zip(
 
         # Initialize scanner and scan files
         scanner = Scanner(
-            root_path=str(repo_root),  # Updated to use root_path instead of repo_path
-            lite_mode=lite,
+            root_path=str(repo_root),
+            mode="lite" if lite else "rich",  # Updated to use mode instead of lite_mode
             output_formats=["txt", "json"],
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
