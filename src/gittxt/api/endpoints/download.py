@@ -14,7 +14,7 @@ OUTPUT_DIR = Path(config.get("output_dir", "./gittxt_output")).resolve()
 @router.get("/download/{scan_id}", tags=["Download"])
 async def download_artifact(
     scan_id: str,
-    format: str = Query(..., regex="^(txt|json|md|zip)$")
+    format: str = Query(..., pattern="^(txt|json|md|zip)$")
 ):
     """
     Return the first .txt, .json, .md, or .zip from OUTPUT_DIR/<scan_id>/subfolder
