@@ -100,8 +100,34 @@ def test_upload_endpoint():
     data = response.json()
     assert "scan_id" in data
     assert "repo_name" in data
-    assert "textual_files" in data
+    assert "summary" in data
     assert "tree" in data
+    assert "download_urls" in data
+
+
+def test_upload_response_content():
+    with open(TEST_ZIP_PATH, "rb") as f:
+        response = client.post(
+            "/upload",
+            files={"file": ("test_repo.zip", f, "application/zip")},
+            data={"lite": "true"},
+        )
+    assert response.status_code == 200
+    data = response.json()
+
+    # Validate summary content
+    summary = data["summary"]
+    assert isinstance(summary, dict)
+    assert "total_files" in summary
+    assert "text_files" in summary
+
+    # Validate download_urls content
+    download_urls = data["download_urls"]
+    assert isinstance(download_urls, dict)
+    assert "txt" in download_urls
+    assert "md" in download_urls
+    assert "json" in download_urls
+    assert "zip" in download_urls
 
 
 def test_cleanup_endpoint(scan_id):
