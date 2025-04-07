@@ -5,7 +5,7 @@ from fastapi import BackgroundTasks
 from typing import Optional, List, Dict, Any, Union
 import asyncio
 import tempfile
-
+import json
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
 from gittxt.core.repository import RepositoryHandler
@@ -70,7 +70,7 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
         scan_output_dir.mkdir(parents=True, exist_ok=True)
         core_output_formats = options.get('output_formats') or config.get('output_formats', ['txt'])
         if core_output_formats:
-            update_status(f"Configuring output builder for formats: {core_output_formats}...")
+            logger.info(f"Configuring output builder for formats: {core_output_formats}...")
             builder = OutputBuilder(
                 repo_name=repo_name,
                 output_dir=scan_output_dir,
@@ -87,16 +87,16 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
                 create_zip='zip' in core_output_formats,
                 tree_depth=options.get('tree_depth'),
             )
-            update_status("Output file generation complete.")
+            logger.info("Output file generation complete.")
 
         # Generate summary
         if textual_files or non_textual_files:
-            update_status("Generating summary data...")
+            logger.info("Generating summary data...")
             summary_data = await generate_summary(textual_files + non_textual_files)
             summary_file = scan_output_dir / "summary.json"
             with summary_file.open("w", encoding="utf-8") as f:
                 json.dump(summary_data, f, indent=2)
-            update_status(f"Summary data saved to {summary_file.name}")
+            logger.info(f"Summary data saved to {summary_file.name}")
 
     except Exception as e:
         logger.error(f"Unhandled Exception during scan: {e}", exc_info=True)
