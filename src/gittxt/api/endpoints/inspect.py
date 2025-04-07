@@ -38,14 +38,12 @@ async def inspect_repository(
         raise HTTPException(status_code=400, detail="Path must be a directory")
         
     try:
-        # Removed count_items argument if unsupported
-        tree, file_count, folder_count = generate_tree(repo_path, max_depth=max_depth)
+        # Simplified to handle single return value from generate_tree
+        tree = generate_tree(repo_path, max_depth=max_depth)
         return {
             "repo_name": path.basename(repo_path),
             "path": str(repo_path),
             "tree": tree,
-            "file_count": file_count,
-            "folder_count": folder_count,
         }
     except Exception as e:
         logger.error(f"Failed to inspect repository: {e}")
