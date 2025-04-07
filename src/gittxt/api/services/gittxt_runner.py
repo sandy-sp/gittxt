@@ -13,11 +13,13 @@ from gittxt.utils.tree_utils import generate_tree
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.core.logger import Logger
 from gittxt import OUTPUT_DIR
-
-# Add this import or definition
+from gittxt.core.config import ConfigManager  # Ensure this import exists
 from gittxt.api.schemas.summary import SummaryResponse
 
 logger = Logger.get_logger(__name__)
+
+# Load global config
+config = ConfigManager.load_config()
 
 class GittxtRunnerError(Exception):
     """Exception raised for errors in the GittxtRunner."""
@@ -43,7 +45,7 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
 
         # Scanner setup
         update_status("Configuring scanner...")
-        default_excludes = set(config.get("filters", {}).get("excluded_dirs", EXCLUDED_DIRS_DEFAULT))
+        default_excludes = set(config.get("filters", {}).get("excluded_dirs", []))
         request_excludes = set(options.get('exclude_dirs') or [])
         merged_exclude_dirs = list(default_excludes | request_excludes)
 
@@ -65,7 +67,7 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
         # Output builder setup
         scan_output_dir = OUTPUT_DIR / scan_id
         scan_output_dir.mkdir(parents=True, exist_ok=True)
-        core_output_formats = [fmt.value for fmt in options.get('output_formats', [])]
+        core_output_formats = options.get('output_formats') or config.get('output_formats', ['txt'])
         if core_output_formats:
             update_status(f"Configuring output builder for formats: {core_output_formats}...")
             builder = OutputBuilder(
@@ -107,7 +109,7 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
 async def run_gittxt_scan(
     repo_url: str,
     branch: Optional[str] = None,
-    output_formats: List[str] = ["txt"],
+    output_formats: List[str] = None,
     lite_mode: bool = False,
     include_patterns: Optional[List[str]] = None,
     exclude_patterns: Optional[List[str]] = None,
@@ -148,9 +150,9 @@ async def run_gittxt_scan(
         scanner = Scanner(
             repo_paths=[repo_path],
             output_dir=str(output_dir) if output_dir else None,
-            include_patterns=include_patterns or [],
-            exclude_patterns=exclude_patterns or [],
-            exclude_dirs=exclude_dirs or [],
+            include_patterns=include_patterns or config.get('include_patterns', []),
+            exclude_patterns=exclude_patterns or config.get('exclude_patterns', []),
+            exclude_dirs=exclude_dirs or config.get("filters", {}).get("excluded_dirs", []),
             lite_mode=lite_mode
         )
         
@@ -162,7 +164,7 @@ async def run_gittxt_scan(
         scan_output_dir = OUTPUT_DIR / str(uuid.uuid4())
         scan_output_dir.mkdir(parents=True, exist_ok=True)
         builder = OutputBuilder(
-            output_formats=output_formats,
+            output_formats=output_formats or config.get('output_formats', ['txt']),
             repo_name=repo_name,
             output_dir=scan_output_dir,
             repo_url=repo_url,
