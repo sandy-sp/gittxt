@@ -79,7 +79,7 @@ async def upload_zip(
 
         # Initialize scanner and scan files
         scanner = Scanner(
-            repo_paths=[str(repo_root)],
+            repo_path=[str(repo_root)],
             lite=lite,
             output_formats=["txt", "json"],
             include_patterns=include_patterns,
