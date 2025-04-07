@@ -113,9 +113,15 @@ async def upload_zip(
         builder.process_files(textual_files, non_textual_files)
         logger.debug(f"Generated output formats: {outputs}")
 
-        # Generate file tree
-        tree = generate_tree(repo_root)
-        
+        # Generate file tree as a nested dict
+        tree, *_ = generate_tree(repo_root, count_items=True)
+        logger.debug(f"Generated file tree for {repo_name}")
+
+        # Write a status log file
+        status_log_path = output_dir / "status.log"
+        status_log_path.write_text("Scan completed successfully.")
+        logger.debug(f"Wrote status log to {status_log_path}")
+
         # Build download URLs
         base_url = f"{request.url.scheme}://{request.url.netloc}"
         download_urls = {
@@ -138,12 +144,18 @@ async def upload_zip(
             "download_urls": download_urls,
             "tree": tree,
         }
-        
+
+        # Cleanup extracted repository folder
+        if repo_root.exists():
+            shutil.rmtree(repo_root)
+            logger.debug(f"Cleaned up extracted repository folder: {repo_root}")
+
         # Auto-clean uploads to save space (keep extracted files for download)
         if zip_path and zip_path.exists():
             os.remove(zip_path)
             logger.debug(f"Cleaned up ZIP file: {zip_path}")
 
+        logger.debug(f"Returning response for scan {scan_id}")
         return JSONResponse(content=response)
 
     except Exception as e:
