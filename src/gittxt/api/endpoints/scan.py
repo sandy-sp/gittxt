@@ -34,7 +34,7 @@ async def scan_repository(scan_request: ScanRequest):
     try:
         # Clone repository
         repo_handler = RepositoryHandler(
-            repo_url=scan_request.repo_path,
+            source=scan_request.repo_path,
             branch=scan_request.branch
         )
         
