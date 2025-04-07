@@ -38,10 +38,9 @@ async def scan_repository(scan_request: ScanRequest):
             branch=scan_request.branch
         )
         
-        repo_path = await repo_handler.clone_repository()
+        await repo_handler.resolve()
+        repo_path, _, _, repo_name, _ = repo_handler.get_local_path()
         logger.debug(f"Cloned repository to {repo_path}")
-        
-        repo_name = Path(repo_path).name
         
         # Scan repository
         scanner = Scanner(
