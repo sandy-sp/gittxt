@@ -3,12 +3,21 @@ from typing import Optional
 from pathlib import Path
 from os import path
 
+from gittxt import OUTPUT_DIR  # Ensure consistent output directory
+from gittxt.core.config import ConfigManager
 from gittxt.core.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
 from gittxt.api.schemas.inspect import InspectRequest  # Ensure schema is imported
 
+# Load the config once at the top of the file
+config = ConfigManager.load_config()
+
 router = APIRouter()
 logger = Logger.get_logger(__name__)
+
+# Define unified paths based on config or defaults
+UPLOAD_DIR = Path(config.get("upload_dir", OUTPUT_DIR / "uploads"))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
 
 @router.post("/inspect")  # Changed from @router.get to @router.post
 async def inspect_repository(
