@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
 from pathlib import Path
+from os import path
 
 from gittxt.core.logger import Logger
 from gittxt.utils.tree_utils import generate_tree
@@ -28,8 +29,14 @@ async def inspect_repository(
         raise HTTPException(status_code=400, detail="Path must be a directory")
         
     try:
-        tree = generate_tree(repo_path, max_depth=max_depth)
-        return {"path": str(repo_path), "tree": tree}
+        tree, file_count, folder_count = generate_tree(repo_path, max_depth=max_depth, count_items=True)
+        return {
+            "repo_name": path.basename(repo_path),
+            "path": str(repo_path),
+            "tree": tree,
+            "file_count": file_count,
+            "folder_count": folder_count,
+        }
     except Exception as e:
         logger.error(f"Failed to inspect repository: {e}")
         raise HTTPException(
