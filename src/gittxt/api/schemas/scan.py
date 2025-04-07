@@ -3,7 +3,7 @@ from typing import Optional, List, Dict
 
 class ScanRequest(BaseModel):
     """Request model for repository scanning"""
-    repo_paths: List[str] = Field(..., description="List of repository paths to scan")
+    repo_path: str = Field(..., description="List of repository paths to scan")
     lite: bool = Field(..., description="Whether to use lite mode")
     output_formats: List[str] = Field(default=["txt"], description="Output formats to generate")
     include_patterns: Optional[List[str]] = Field(None, description="Glob patterns to include")
