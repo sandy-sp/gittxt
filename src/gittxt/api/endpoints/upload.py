@@ -86,7 +86,7 @@ async def upload_zip(
 
         # Initialize scanner and scan files
         scanner = Scanner(
-            repo_path=[str(repo_root)],
+            root_path=str(repo_root),  # Updated to use root_path instead of repo_path
             lite=lite,
             output_formats=["txt", "json"],
             include_patterns=include_patterns,
@@ -96,6 +96,7 @@ async def upload_zip(
             callback_host=None,  # Callback host is not applicable for uploads
         )
 
+        # Call scan_directory (not scan_directories)
         textual_files, non_textual_files = await scanner.scan_directory()
         logger.info(f"Scan completed: {len(textual_files)} textual files, {len(non_textual_files)} non-textual files")
 
@@ -104,8 +105,8 @@ async def upload_zip(
         builder = OutputBuilder(
             output_formats=outputs,
             repo_name=repo_name,
-            output_dir=str(output_dir),
-            mode="lite" if lite else "rich",
+            output_dir=str(output_dir),  # Ensure correct output_dir is passed
+            mode="lite" if lite else "rich",  # Ensure mode is consistent with CLI
         )
         
         # Build output files
