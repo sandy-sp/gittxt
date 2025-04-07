@@ -16,6 +16,7 @@ from gittxt import OUTPUT_DIR
 from gittxt.core.config import ConfigManager  # Ensure this import exists
 from gittxt.api.schemas.summary import SummaryResponse
 
+# Initialize logger at the module level
 logger = Logger.get_logger(__name__)
 
 # Load global config
@@ -27,24 +28,24 @@ class GittxtRunnerError(Exception):
 
 async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, options: dict):
     try:
-        update_status("Initiating repository handling...")
+        logger.info("Initiating repository handling...")
         repo_handler = RepositoryHandler(
             source=repo_url,
             branch=options.get('branch'),
         )
         await repo_handler.resolve()
         repo_path, subdir_in_repo, is_remote, repo_name, used_branch = repo_handler.get_local_path()
-        update_status(f"Repository resolved: {repo_name}, Branch: {used_branch}, Path: {repo_path}")
+        logger.info(f"Repository resolved: {repo_name}, Branch: {used_branch}, Path: {repo_path}")
 
         scan_root = Path(repo_path)
         if options.get('subdir'):
             scan_root = scan_root / options['subdir']
             if not scan_root.exists() or not scan_root.is_dir():
                 raise GittxtRunnerError(f"Subdirectory '{options['subdir']}' not found in repository.", status_code=404)
-            update_status(f"Scanning subdirectory: {options['subdir']}")
+            logger.info(f"Scanning subdirectory: {options['subdir']}")
 
         # Scanner setup
-        update_status("Configuring scanner...")
+        logger.debug("Configuring scanner...")
         default_excludes = set(config.get("filters", {}).get("excluded_dirs", []))
         request_excludes = set(options.get('exclude_dirs') or [])
         merged_exclude_dirs = list(default_excludes | request_excludes)
@@ -59,10 +60,10 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
             progress=False
         )
 
-        update_status("Scanning directory...")
+        logger.info("Scanning directory...")
         textual_files, non_textual_files = await scanner.scan_directory()
         skipped_files = scanner.skipped_files
-        update_status(f"Scan complete: {len(textual_files)} textual, {len(non_textual_files)} non-textual files found.")
+        logger.info(f"Scan complete: {len(textual_files)} textual, {len(non_textual_files)} non-textual files found.")
 
         # Output builder setup
         scan_output_dir = OUTPUT_DIR / scan_id
@@ -98,13 +99,12 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
             update_status(f"Summary data saved to {summary_file.name}")
 
     except Exception as e:
-        update_status(f"Unhandled Exception during scan: {e}", level="error")
-        logger.error(f"[{scan_id}] Unhandled exception trace:", exc_info=True)
+        logger.error(f"Unhandled Exception during scan: {e}", exc_info=True)
     finally:
         if is_remote and repo_handler and repo_path:
-            update_status(f"Cleaning up temporary clone directory: {repo_path}")
+            logger.info(f"Cleaning up temporary clone directory: {repo_path}")
             cleanup_temp_folder(Path(repo_path))
-        update_status("Background task finished.")
+        logger.info("Background task finished.")
 
 async def run_gittxt_scan(
     repo_url: str,
@@ -135,7 +135,6 @@ async def run_gittxt_scan(
     repo_path = None
     
     try:
-        # Clone repository
         logger.info(f"Starting scan of repository: {repo_url}")
         repo_handler = RepositoryHandler(
             repo_url=repo_url,
@@ -183,12 +182,12 @@ async def run_gittxt_scan(
         }
     
     except Exception as e:
-        logger.error(f"Scan failed: {str(e)}")
+        logger.error(f"Scan failed: {str(e)}", exc_info=True)
         raise GittxtRunnerError(f"Scan failed: {str(e)}")
         
     finally:
-        # Clean up temp directory if needed
         if repo_path and Path(repo_path).exists():
+            logger.info(f"Cleaning up temporary directory: {repo_path}")
             cleanup_temp_folder(Path(repo_path))
 
 async def get_gittxt_summary(scan_id: str) -> SummaryResponse:
