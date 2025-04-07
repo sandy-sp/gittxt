@@ -19,8 +19,6 @@ from gittxt.api.schemas.summary import SummaryResponse
 
 logger = Logger.get_logger(__name__)
 
-BASE_OUTPUT_DIR = "outputs"
-
 class GittxtRunnerError(Exception):
     """Exception raised for errors in the GittxtRunner."""
     pass
@@ -65,6 +63,8 @@ async def _perform_actual_scan(scan_id: str, repo_url: str, config: dict, option
         update_status(f"Scan complete: {len(textual_files)} textual, {len(non_textual_files)} non-textual files found.")
 
         # Output builder setup
+        scan_output_dir = OUTPUT_DIR / scan_id
+        scan_output_dir.mkdir(parents=True, exist_ok=True)
         core_output_formats = [fmt.value for fmt in options.get('output_formats', [])]
         if core_output_formats:
             update_status(f"Configuring output builder for formats: {core_output_formats}...")
@@ -159,10 +159,12 @@ async def run_gittxt_scan(
         logger.info(f"Scan found {len(textual_files)} textual files and {len(non_textual_files)} non-textual files")
         
         # Build outputs
+        scan_output_dir = OUTPUT_DIR / str(uuid.uuid4())
+        scan_output_dir.mkdir(parents=True, exist_ok=True)
         builder = OutputBuilder(
             output_formats=output_formats,
             repo_name=repo_name,
-            output_dir=str(output_dir) if output_dir else None,
+            output_dir=scan_output_dir,
             repo_url=repo_url,
             branch=branch,
             mode="lite" if lite_mode else "rich"
