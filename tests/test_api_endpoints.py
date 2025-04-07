@@ -56,7 +56,7 @@ def test_inspect_endpoint():
     response = client.post("/inspect", json={"repo_path": str(TEST_REPO_PATH)})
     assert response.status_code == 200
     data = response.json()
-    assert "repo_name" in data
+    assert "repo_name" in data 
     assert "tree" in data
     assert data["file_count"] == 2
 
