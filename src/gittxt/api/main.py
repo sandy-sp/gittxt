@@ -7,6 +7,7 @@ import traceback
 
 from gittxt import OUTPUT_DIR, __version__
 from gittxt.core.logger import Logger
+from gittxt.core.config import ConfigManager
 from gittxt.api.endpoints import (
     inspect,
     upload,
@@ -18,6 +19,12 @@ from gittxt.api.endpoints import (
 
 # Initialize logger for API
 logger = Logger.get_logger(__name__)
+
+# Load the config
+config = ConfigManager.load_config()
+
+# Define unified paths
+UPLOAD_DIR = Path(config.get("upload_dir", OUTPUT_DIR / "uploads"))
 
 app = FastAPI(
     title="Gittxt API",
@@ -35,10 +42,7 @@ app.add_middleware(
 )
 
 # Ensure output/upload folders exist
-startup_dirs = [
-    OUTPUT_DIR,
-    Path("uploads")  # For uploaded ZIPs (used in /upload)
-]
+startup_dirs = [OUTPUT_DIR, UPLOAD_DIR]
 for d in startup_dirs:
     os.makedirs(d, exist_ok=True)
     logger.debug(f"Ensured directory exists: {d}")
