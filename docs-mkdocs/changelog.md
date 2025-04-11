@@ -1,8 +1,21 @@
-# 📦 Changelog
+# 📜 Changelog
 
 All notable changes to **Gittxt** are documented here.
 
 We follow [Semantic Versioning](https://semver.org/) — breaking changes increase the major version, enhancements increase the minor, and bug fixes increase the patch.
+
+---
+
+## [1.7.4] - 2025-04-11
+
+### 📚 Documentation
+- Complete rewrite and reorganization of project documentation into MkDocs structure
+- Added structured pages for CLI reference, plugin usage, API endpoints, and reverse engineering
+
+### 🌐 Streamlit App
+- Introduced `gittxt_streamlit` plugin
+- Enables a visual UI for scanning GitHub repos
+- Features file previews, summary rendering, and ZIP downloads
 
 ---
 
@@ -128,3 +141,4 @@ We follow [Semantic Versioning](https://semver.org/) — breaking changes increa
 - Extension-based file filtering
 
 ---
+
