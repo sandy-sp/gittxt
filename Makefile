@@ -12,6 +12,7 @@ test:
 	rm -rf tests/test_outputs*
 	rm -rf tests/cli_test_outputs
 	rm -rf tests/test_zip_output
+	rm -rf tests/test_repo.zip
 
 lint:
 	poetry run ruff check . --fix
