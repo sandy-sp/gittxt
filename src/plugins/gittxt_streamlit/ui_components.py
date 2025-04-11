@@ -26,8 +26,15 @@ def display_summary(repo_info: dict):
 
 def display_directory_tree(repo_info: dict):
     st.subheader("Directory Tree")
-    st.code(repo_info.get("tree_summary", "(No tree available)"), language="text")
-
+    tree = repo_info.get("tree_summary", "(No tree available)")
+    st.markdown(
+        f"""
+        <div style="max-height: 400px; overflow-y: auto; background-color: #111; padding: 1em; border-radius: 5px;">
+            <pre style="color: white;">{tree}</pre>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 def display_file_type_selector(repo_info: dict):
     st.subheader("File Type Classification by Subcategory")
