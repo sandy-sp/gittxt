@@ -3,6 +3,13 @@ from pathlib import Path
 from gittxt.utils.subcat_utils import detect_subcategory
 from collections import defaultdict
 import asyncio
+from st_aggrid import AgGrid, GridOptionsBuilder
+import pandas as pd
+
+
+def get_data_path(row):
+    """Helper function to extract the data path for treeData."""
+    return row["full_path"].split("/")
 
 
 async def _classify_extensions_by_subcategory(textual_files):
@@ -28,26 +35,53 @@ def display_directory_tree(repo_info: dict):
     st.subheader("Directory Tree")
     tree = repo_info.get("tree_summary", "(No tree available)")
 
-    # Wrap the tree in a styled container
-    st.markdown(
-        """
-        <style>
-        .tree-container {
-            max-height: 200px;
-            overflow-y: auto;
-            background-color: #111;
-            padding: 1em;
-            border-radius: 5px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    # Parse the tree into a structured format
+    tree_lines = tree.split("\n")
+    tree_data = []
+    for line in tree_lines:
+        if line.strip():
+            depth = line.count("│") + line.count("├") + line.count("└")
+            tree_data.append({
+                "name": line.strip("│├└─ "), 
+                "depth": depth, 
+                "full_path": line.strip(),
+                "path_parts": line.strip("│├└─ ").split("/")  # Preprocess path parts
+            })
 
-    # Use st.code for proper formatting inside the styled container
-    st.markdown('<div class="tree-container">', unsafe_allow_html=True)
-    st.code(tree, language="plaintext")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Convert to DataFrame for AgGrid
+    df = pd.DataFrame(tree_data)
+
+    # Validate DataFrame structure
+    if "path_parts" not in df.columns or not all(isinstance(row, list) for row in df["path_parts"]):
+        st.error("Invalid tree structure. Ensure 'path_parts' column contains hierarchical paths.")
+        return
+
+    # Configure AgGrid options
+    gb = GridOptionsBuilder.from_dataframe(df)
+    gb.configure_default_column(editable=False, groupable=True)
+    gb.configure_column("name", header_name="Name", cellRenderer="agGroupCellRenderer")
+    gb.configure_column("depth", header_name="Depth", hide=True)
+    gb.configure_column("full_path", header_name="Full Path", hide=True)
+    gb.configure_grid_options(treeData=True, getDataPath="path_parts")  # Use preprocessed path parts
+    gb.configure_selection("multiple", use_checkbox=True)
+
+    grid_options = gb.build()
+
+    # Render the interactive tree
+    try:
+        response = AgGrid(
+            df,
+            gridOptions=grid_options,
+            height=400,
+            allow_unsafe_jscode=True,
+            enable_enterprise_modules=False,
+        )
+
+        # Get selected rows
+        selected_rows = response["selected_rows"]
+        st.write("Selected Files/Folders:", selected_rows)
+    except Exception as e:
+        st.error(f"Failed to render directory tree: {e}")
 
 
 def display_file_type_selector(repo_info: dict):
