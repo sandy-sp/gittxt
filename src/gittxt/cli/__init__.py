@@ -3,7 +3,6 @@ from .cli_scan import scan
 from gittxt.cli.cli_config import config
 from gittxt.cli.cli_utils import clean
 from gittxt.cli.cli_reverse import reverse_command
-from gittxt.cli.cli_api import app as api_command  
 from gittxt.__init__ import __version__
 
 
@@ -17,7 +16,7 @@ class CustomGroup(click.Group):
 
     def list_commands(self, ctx):
         # Custom order instead of alphabetical
-        return ["scan", "config", "clean", "re", "api"] 
+        return ["scan", "config", "clean", "re"] 
 
 
 @click.group(cls=CustomGroup)
@@ -30,4 +29,3 @@ cli.add_command(scan)
 cli.add_command(config)
 cli.add_command(clean)
 cli.add_command(reverse_command)
-cli.add_command(api_command, name="api") 
