@@ -1,4 +1,5 @@
 from pathlib import Path
+import zipfile
 
 
 def generate_test_repo(base_dir="tests/test_repo"):
@@ -58,5 +59,24 @@ def generate_test_repo(base_dir="tests/test_repo"):
     print(f"✅ Test repo created at: {base}")
 
 
-if __name__ == "__main__":
+def generate_test_zip():
+    # Generate the test repository
     generate_test_repo()
+
+    test_dir = Path("tests/test_repo")
+    zip_path = Path("tests/test_repo.zip")
+
+    # Clean up existing zip file
+    if zip_path.exists():
+        zip_path.unlink()
+
+    # Zip the test repository
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        for file in test_dir.rglob("*"):
+            zipf.write(file, arcname=file.relative_to(test_dir.parent))
+
+    print(f"✅ Created {zip_path}")
+
+
+if __name__ == "__main__":
+    generate_test_zip()
