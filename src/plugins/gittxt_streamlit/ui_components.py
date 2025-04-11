@@ -149,11 +149,9 @@ def display_filter_form(repo_info: dict):
     # Custom textual extension overrides
     filters["custom_textual"] = display_file_type_selector(repo_info)
 
-    filters["size_limit"] = st.slider("Max File Size (KB):", min_value=1, max_value=1000, value=200) * 1024
     filters["output_formats"] = st.multiselect("Output Formats:", ["txt", "json", "md"], default=["txt"], key="formats")
     filters["lite_mode"] = st.checkbox("Lite Mode", value=False, key="lite")
     filters["zip_output"] = st.checkbox("Include ZIP Bundle", value=True, key="zip")
-    filters["tree_depth"] = st.slider("Tree Depth (optional):", min_value=1, max_value=10, value=4)
 
     return filters
 
