@@ -12,6 +12,10 @@ PLUGIN_LIST = {
         "path": PLUGINS_DIR / "gittxt_api",
         "run_cmd": "uvicorn gittxt_api.main:app --reload"
     },
+    "gittxt-streamlit": {
+        "path": PLUGINS_DIR / "gittxt_streamlit",
+        "run_cmd": "streamlit run app.py"
+    }
     # Add future plugins here
 }
 
