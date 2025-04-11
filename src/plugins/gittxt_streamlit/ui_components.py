@@ -149,7 +149,15 @@ def display_filter_form(repo_info: dict):
     # Custom textual extension overrides
     filters["custom_textual"] = display_file_type_selector(repo_info)
 
-    filters["output_formats"] = st.multiselect("Output Formats:", ["txt", "json", "md"], default=["txt"], key="formats")
+    # Convert output formats to tick boxes
+    st.subheader("Output Formats")
+    formats = ["txt", "json", "md"]
+    selected_formats = []
+    for fmt in formats:
+        if st.checkbox(f"Include {fmt.upper()} Format", value=(fmt == "txt"), key=f"format_{fmt}"):
+            selected_formats.append(fmt)
+    filters["output_formats"] = selected_formats
+
     filters["lite_mode"] = st.checkbox("Lite Mode", value=False, key="lite")
     filters["zip_output"] = st.checkbox("Include ZIP Bundle", value=True, key="zip")
 
