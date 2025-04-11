@@ -34,28 +34,28 @@ def display_directory_tree(repo_info: dict):
     st.subheader("Directory Tree")
     tree = repo_info.get("tree_summary", "(No tree available)")
 
-    # Wrap the tree in a styled container
-    st.markdown(
-        """
-        <style>
-        .tree-container {
-            max-height: 200px;
-            overflow-y: auto;
-            background-color: #111;
-            padding: 1em;
-            border-radius: 5px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    # Add a collapsible section using st.expander
+    with st.expander("Show/Hide Directory Tree", expanded=False):
+        # Wrap the tree in a styled container
+        st.markdown(
+            """
+            <style>
+            .tree-container {
+                max-height: 200px;
+                overflow-y: auto;
+                background-color: #111;
+                padding: 1em;
+                border-radius: 5px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Use st.code for proper formatting inside the styled container
-    st.markdown('<div class="tree-container">', unsafe_allow_html=True)
-    st.code(tree, language="plaintext")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
+        # Use st.code for proper formatting inside the styled container
+        st.markdown('<div class="tree-container">', unsafe_allow_html=True)
+        st.code(tree, language="plaintext")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def display_file_type_selector(repo_info: dict):
