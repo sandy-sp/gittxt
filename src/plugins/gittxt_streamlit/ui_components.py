@@ -2,11 +2,22 @@ import streamlit as st
 from pathlib import Path
 from gittxt.utils.subcat_utils import detect_subcategory
 from collections import defaultdict
+import asyncio
+
+
+async def _classify_extensions_by_subcategory(textual_files):
+    subcat_exts = defaultdict(set)
+    for file in textual_files:
+        subcat = await detect_subcategory(file, "TEXTUAL")
+        ext = file.suffix.lower()
+        if ext:
+            subcat_exts[subcat].add(ext)
+    return subcat_exts
 
 
 def display_summary(repo_info: dict):
     summary = repo_info.get("summary", {})
-    st.subheader("📊 Repository Summary")
+    st.subheader("\ud83d\udcca Repository Summary")
     st.markdown(f"**Repo Name**: `{repo_info['repo_name']}`")
     st.markdown(f"**Total Files**: `{summary.get('total_files', 0)}`")
     st.markdown(f"**Estimated Tokens**: `{summary.get('formatted', {}).get('estimated_tokens', '-')}`")
@@ -14,39 +25,28 @@ def display_summary(repo_info: dict):
 
 
 def display_directory_tree(repo_info: dict):
-    st.subheader("🌲 Directory Tree")
+    st.subheader("\ud83c\udf32 Directory Tree")
     st.code(repo_info.get("tree_summary", "(No tree available)"), language="text")
 
 
 def display_file_type_selector(repo_info: dict):
-    st.subheader("📂 File Type Classification")
+    st.subheader("\ud83d\udcc2 File Type Classification by Subcategory")
+    subcat_exts = asyncio.run(_classify_extensions_by_subcategory(repo_info["textual_files"]))
 
-    # Extract extensions from textual and non-textual files
-    ext_counts = defaultdict(int)
-    for path in repo_info.get("textual_files", []) + repo_info.get("non_textual_files", []):
-        ext = path.suffix.lower()
-        if ext:
-            ext_counts[ext] += 1
+    selected_exts = set()
+    cols = st.columns(2)
+    for idx, (subcat, extensions) in enumerate(sorted(subcat_exts.items())):
+        with cols[idx % 2]:
+            st.markdown(f"**{subcat.upper()}**")
+            chosen = st.multiselect(
+                f"Include extensions for {subcat}",
+                options=sorted(extensions),
+                default=sorted(extensions),
+                key=f"subcat_{subcat}"
+            )
+            selected_exts.update(chosen)
 
-    textual_exts = {p.suffix.lower() for p in repo_info.get("textual_files", []) if p.suffix}
-    non_textual_exts = {p.suffix.lower() for p in repo_info.get("non_textual_files", []) if p.suffix}
-
-    # Render two columns
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("**Textual Extensions (editable)**")
-        editable_textual = st.multiselect(
-            "Mark as Textual:",
-            options=sorted(ext_counts),
-            default=sorted(textual_exts),
-            key="textual_selector"
-        )
-    with col2:
-        st.markdown("**Non-Textual Extensions (locked)**")
-        locked = sorted(non_textual_exts - set(editable_textual))
-        st.write(", ".join(locked) or "-")
-
-    return editable_textual
+    return sorted(selected_exts)
 
 
 def display_filter_form(repo_info: dict):
@@ -78,12 +78,12 @@ def display_filter_form(repo_info: dict):
 
 
 def display_outputs(outputs: dict):
-    st.subheader("📥 Download Outputs")
+    st.subheader("\ud83d\udcc5 Download Outputs")
     for fmt, path in outputs.items():
         if Path(path).exists():
             with open(path, "rb") as f:
                 st.download_button(
-                    label=f"⬇️ Download {fmt.upper()} Output",
+                    label=f"\u2b07\ufe0f Download {fmt.upper()} Output",
                     data=f.read(),
                     file_name=Path(path).name,
                     mime="application/octet-stream",
