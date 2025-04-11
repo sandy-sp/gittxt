@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from gittxt.api.models.inspect_models import InspectRequest
-from gittxt.api.services.inspect_service import perform_inspect
+from plugins.gittxt_api.models.inspect_models import InspectRequest
+from plugins.gittxt_api.services.inspect_service import perform_inspect
 
 router = APIRouter(tags=["Inspect"])
 
