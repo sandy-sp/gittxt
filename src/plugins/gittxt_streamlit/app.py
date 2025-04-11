@@ -8,7 +8,8 @@ from plugins.gittxt_streamlit.ui_components import (
     display_summary,
     display_directory_tree,
     display_filter_form,
-    display_outputs
+    display_outputs,
+    display_hidden_icon_with_tooltip 
 )
 from plugins.gittxt_streamlit.state_manager import init_session_state
 
