@@ -6,7 +6,36 @@ We follow [Semantic Versioning](https://semver.org/) — breaking changes increa
 
 ---
 
-## [Unreleased - 1.7.2]
+## [1.7.3] - 2025-04-11
+
+### ✨ Features
+- Introduced plugin management commands in the CLI:
+  - `gittxt plugin list` to view available plugins.
+  - `gittxt plugin install <plugin_name>` to install plugins.
+  - `gittxt plugin uninstall <plugin_name>` to remove plugins.
+  - `gittxt plugin run <plugin_name>` to execute installed plugins.
+- Added `gittxt_api` plugin for running a FastAPI server:
+  - Provides endpoints for scanning repositories, uploading ZIP files, and retrieving summaries.
+  - Includes routes for cleanup, artifact downloads, and reverse engineering.
+
+### 🛠 Improvements
+- Enhanced `gittxt_api` plugin with:
+  - CORS middleware for cross-origin requests.
+  - Health check endpoint (`/health`) to verify API status.
+  - Docker support with `Dockerfile` and `docker-compose.yml` for easy deployment.
+- Improved CLI integration with plugins, allowing seamless management and execution.
+
+### 🧪 Tests
+- Added test coverage for plugin installation, uninstallation, and execution.
+- Verified API endpoints for `gittxt_api` plugin, including scan, upload, and summary retrieval.
+
+### 🐛 Bug Fixes
+- Fixed issues with plugin path resolution in the CLI.
+- Resolved minor logging inconsistencies in `gittxt_api` plugin.
+
+---
+
+## [1.7.2]
 
 ### Added
 - New CLI command: `gittxt re` to reverse engineer source files from `.txt`, `.md`, or `.json` reports.
