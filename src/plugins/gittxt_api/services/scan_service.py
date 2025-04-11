@@ -7,8 +7,8 @@ from gittxt.core.output_builder import OutputBuilder
 from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
-from gittxt.api.dependencies import OUTPUT_DIR
-from gittxt.api.models.scan_models import ScanRequest, ScanResponse
+from plugins.gittxt_api.dependencies import OUTPUT_DIR
+from plugins.gittxt_api.models.scan_models import ScanRequest, ScanResponse
 
 async def perform_scan(request: ScanRequest) -> ScanResponse:
     scan_id = str(uuid4())
