@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from gittxt import __version__
 
-from gittxt.api.routers import inspect, scan, upload, summary, download, cleanup
+from plugins.gittxt_api.routers import inspect, scan, upload, summary, download, cleanup
 
 app = FastAPI(
     title="Gittxt API",
