@@ -7,7 +7,6 @@ from plugins.gittxt_streamlit.pipeline import (
 from plugins.gittxt_streamlit.ui_components import (
     display_summary,
     display_directory_tree,
-    display_file_type_selector,
     display_filter_form,
     display_outputs
 )
@@ -20,7 +19,7 @@ st.title("🧠 Gittxt: GitHub Repo Scanner & Formatter")
 
 # --- Phase 1: GitHub Repo URL Input ---
 with st.form("repo_input_form"):
-    github_url = st.text_input("Enter a GitHub Repository URL", placeholder="https://github.com/user/repo")
+    github_url = st.text_input("Enter a GitHub Repository URL", placeholder="https://github.com/sandy-sp/gittxt")
     submitted = st.form_submit_button("Inspect Repository")
 
 if submitted and github_url:
@@ -54,8 +53,8 @@ if repo_info:
             st.success("Scan complete. You can now download the outputs.")
 
 # --- Phase 3: Display and Download Results ---
-if "outputs" in st.session_state:
-    display_outputs(st.session_state["output_paths"])
+if st.session_state.get("outputs"):
+    display_outputs(st.session_state["outputs"])
     if st.button("Restart & Clean Output"):
         cleanup_output_dir()
         st.session_state.clear()
