@@ -48,6 +48,17 @@ def load_repository_summary(github_url: str, include_default_excludes: bool, inc
     tree_summary = generate_tree(scan_root)
     summary_data = loop.run_until_complete(generate_summary(textual_files + non_textual_files))
 
+    # Display the full summary results
+    print("Repository Summary:")
+    print(f"Repository Name: {repo_name}")
+    print(f"Repository Path: {scan_root}")
+    print(f"Tree Summary: {tree_summary}")
+    print(f"Total Files: {summary_data['total_files']}")
+    print(f"Total Size: {summary_data['formatted']['total_size']}")
+    print(f"Estimated Tokens: {summary_data['formatted']['estimated_tokens']}")
+    print(f"File Type Breakdown: {summary_data['file_type_breakdown']}")
+    print(f"Tokens by Type: {summary_data['formatted']['tokens_by_type']}")
+
     return {
         "repo_name": repo_name,
         "repo_path": str(scan_root),
