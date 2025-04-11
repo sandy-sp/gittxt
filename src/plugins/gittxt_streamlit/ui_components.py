@@ -23,12 +23,35 @@ async def _classify_extensions_by_subcategory(textual_files):
 
 
 def display_summary(repo_info: dict):
+    """
+    Display the repository summary in the Streamlit UI.
+    """
     summary = repo_info.get("summary", {})
+    formatted = summary.get("formatted", {})
+
     st.subheader("**Repository Summary**")
     st.markdown(f"**Repo Name**: `{repo_info['repo_name']}`")
     st.markdown(f"**Total Files**: `{summary.get('total_files', 0)}`")
-    st.markdown(f"**Estimated Tokens**: `{summary.get('formatted', {}).get('estimated_tokens', '-')}`")
-    st.markdown(f"**Total Size**: `{summary.get('formatted', {}).get('total_size', '-')}`")
+    st.markdown(f"**Total Size**: `{formatted.get('total_size', '-')}`")
+    st.markdown(f"**Estimated Tokens**: `{formatted.get('estimated_tokens', '-')}`")
+
+    # Display file type breakdown
+    st.markdown("### File Type Breakdown")
+    file_type_breakdown = summary.get("file_type_breakdown", {})
+    if file_type_breakdown:
+        for file_type, count in file_type_breakdown.items():
+            st.markdown(f"- **{file_type.capitalize()}**: `{count}` files")
+    else:
+        st.markdown("No file type breakdown available.")
+
+    # Display tokens by type
+    st.markdown("### Tokens by File Type")
+    tokens_by_type = formatted.get("tokens_by_type", {})
+    if tokens_by_type:
+        for file_type, tokens in tokens_by_type.items():
+            st.markdown(f"- **{file_type.capitalize()}**: `{tokens}` tokens")
+    else:
+        st.markdown("No token data available.")
 
 
 def display_directory_tree(repo_info: dict):
