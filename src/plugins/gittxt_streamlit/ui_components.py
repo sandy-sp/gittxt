@@ -4,6 +4,7 @@ from gittxt.utils.subcat_utils import detect_subcategory
 from collections import defaultdict
 import asyncio
 import pandas as pd
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT  # Import the default excluded directories
 
 
 def get_data_path(row):
@@ -127,3 +128,48 @@ def display_outputs(outputs: dict):
                     mime="application/octet-stream",
                     key=f"download_{fmt}"
                 )
+
+
+def display_hidden_icon_with_tooltip():
+    # Create a hidden icon with a tooltip
+    st.markdown(
+        f"""
+        <style>
+        .tooltip {{
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }}
+
+        .tooltip .tooltiptext {{
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Position above the icon */
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }}
+
+        .tooltip:hover .tooltiptext {{
+            visibility: visible;
+            opacity: 1;
+        }}
+        </style>
+        <div class="tooltip">
+            ❓
+            <span class="tooltiptext">
+                Default Excluded Directories:<br>
+                {", ".join(EXCLUDED_DIRS_DEFAULT)}
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
