@@ -12,7 +12,7 @@ from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 PLUGIN_OUTPUT_DIR = Path("/tmp/gittxt_plugin_output")
 
 
-def load_repository_summary(github_url: str) -> dict:
+def load_repository_summary(github_url: str, include_default_excludes: bool, include_gitignore: bool) -> dict:
     """
     Clone and analyze a GitHub repo or local path.
     Returns repo metadata including dir tree and file summary.
@@ -27,9 +27,13 @@ def load_repository_summary(github_url: str) -> dict:
     if subdir:
         scan_root = scan_root / subdir
 
-    # Default excludes + ignore file merge
-    dynamic_ignores = load_gittxtignore(scan_root)
-    merged_excludes = list(set(EXCLUDED_DIRS_DEFAULT) | set(dynamic_ignores))
+    # Default excludes + ignore file merge based on user input
+    dynamic_ignores = load_gittxtignore(scan_root) if include_gitignore else []
+    merged_excludes = []
+    if include_default_excludes:
+        merged_excludes = list(set(EXCLUDED_DIRS_DEFAULT) | set(dynamic_ignores))
+    else:
+        merged_excludes = list(set(dynamic_ignores))
 
     scanner = Scanner(
         root_path=scan_root,
@@ -38,7 +42,7 @@ def load_repository_summary(github_url: str) -> dict:
         include_patterns=[],
         exclude_patterns=[],
         progress=False,
-        use_ignore_file=True,
+        use_ignore_file=include_gitignore,
     )
     textual_files, non_textual_files = loop.run_until_complete(scanner.scan_directory())
     tree_summary = generate_tree(scan_root)
