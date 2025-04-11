@@ -17,7 +17,7 @@ async def _classify_extensions_by_subcategory(textual_files):
 
 def display_summary(repo_info: dict):
     summary = repo_info.get("summary", {})
-    st.subheader("\ud83d\udcca Repository Summary")
+    st.subheader("**Repository Summary**")
     st.markdown(f"**Repo Name**: `{repo_info['repo_name']}`")
     st.markdown(f"**Total Files**: `{summary.get('total_files', 0)}`")
     st.markdown(f"**Estimated Tokens**: `{summary.get('formatted', {}).get('estimated_tokens', '-')}`")
@@ -25,12 +25,12 @@ def display_summary(repo_info: dict):
 
 
 def display_directory_tree(repo_info: dict):
-    st.subheader("\ud83c\udf32 Directory Tree")
+    st.subheader("Directory Tree")
     st.code(repo_info.get("tree_summary", "(No tree available)"), language="text")
 
 
 def display_file_type_selector(repo_info: dict):
-    st.subheader("\ud83d\udcc2 File Type Classification by Subcategory")
+    st.subheader("File Type Classification by Subcategory")
     subcat_exts = asyncio.run(_classify_extensions_by_subcategory(repo_info["textual_files"]))
 
     selected_exts = set()
@@ -78,7 +78,7 @@ def display_filter_form(repo_info: dict):
 
 
 def display_outputs(outputs: dict):
-    st.subheader("\ud83d\udcc5 Download Outputs")
+    st.subheader("Download Outputs")
     for fmt, path in outputs.items():
         if Path(path).exists():
             with open(path, "rb") as f:
