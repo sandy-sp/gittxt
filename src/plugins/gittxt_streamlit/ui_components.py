@@ -86,6 +86,15 @@ def display_filter_form(repo_info: dict):
     filters["non_textual_files"] = repo_info["non_textual_files"]
     filters["handler"] = repo_info["handler"]
 
+    # Add checkboxes for default excludes and .gitignore
+    st.subheader("Repository Options")
+    filters["include_default_excludes"] = st.checkbox(
+        "Include Default Excluded Directories", value=True, key="default_excludes"
+    )
+    filters["include_gitignore"] = st.checkbox(
+        "Include .gitignore Rules", value=True, key="gitignore_rules"
+    )
+
     # Extract dirs from tree
     tree_lines = repo_info.get("tree_summary", "").split("\n")
     all_dirs = sorted({line.strip("│├└─ ") for line in tree_lines if line.strip() and not "." in line})
