@@ -20,9 +20,13 @@ st.title("🧠 Gittxt: GitHub Repo Scanner & Formatter")
 # --- Phase 1: GitHub Repo URL Input ---
 with st.form("repo_input_form"):
     github_url = st.text_input("Enter a GitHub Repository URL", placeholder="https://github.com/sandy-sp/gittxt")
-    include_default_excludes = st.checkbox(
-        "Include Default Excluded Directories", value=True, key="default_excludes_checkbox"
-    )
+    col1, col2 = st.columns([9, 1])
+    with col1:
+        include_default_excludes = st.checkbox(
+            "Include Default Excluded Directories", value=True, key="default_excludes_checkbox"
+        )
+    with col2:
+        display_hidden_icon_with_tooltip()  # Add the hidden icon with tooltip
     include_gitignore = st.checkbox(
         "Include .gitignore Rules", value=True, key="gitignore_checkbox"
     )
