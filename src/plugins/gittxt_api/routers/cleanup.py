@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path
 import shutil
 import pathlib
-from gittxt.api.dependencies import OUTPUT_DIR
+from plugins.gittxt_api.dependencies import OUTPUT_DIR
 
 router = APIRouter(tags=["Cleanup"])
 
