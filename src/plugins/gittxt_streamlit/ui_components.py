@@ -35,23 +35,22 @@ def display_summary(repo_info: dict):
     st.markdown(f"**Total Size**: `{formatted.get('total_size', '-')}`")
     st.markdown(f"**Estimated Tokens**: `{formatted.get('estimated_tokens', '-')}`")
 
-    # Display file type breakdown
-    st.markdown("### File Type Breakdown")
+    # Display file type breakdown and tokens in a table
+    st.markdown("### File Type Breakdown and Tokens")
     file_type_breakdown = summary.get("file_type_breakdown", {})
+    tokens_by_type = formatted.get("tokens_by_type", {})
+
     if file_type_breakdown:
-        for file_type, count in file_type_breakdown.items():
-            st.markdown(f"- **{file_type.capitalize()}**: `{count}` files")
+        # Create a DataFrame for better visualization
+        breakdown_data = {
+            "File Type": list(file_type_breakdown.keys()),
+            "Files": list(file_type_breakdown.values()),
+            "Tokens": [tokens_by_type.get(ft, "-") for ft in file_type_breakdown.keys()],
+        }
+        df = pd.DataFrame(breakdown_data)
+        st.table(df)
     else:
         st.markdown("No file type breakdown available.")
-
-    # Display tokens by type
-    st.markdown("### Tokens by File Type")
-    tokens_by_type = formatted.get("tokens_by_type", {})
-    if tokens_by_type:
-        for file_type, tokens in tokens_by_type.items():
-            st.markdown(f"- **{file_type.capitalize()}**: `{tokens}` tokens")
-    else:
-        st.markdown("No token data available.")
 
 
 def display_directory_tree(repo_info: dict):
