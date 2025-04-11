@@ -20,11 +20,21 @@ st.title("🧠 Gittxt: GitHub Repo Scanner & Formatter")
 # --- Phase 1: GitHub Repo URL Input ---
 with st.form("repo_input_form"):
     github_url = st.text_input("Enter a GitHub Repository URL", placeholder="https://github.com/sandy-sp/gittxt")
+    include_default_excludes = st.checkbox(
+        "Include Default Excluded Directories", value=True, key="default_excludes_checkbox"
+    )
+    include_gitignore = st.checkbox(
+        "Include .gitignore Rules", value=True, key="gitignore_checkbox"
+    )
     submitted = st.form_submit_button("Inspect Repository")
 
 if submitted and github_url:
     with st.spinner("Cloning and analyzing repository..."):
-        repo_info = load_repository_summary(github_url)
+        repo_info = load_repository_summary(
+            github_url,
+            include_default_excludes=include_default_excludes,
+            include_gitignore=include_gitignore
+        )
         if repo_info:
             st.session_state["repo_info"] = repo_info
             st.success("Repository loaded successfully!")
