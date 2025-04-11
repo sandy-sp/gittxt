@@ -6,8 +6,8 @@ from uuid import uuid4
 from fastapi import UploadFile
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
-from gittxt.api.dependencies import OUTPUT_DIR
-from gittxt.api.models.upload_models import UploadResponse
+from plugins.gittxt_api.dependencies import OUTPUT_DIR
+from plugins.gittxt_api.models.upload_models import UploadResponse
 
 UPLOAD_DIR = OUTPUT_DIR / "uploads"
 
