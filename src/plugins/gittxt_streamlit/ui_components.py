@@ -48,7 +48,27 @@ def display_summary(repo_info: dict):
             "Tokens": [tokens_by_type.get(ft, "-") for ft in file_type_breakdown.keys()],
         }
         df = pd.DataFrame(breakdown_data)
-        st.table(df)
+
+        # Convert DataFrame to HTML with centered alignment
+        styled_table = df.style.set_table_styles(
+            [{'selector': 'td', 'props': [('text-align', 'center')]},
+             {'selector': 'th', 'props': [('text-align', 'center')]}]
+        ).hide(axis="index").to_html()
+
+        # Extract the <style> block and the table HTML
+        style_block, table_html = styled_table.split('<style type="text/css">', 1)
+        style_block = f"<style>{table_html.split('</style>', 1)[0]}</style>"
+        table_html = table_html.split('</style>', 1)[1]
+
+        # Inject the <style> block and render the table
+        st.markdown(style_block, unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+            {table_html}</div>
+            """,
+            unsafe_allow_html=True
+        )
     else:
         st.markdown("No file type breakdown available.")
 
