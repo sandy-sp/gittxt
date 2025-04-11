@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path
-from gittxt.api.services.utils import load_json_file
-from gittxt.api.dependencies import OUTPUT_DIR
+from plugins.gittxt_api.services.utils import load_json_file
+from plugins.gittxt_api.dependencies import OUTPUT_DIR
 
 router = APIRouter(tags=["Summary"])
 
