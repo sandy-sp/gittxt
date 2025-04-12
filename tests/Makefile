@@ -16,4 +16,4 @@ api-tests:
 # Clean up generated test outputs
 clean:
 	@echo "🗑️ Cleaning up test repo and outputs..."
-	rm -rf tests/cli/test_repo tests/cli/cli_test_outputs tests/api/test_repo tests/api/test_repo.zip
+	rm -rf tests/cli/cli_test_outputs tests/cli/test_outputs tests/cli/test_outputs_lite tests/cli/test_repo tests/cli/test_zip_output tests/api/test_repo tests/api/test_repo.zip
