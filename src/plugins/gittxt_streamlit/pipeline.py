@@ -23,17 +23,17 @@ def load_repository_summary(github_url: str, include_default_excludes: bool, inc
     handler = RepositoryHandler(source=github_url)
     repo_path = loop.run_until_complete(handler.resolve())
     repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
+
+    # Validate subdir path
     scan_root = Path(repo_path)
     if subdir:
         scan_root = scan_root / subdir
+        if not scan_root.exists():
+            raise FileNotFoundError(f"Subdirectory '{subdir}' does not exist in the repository.")
 
-    # Default excludes + ignore file merge based on user input
+    # Merge .gitignore patterns if requested
     dynamic_ignores = load_gittxtignore(scan_root) if include_gitignore else []
-    merged_excludes = []
-    if include_default_excludes:
-        merged_excludes = list(set(EXCLUDED_DIRS_DEFAULT) | set(dynamic_ignores))
-    else:
-        merged_excludes = list(set(dynamic_ignores))
+    merged_excludes = list(set(EXCLUDED_DIRS_DEFAULT if include_default_excludes else []) | set(dynamic_ignores))
 
     scanner = Scanner(
         root_path=scan_root,
@@ -44,20 +44,10 @@ def load_repository_summary(github_url: str, include_default_excludes: bool, inc
         progress=False,
         use_ignore_file=include_gitignore,
     )
+
     textual_files, non_textual_files = loop.run_until_complete(scanner.scan_directory())
     tree_summary = generate_tree(scan_root)
     summary_data = loop.run_until_complete(generate_summary(textual_files + non_textual_files))
-
-    # Display the full summary results
-    print("Repository Summary:")
-    print(f"Repository Name: {repo_name}")
-    print(f"Repository Path: {scan_root}")
-    print(f"Tree Summary: {tree_summary}")
-    print(f"Total Files: {summary_data['total_files']}")
-    print(f"Total Size: {summary_data['formatted']['total_size']}")
-    print(f"Estimated Tokens: {summary_data['formatted']['estimated_tokens']}")
-    print(f"File Type Breakdown: {summary_data['file_type_breakdown']}")
-    print(f"Tokens by Type: {summary_data['formatted']['tokens_by_type']}")
 
     return {
         "repo_name": repo_name,
@@ -115,4 +105,4 @@ def execute_scan_with_filters(github_url: str, filters: dict) -> dict:
 def cleanup_output_dir():
     if PLUGIN_OUTPUT_DIR.exists():
         shutil.rmtree(PLUGIN_OUTPUT_DIR)
-        PLUGIN_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    PLUGIN_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
