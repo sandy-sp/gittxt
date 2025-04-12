@@ -44,6 +44,7 @@ nav:
   - Development:
       - Contributing: development/contributing.md
       - Code of Conduct: development/code-of-conduct.md
+      - Test Suite: development/tests.md 
   - Changelog: changelog.md
 
 markdown_extensions:
