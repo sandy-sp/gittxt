@@ -6,12 +6,12 @@ all: cli-tests api-tests
 # Run CLI tests
 cli-tests:
 	@echo "🔧 Generating test repo in tests/cli/test_repo..."
-	pytest cli --maxfail=5 --disable-warnings -v
+	poetry run pytest cli -v
 
 # Run API tests
 api-tests:
 	@echo "🔧 Generating test repo in tests/api/test_repo..."
-	pytest api --maxfail=5 --disable-warnings -v
+	poetry run pytest api -v
 
 # Clean up generated test outputs
 clean:
