@@ -162,6 +162,16 @@ def display_filter_form(repo_info: dict):
     filters["include_patterns"] = st.text_input("Include Patterns (comma-separated):", key="include_patterns").split(",")
     filters["exclude_patterns"] = st.text_input("Exclude Patterns (comma-separated):", key="exclude_patterns").split(",")
 
+    # Add a download button for Config Scan Filters
+    st.subheader("Config Scan Filters")
+    st.download_button(
+        label="Download Config Scan Filters",
+        data=str(filters),  # Convert filters to a string or JSON for download
+        file_name="config_scan_filters.json",
+        mime="application/json",
+        key="download_config_filters"
+    )
+
     return filters
 
 
