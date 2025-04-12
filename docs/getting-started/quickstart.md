@@ -74,6 +74,12 @@ After scanning, output folders look like this:
 
 ---
 
+## 📷 Demo
+
+![Gittxt Demo](assets/gittxt-demo.gif)
+
+---
+
 ## ✅ Success Checklist
 - [x] CLI shows summary and breakdown
 - [x] `.txt`, `.json`, or `.md` files appear in output dir
