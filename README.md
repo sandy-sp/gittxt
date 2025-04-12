@@ -1,4 +1,4 @@
-> 🚀 **AI-Ready Text Extractor for Git Repos** | CLI tool for dataset prep, summaries & bundling
+🚀 **AI-Ready Text Extractor for Git Repos** | CLI tool for dataset prep, summaries, reverse engineering & bundling
 
 # 📝 Gittxt: Get text from Git repositories in AI-ready formats
 
@@ -18,227 +18,145 @@
 ## ✨ What is Gittxt? 
 ![](./docs/getting-started/assets/gittxt-demo.gif)
 
-**Gittxt** is a modular and configurable CLI tool that converts Git repositories into clean, AI-ready textual datasets. It is built for developers, researchers, and ML engineers who need structured, filtered, and summarized content from codebases and technical documentation.
+**Gittxt** is a powerful CLI and plugin framework that extracts structured text and metadata from Git repositories. It’s designed to help you build AI-ready datasets, analyze large codebases, and even reverse engineer report outputs.
 
-With support for smart file classification, flexible exclusion logic, and multiple output formats, Gittxt is a versatile tool for:
-
-- 🔍 Curating LLM training data from source code
-- 🗃️ Converting repos into structured `.txt`, `.json`, `.md`, and `.zip` outputs
-- 📑 Extracting docs, comments, and markdown files from large monorepos
-- 🧠 Analyzing repositories by token counts, file size, and content types
-- 📦 Bundling outputs for reproducibility and downstream pipelines
-
-It supports both local folders and GitHub URLs with branch/subdir targeting.
+Use it for:
+- 🔍 Curating datasets from code and documentation
+- 🗃️ Generating `.txt`, `.json`, `.md`, and `.zip` bundles
+- 📑 Extracting and classifying technical files by sub-type
+- 🧠 Analyzing size, token count, and file types
+- 🔄 Reconstructing full project trees from summary reports
 
 ---
 
 ## 🚀 Features
 
-- ✅ **Dynamic File-Type Filtering** (extension + MIME + content heuristics)
-- ✅ **Smart Directory Tree Summaries** with depth and exclude support
-- ✅ **Multiple Output Formats**: `.txt`, `.json`, `.md`, `.zip`
-- ✅ **Lite Mode** (`--lite`) for fast, minimal reports
-- ✅ **ZIP Bundling** with `--zip`, including `summary.json`, `manifest.json`, and assets
-- ✅ **Rich Summary Tables** with size, token, and type breakdowns
-- ✅ **.gittxtignore** support for repo-specific exclusions
-- ✅ **Async File I/O** for efficient scanning
-- ✅ **Reverse Engineering** (`gittxt re`) to reconstruct repositories from reports
+- ✅ **File-Type Detection** (extension, MIME, content heuristic)
+- ✅ **.gittxtignore Support** (with `--sync`)
+- ✅ **Subcategory Classification** (docs, config, code, etc.)
+- ✅ **Async File I/O** for scalable performance
+- ✅ **Lite Mode** for minimal outputs (`--lite`)
+- ✅ **Bundled ZIPs** (`--zip`) with manifest, summary, README
+- ✅ **Reverse Engineering** from `.txt`, `.md`, `.json` reports
+- ✅ **Plugin System**: `gittxt-api`, `gittxt-streamlit`, etc.
 
 ---
 
 ## 🏗️ Installation
 
-### 🐍 Using pip (stable)
-
 ```bash
 pip install gittxt
 ```
 
-### 📦 Using Poetry
+Or for development:
 
 ```bash
 git clone https://github.com/sandy-sp/gittxt.git
 cd gittxt
 poetry install
-# Optional Gittxt setup
-poetry run gittxt install
+poetry run gittxt config install  # Optional installer
 ```
+
 ---
 
-## ⚙️ Quickstart Example
+## ⚙️ Quickstart
 
 ```bash
-# Scan and bundle
-gittxt scan https://github.com/sandy-sp/gittxt.git --output-format txt,json --zip --lite
-
-# Reverse engineer from report
-gittxt re exports/gittxt_summary.txt
+gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json --zip --lite
+gittxt re outputs/gittxt_summary.json
 ```
-
-👉 This will:
-
-- Scan the repository root
-- Output `.txt` and `.json` summary files
-- Bundle outputs in a ZIP with manifest and summary
-- Reconstruct original files and structure from a Gittxt report
-
-More examples → [Usage Examples](docs/USAGE_EXAMPLES.md)
 
 ---
 
-## 🖥️ CLI Usage
+## 🖥️ CLI Commands
 
 ```bash
 gittxt scan [OPTIONS] [REPOS]...
+gittxt config [SUBCOMMANDS]
+gittxt clean [--output-dir]
+gittxt re REPORT_FILE [--output-dir]
+gittxt plugin [list|install|run|uninstall]
 ```
-
-📦 Scan directories or GitHub repos (textual only).
-
-### Options
-
-| Option                                      | Description                                     |
-| ------------------------------------------- | ----------------------------------------------- |
-| `-x`, `--exclude-dir`                       | Exclude folder paths                            |
-| `-o`, `--output-dir PATH`                   | Custom output directory                         |
-| `-f`, `--output-format TEXT`                | Comma-separated: txt, json, md                  |
-| `-i`, `--include-patterns TEXT`             | Glob to include (only textual)                  |
-| `-e`, `--exclude-patterns TEXT`             | Glob to exclude                                 |
-| `--zip`                                     | Create a ZIP bundle                             |
-| `--lite`                                    | Generate minimal output instead of full content |
-| `--sync`                                    | Opt-in to .gitignore usage                      |
-| `--size-limit INTEGER`                      | Max file size in bytes                          |
-| `--branch TEXT`                             | Git branch for remote repos                     |
-| `--tree-depth INTEGER`                      | Limit tree output to N levels                   |
-| `--log-level [debug\|info\|warning\|error]` | Set log verbosity level                         |
-| `--help`                                    | Show CLI help and exit                          |
-
-Run `gittxt scan --help` for the full reference.
 
 ---
 
-### Reverse Engineer Command
+## 🔌 Plugin System
 
 ```bash
-gittxt re [OPTIONS] REPORT_FILE
+gittxt plugin list
+gittxt plugin install gittxt-api
+gittxt plugin run gittxt-api
 ```
 
-🔄 Reconstruct original files and structure from Gittxt `.txt`, `.md`, or `.json` reports. Outputs a ZIP with recovered content.
+Plugins include:
 
-#### Options
-
-| Option                | Description                                     |
-| --------------------- | ----------------------------------------------- |
-| `-o`, `--output-dir`  | Custom output directory for reconstructed files |
-
-#### Example Usage
-
-```bash
-gittxt re path/to/report.txt
-```
-
-This will:
-
-- Take a Gittxt-generated report (`.txt`, `.md`, or `.json`)
-- Reconstruct the original file structure as a ZIP archive
-- Save the ZIP to the specified output directory or the current directory by default
-
-📘 Learn more → [Reverse Engineering Guide](docs/reverse_engineer.md)
+- 🧪 `gittxt-api`: FastAPI backend for scanning and summaries
+- 🖥️ `gittxt-streamlit`: Interactive visual dashboard
 
 ---
 
 ## 📦 Output Formats
 
-Each scan produces structured outputs:
-
-```text
+```
 <output_dir>/
-├── text/              # .txt
-├── json/              # .json
-├── md/                # .md
-├── zips/              # .zip (optional)
-│   └── manifest.json, summary.json, outputs/, assets/
+├── txt/
+├── json/
+├── md/
+├── zip/
+│   ├── summary.json
+│   ├── manifest.json
+│   ├── outputs/
+│   └── assets/
 ```
 
-See [Formats Guide](docs/FORMATS.md)
-
 ---
 
-## 🛠 How It Works
-
-1. 🔗 Clone repo (local or GitHub, with branch/subdir support)
-2. 🌲 Walk repo with filtering and MIME rules
-3. 📑 Classify TEXTUAL vs NON-TEXTUAL
-4. 📝 Format output to `.txt`, `.json`, `.md`
-5. 📦 Bundle ZIP with summary + manifest (optional)
-6. 🧹 Clean temp state after scan
-
----
-
-## 🧰 Gittxt Installer
-
-Run the interactive installer to configure Gittxt preferences:
+## 🔄 Reverse Engineer
 
 ```bash
-gittxt config install
+gittxt re report.txt -o ./restored
 ```
 
-This command lets you:
-
-- Set default **output directory** and **formats** (txt/json/md)
-- Configure **log level** (`DEBUG`, `INFO`, `WARNING`, `ERROR`)
-- Enable or disable automatic **ZIP bundling**
-- Define or override:
-  - Textual extensions (e.g. `.py`, `.md`)
-  - Non-textual extensions (e.g. `.png`, `.zip`)
-  - Excluded directories (e.g. `.git`, `node_modules`)
-
-The config is saved to `gittxt-config.json` and used as default for all scans.
+This recreates original file structure in a ZIP from Gittxt `.txt`, `.md`, or `.json` reports.
 
 ---
 
-## 📄 Configuration
+## 📚 Documentation
 
-- CLI flags (e.g., `--output-dir`, `--size-limit`)
-- Environment variables (e.g., `GITTXT_OUTPUT_DIR`)
-- `.gittxtignore` file support for exclusions
+Docs are now organized in a full [MkDocs site](https://your-docs-site-url.com) with:
 
-Config details → [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
-
----
-
-## 🔐 Security Policy
-
-Please report security issues to: [**sandeep.paidipati@gmail.com**](mailto\:sandeep.paidipati@gmail.com)\
-[Security Guidelines](docs/SECURITY.md)
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from the community!
-
-- [Contributing Guide](docs/CONTRIBUTING.md)
-- [Code of Conduct](docs/CODE_OF_CONDUCT.md)
-- [Open Issue](https://github.com/sandy-sp/gittxt/issues/new/choose)
+- ✅ Getting Started
+- ✅ CLI Reference
+- ✅ API Endpoints
+- ✅ Reverse Engineering
+- ✅ Developer & Contributor Guide
 
 ---
 
 ## 🛣️ Roadmap
 
-- ✅ Async file scanning
-- ✅ ZIP archive export with manifest
-- ✅ Lite mode output
-- ⏳ AI-powered summaries (GPT, Claude)
-- ⏳ YAML + CSV output support
-- ⏳ Web UI via FastAPI
+- ✅ Plugin framework with API/Streamlit
+- ✅ Reverse from Gittxt reports
+- ⏳ AI-powered summaries
+- ⏳ Live web UI
 
 ---
 
-## 📄 License
+## 🤝 Contributing
+
+See [Contributing Guide](https://your-docs-site-url.com/development/contributing)
+
+```bash
+make lint     # Code style
+make test     # Run CLI + API tests
+```
+
+---
+
+## 🛡️ License
 
 MIT License © [Sandeep Paidipati](https://github.com/sandy-sp)
 
 ---
 
 Gittxt — **Get text from Git repositories in AI-ready formats.**
-
