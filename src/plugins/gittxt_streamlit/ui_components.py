@@ -129,6 +129,18 @@ def display_filter_form(repo_info: dict):
     filters["non_textual_files"] = repo_info["non_textual_files"]
     filters["handler"] = repo_info["handler"]
 
+    # Convert output formats to tick boxes
+    st.subheader("Output Formats")
+    formats = ["txt", "json", "md"]
+    selected_formats = []
+    for fmt in formats:
+        if st.checkbox(f"Include {fmt.upper()} Format", value=(fmt == "txt"), key=f"format_{fmt}"):
+            selected_formats.append(fmt)
+    filters["output_formats"] = selected_formats
+
+    # Custom textual extension overrides
+    filters["custom_textual"] = display_file_type_selector(repo_info)
+
     # Add checkboxes for default excludes and .gitignore
     st.subheader("Repository Options")
     filters["include_default_excludes"] = st.checkbox(
@@ -145,18 +157,6 @@ def display_filter_form(repo_info: dict):
 
     filters["include_patterns"] = st.text_input("Include Patterns (comma-separated):", key="include_patterns").split(",")
     filters["exclude_patterns"] = st.text_input("Exclude Patterns (comma-separated):", key="exclude_patterns").split(",")
-
-    # Custom textual extension overrides
-    filters["custom_textual"] = display_file_type_selector(repo_info)
-
-    # Convert output formats to tick boxes
-    st.subheader("Output Formats")
-    formats = ["txt", "json", "md"]
-    selected_formats = []
-    for fmt in formats:
-        if st.checkbox(f"Include {fmt.upper()} Format", value=(fmt == "txt"), key=f"format_{fmt}"):
-            selected_formats.append(fmt)
-    filters["output_formats"] = selected_formats
 
     filters["lite_mode"] = st.checkbox("Lite Mode", value=False, key="lite")
     filters["zip_output"] = st.checkbox("Include ZIP Bundle", value=True, key="zip")
