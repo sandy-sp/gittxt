@@ -32,7 +32,7 @@ async def test_health_check():
 async def test_inspect_repo():
     async with httpx.AsyncClient() as client:
         payload = {
-            "repo_path": "https://github.com/sindresorhus/slugify"
+            "repo_path": "https://github.com/sandy-sp/gittxt",
         }
         r = await client.post(f"{API_URL}/inspect/", json=payload)
         assert r.status_code == 200
@@ -44,7 +44,7 @@ async def test_inspect_repo():
 async def test_scan_repo():
     async with httpx.AsyncClient() as client:
         payload = {
-            "repo_path": "https://github.com/sindresorhus/slugify",
+            "repo_path": "https://github.com/sandy-sp/gittxt",
             "lite": True,
             "create_zip": True
         }
@@ -81,7 +81,7 @@ async def test_cleanup():
 
 @pytest.mark.asyncio
 async def test_upload_zip():
-    zip_path = Path("tests/test_repo.zip")  # Make sure it exists
+    zip_path = Path("tests/api/test_repo.zip")  # Make sure it exists
     assert zip_path.exists()
     async with httpx.AsyncClient() as client:
         with zip_path.open("rb") as f:
