@@ -4,7 +4,7 @@ from pathlib import Path
 from gittxt.core.scanner import Scanner
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
-TEST_REPO = Path("tests/cli/test_repo")
+TEST_REPO = Path("cli/test_repo")
 
 
 @pytest.mark.asyncio
