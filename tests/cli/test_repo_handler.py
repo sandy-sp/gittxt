@@ -3,7 +3,7 @@ from pathlib import Path
 from gittxt.core.repository import RepositoryHandler
 import uuid
 
-TEST_REPO = Path("tests/cli/test_repo")
+TEST_REPO = Path("cli/test_repo")
 
 
 @pytest.mark.asyncio
