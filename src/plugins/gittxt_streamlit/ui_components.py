@@ -4,11 +4,10 @@ from gittxt.utils.subcat_utils import detect_subcategory
 from collections import defaultdict
 import asyncio
 import pandas as pd
-from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT  # Import the default excluded directories
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 
 def get_data_path(row):
-    """Helper function to extract the data path for treeData."""
     return row["full_path"].split("/")
 
 
@@ -23,11 +22,9 @@ async def _classify_extensions_by_subcategory(textual_files):
 
 
 def display_summary(repo_info: dict):
-    """
-    Display the repository summary in the Streamlit UI.
-    """
     summary = repo_info.get("summary", {})
     formatted = summary.get("formatted", {})
+    handler = repo_info.get("handler")
 
     st.subheader("**Repository Summary**")
     st.markdown(f"**Repo Name**: `{repo_info['repo_name']}`")
@@ -35,53 +32,45 @@ def display_summary(repo_info: dict):
     st.markdown(f"**Total Size**: `{formatted.get('total_size', '-')}`")
     st.markdown(f"**Estimated Tokens**: `{formatted.get('estimated_tokens', '-')}`")
 
-    # Display file type breakdown and tokens in a table
+    # Show GitHub metadata if available
+    if handler:
+        branch = handler.branch or "main"
+        url = getattr(handler, "repo_url", None) or "(local)"
+        st.markdown(f"**Branch**: `{branch}`")
+        st.markdown(f"**Source URL**: [{url}]({url})")
+
     st.markdown("### File Type Breakdown and Tokens")
     file_type_breakdown = summary.get("file_type_breakdown", {})
     tokens_by_type = formatted.get("tokens_by_type", {})
 
     if file_type_breakdown:
-        # Create a DataFrame for better visualization
-        breakdown_data = {
+        df = pd.DataFrame({
             "File Type": list(file_type_breakdown.keys()),
             "Files": list(file_type_breakdown.values()),
             "Tokens": [tokens_by_type.get(ft, "-") for ft in file_type_breakdown.keys()],
-        }
-        df = pd.DataFrame(breakdown_data)
-
-        # Convert DataFrame to HTML with centered alignment
-        styled_table = df.style.set_table_styles(
-            [{'selector': 'td', 'props': [('text-align', 'center')]},
-             {'selector': 'th', 'props': [('text-align', 'center')]}]
+        })
+        styled = df.style.set_table_styles(
+            [
+                {"selector": "td", "props": [("text-align", "center")]},
+                {"selector": "th", "props": [("text-align", "center")]}]
         ).hide(axis="index").to_html()
 
-        # Extract the <style> block and the table HTML
-        style_block, table_html = styled_table.split('<style type="text/css">', 1)
+        style_block, table_html = styled.split('<style type="text/css">', 1)
         style_block = f"<style>{table_html.split('</style>', 1)[0]}</style>"
         table_html = table_html.split('</style>', 1)[1]
 
-        # Inject the <style> block and render the table
         st.markdown(style_block, unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div style="text-align: center;">
-            {table_html}</div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.markdown(f"<div style='text-align: center;'>{table_html}</div>", unsafe_allow_html=True)
     else:
-        st.markdown("No file type breakdown available.")
+        st.info("No file type breakdown available.")
 
 
 def display_directory_tree(repo_info: dict):
     st.subheader("Directory Tree")
-    tree = repo_info.get("tree_summary", "(No tree available)")
+    tree = repo_info.get("tree_summary", "").strip() or "(No tree available)"
 
-    # Add a collapsible section using st.expander
     with st.expander("Show/Hide Directory Tree", expanded=False):
-        # Wrap the tree in a styled container
-        st.markdown(
-            """
+        st.markdown("""
             <style>
             .tree-container {
                 max-height: 200px;
@@ -91,11 +80,7 @@ def display_directory_tree(repo_info: dict):
                 border-radius: 5px;
             }
             </style>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # Use st.code for proper formatting inside the styled container
+        """, unsafe_allow_html=True)
         st.markdown('<div class="tree-container">', unsafe_allow_html=True)
         st.code(tree, language="plaintext")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -122,43 +107,31 @@ def display_file_type_selector(repo_info: dict):
 
 
 def display_filter_form(repo_info: dict):
-    filters = {}
-    filters["repo_path"] = repo_info["repo_path"]
-    filters["repo_name"] = repo_info["repo_name"]
-    filters["textual_files"] = repo_info["textual_files"]
-    filters["non_textual_files"] = repo_info["non_textual_files"]
-    filters["handler"] = repo_info["handler"]
+    filters = {
+        "repo_path": repo_info["repo_path"],
+        "repo_name": repo_info["repo_name"],
+        "textual_files": repo_info["textual_files"],
+        "non_textual_files": repo_info["non_textual_files"],
+        "handler": repo_info["handler"],
+    }
 
-    # Tick boxes for Output Formats
     st.subheader("Output Formats")
     formats = ["txt", "json", "md"]
-    selected_formats = []
-    for fmt in formats:
-        if st.checkbox(f"Include {fmt.upper()} Format", value=(fmt == "txt"), key=f"format_{fmt}"):
-            selected_formats.append(fmt)
+    selected_formats = [fmt for fmt in formats if st.checkbox(f"Include {fmt.upper()} Format", value=(fmt == "txt"), key=f"format_{fmt}")]
     filters["output_formats"] = selected_formats
 
-    # Add Lite Mode and ZIP Bundle under Output Formats
     filters["lite_mode"] = st.checkbox("Lite Mode", value=False, key="lite")
     filters["zip_output"] = st.checkbox("Include ZIP Bundle", value=True, key="zip")
 
-    # Tick boxes for Repository Options
     st.subheader("Repository Options")
-    filters["include_default_excludes"] = st.checkbox(
-        "Include Default Excluded Directories", value=True, key="default_excludes"
-    )
-    filters["include_gitignore"] = st.checkbox(
-        "Include .gitignore Rules", value=True, key="gitignore_rules"
-    )
+    filters["include_default_excludes"] = st.checkbox("Include Default Excluded Directories", value=True, key="default_excludes")
+    filters["include_gitignore"] = st.checkbox("Include .gitignore Rules", value=True, key="gitignore_rules")
 
-    # Custom textual extension overrides
     filters["custom_textual"] = display_file_type_selector(repo_info)
 
-    # Directory and pattern options
     tree_lines = repo_info.get("tree_summary", "").split("\n")
-    all_dirs = sorted({line.strip("│├└─ ") for line in tree_lines if line.strip() and not "." in line})
+    all_dirs = sorted({line.strip("│├└─ ") for line in tree_lines if line.strip() and "." not in line})
     filters["exclude_dirs"] = st.multiselect("Exclude Directories:", all_dirs, key="exclude_dirs")
-
     filters["include_patterns"] = st.text_input("Include Patterns (comma-separated):", key="include_patterns").split(",")
     filters["exclude_patterns"] = st.text_input("Exclude Patterns (comma-separated):", key="exclude_patterns").split(",")
 
@@ -180,16 +153,13 @@ def display_outputs(outputs: dict):
 
 
 def display_hidden_icon_with_tooltip():
-    # Create a hidden icon with a tooltip
-    st.markdown(
-        f"""
+    st.markdown(f"""
         <style>
         .tooltip {{
             position: relative;
             display: inline-block;
             cursor: pointer;
         }}
-
         .tooltip .tooltiptext {{
             visibility: hidden;
             width: 200px;
@@ -200,13 +170,12 @@ def display_hidden_icon_with_tooltip():
             padding: 5px;
             position: absolute;
             z-index: 1;
-            bottom: 125%; /* Position above the icon */
+            bottom: 125%;
             left: 50%;
             margin-left: -100px;
             opacity: 0;
             transition: opacity 0.3s;
         }}
-
         .tooltip:hover .tooltiptext {{
             visibility: visible;
             opacity: 1;
@@ -219,6 +188,4 @@ def display_hidden_icon_with_tooltip():
                 {", ".join(EXCLUDED_DIRS_DEFAULT)}
             </span>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
