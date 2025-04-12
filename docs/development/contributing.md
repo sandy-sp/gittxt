@@ -1,98 +1,170 @@
-# 🤝 Contributing to Gittxt
+# 🙌 Contributing to Gittxt
 
 Thank you for your interest in contributing to Gittxt!
-This guide outlines how to set up your environment, contribute code, and collaborate through pull requests.
+This guide outlines how to get started with local development, contribute features or fixes, run tests, and follow coding standards.
 
 ---
 
-## 🧱 Project Structure
+## 🧭 Project Structure
 
-```text
-src/gittxt/
-├── cli/        # CLI subcommands
-├── core/       # Scanner, config, logger, builder
-├── formatters/ # txt, json, md, zip output builders
-├── utils/      # File + summary helpers
-plugins/        # Optional extensions (e.g., API, Streamlit)
-tests/          # Unit tests
+```
+src/gittxt/           # Core source code
+├── cli/              # CLI subcommands
+├── core/             # Scanner, repository handler, config, logger
+├── formatters/       # Output builders for txt, json, md, zip
+├── utils/            # Helper modules (file filters, summarizers)
+
+plugins/              # Optional plugins (e.g., FastAPI, Streamlit)
+tests/                # CLI and API test suite
 ```
 
 ---
 
-## 🚀 Quickstart for Local Development
+## 🚀 Quickstart
 
-### 1. Clone the repository
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/sandy-sp/gittxt.git
 cd gittxt
 ```
 
-### 2. Install dependencies (Poetry required)
+### 2. Install Dependencies
 ```bash
 poetry install
 ```
 
-### 3. Run Gittxt
-```bash
-poetry run gittxt scan .
-```
-
-### 4. Use editable install for CLI testing
+### 3. Use Editable Mode (Recommended for Dev)
 ```bash
 poetry install --editable .
 ```
 
+### 4. Run Gittxt
+```bash
+poetry run gittxt scan .
+```
+
+---
+
+## ✅ Code Quality and Linting
+
+Before pushing code or submitting a PR, please run:
+
+```bash
+make lint      # Fix issues with ruff
+make format    # Format with black
+make check     # Run ruff + black --check + poetry check
+```
+
+These help enforce:
+- PEP8 code standards
+- Auto-fixes for common issues
+- Consistent formatting and static analysis
+
 ---
 
 ## 🧪 Running Tests
-Tests are located in the `tests/` folder.
+
+### Full Suite (CLI + API)
 ```bash
-poetry run pytest
+make test
 ```
-To test a specific file:
+
+### Only CLI Tests
 ```bash
-poetry run pytest tests/test_scanner.py
+make cli-tests
+```
+
+### Only API Tests
+```bash
+make api-tests
+```
+
+### Individual Test Example
+```bash
+pytest tests/cli/test_scanner.py::test_scanner_with_include_pattern -v
+```
+
+### Cleanup Test Outputs
+```bash
+make clean
 ```
 
 ---
 
-## 🧩 Working with Plugins
-- Plugins live in `plugins/`
-- Run plugins via CLI:
+## 🧠 What Tests Cover
+
+- CLI flags: `--zip`, `--lite`, `--output-format`, include/exclude patterns
+- `.gittxtignore` behavior and override priority
+- ZIP bundle contents + manifest/summary integrity
+- Markdown/JSON/TXT formatter correctness
+- Subdirectory resolution and GitHub repo handling
+- API routes: `/scan`, `/inspect`, `/upload`, `/summary`, `/cleanup`
+- Reverse engineering from `.txt`, `.md`, `.json` reports
+- Subcategory inference (e.g., code, config, data)
+
+See full [Test Suite Docs](tests.md) for structure and coverage.
+
+---
+
+## 🔌 Working with Plugins
+
+Plugins live in the `plugins/` directory and can be managed via:
 ```bash
 poetry run gittxt plugin run gittxt-api
+poetry run gittxt plugin run gittxt-streamlit
 ```
-- Plugin templates go in `plugin_templates/`
 
 ---
 
-## 🧼 Formatting & Linting
-- Use [Black](https://black.readthedocs.io/) for formatting:
+## 📦 Build Package Locally
 ```bash
-poetry run black src/ tests/
+make build
 ```
-- Ensure commits pass lint and tests
+This builds the distribution using Poetry.
 
 ---
 
-## 🌍 Submitting a Pull Request
-1. Fork the repository
-2. Create a feature branch
+## 🧹 Clear Caches
 ```bash
-git checkout -b feature/my-contribution
+make cache
 ```
-3. Commit with a clear message
+Removes all `__pycache__` folders recursively.
+
+---
+
+## 🧑‍💻 Submitting a Pull Request
+
+### 1. Create a Feature Branch
 ```bash
-git commit -m "feat(cli): add reverse scan from report"
+git checkout -b feature/your-update
 ```
-4. Push to your fork and open a PR
+
+### 2. Follow Conventional Commits
+Example:
+```bash
+git commit -m "feat(cli): add support for --tree-depth"
+```
+
+### 3. Push and Open PR
+```bash
+git push origin feature/your-update
+```
+
+- Clearly explain what changed
+- Add screenshots or logs if needed
+- Link related issues if applicable
 
 ---
 
 ## 🛡 Code of Conduct
-All contributors are expected to follow our [Code of Conduct](code-of-conduct.md).
+Please follow our [Code of Conduct](code-of-conduct.md) in all interactions.
 
 ---
 
-Happy building 🚀
+Thanks for helping improve **Gittxt** for the dev and AI community! ❤️
 
+---
+
+Next:
+- [Code of Conduct ➡](code-of-conduct.md)
+- [Gittxt Test Suite ➡](test.md)
