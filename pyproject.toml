@@ -7,7 +7,7 @@ name = "gittxt"
 version = "1.7.5"
 description = "Gittxt: Get text from Git repositories in AI-ready formats"
 readme = "README.md"
-requires-python = ">=3.9,<3.9.7 || >3.9.7"
+requires-python = ">=3.9,!=3.9.7"
 keywords = [ "llm-dataset", "text-extraction", "git-repos", "ai-preprocessing", "cli-tool", "nlp", "data-pipeline", "repo-analysis", "source-code", "github-scanner", "ai-ready",]
 classifiers = [ "Development Status :: 4 - Beta", "Environment :: Console", "Intended Audience :: Developers", "Intended Audience :: Science/Research", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent", "Programming Language :: Python", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Topic :: Software Development :: Version Control :: Git", "Topic :: Text Processing :: Linguistic", "Topic :: Scientific/Engineering :: Artificial Intelligence", "Topic :: Scientific/Engineering :: Information Analysis", "Topic :: Utilities",]
 dependencies = [ "click>=8.1.3", "gitpython>=3.1.40", "colorama>=0.4.6", "binaryornot>=0.4.4", "aiofiles>=23.2.1", "aiohttp>=3.9.5", "tiktoken>=0.9.0", "humanize>=4.12.2", "rich>=13.9.4", "python-dotenv>=0.21.1",]
