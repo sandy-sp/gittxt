@@ -114,3 +114,7 @@ This will remove:
 Need help writing new tests? Open an issue or ping us in [GitHub Discussions](https://github.com/sandy-sp/gittxt/discussions).
 
 Happy testing 🚀
+
+---
+
+Back: [Contributing](contributing.md)
