@@ -3,8 +3,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-TEST_REPO = Path("tests/test_repo")
-OUTPUT_DIR = Path("tests/cli_test_outputs")
+TEST_REPO = Path("tests/cli/test_repo")
+OUTPUT_DIR = Path("tests/cli/cli_test_outputs")
 
 
 def test_cli_scan_lite_zip():
