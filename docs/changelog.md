@@ -6,6 +6,23 @@ We follow [Semantic Versioning](https://semver.org/) — breaking changes increa
 
 ---
 
+## [1.7.5] - 2025-04-12
+
+### 📝 Documentation
+- Refreshed `README.md` to align with v1.7.x features and structure
+- Linked new MkDocs documentation site in relevant sections
+- Added dedicated sections for `clean`, `plugin`, and `reverse` commands
+- Updated usage examples to reflect real CLI behavior and ZIP bundling logic
+
+### 🚀 Features
+- Introduced full plugin system section in README (API + Streamlit)
+- Included reverse engineering usage and documentation highlights
+- Clarified usage of `.gittxtignore`, `--lite`, and `--zip` modes in examples
+
+### 🧹 Cleanup
+- Removed outdated references to legacy usage docs (`docs/USAGE_EXAMPLES.md`)
+- Refactored README badges, headings, and feature descriptions for consistency
+
 ## [1.7.4] - 2025-04-11
 
 ### 📚 Documentation
