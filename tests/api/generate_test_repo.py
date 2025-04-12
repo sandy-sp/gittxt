@@ -1,8 +1,9 @@
 from pathlib import Path
 import zipfile
+import shutil
 
 
-def generate_test_repo(base_dir="tests/test_repo"):
+def generate_test_repo(base_dir="tests/api/test_repo"):
     base = Path(base_dir).resolve()
     base.mkdir(parents=True, exist_ok=True)
 
@@ -61,10 +62,10 @@ def generate_test_repo(base_dir="tests/test_repo"):
 
 def generate_test_zip():
     # Generate the test repository
-    generate_test_repo()
+    test_dir = Path("tests/api/test_repo")
+    generate_test_repo(test_dir)
 
-    test_dir = Path("tests/test_repo")
-    zip_path = Path("tests/test_repo.zip")
+    zip_path = Path("tests/api/test_repo.zip")
 
     # Clean up existing zip file
     if zip_path.exists():
@@ -76,6 +77,10 @@ def generate_test_zip():
             zipf.write(file, arcname=file.relative_to(test_dir.parent))
 
     print(f"✅ Created {zip_path}")
+
+    # Clean up the test repository folder
+    shutil.rmtree(test_dir)
+    print(f"✅ Deleted test repository folder: {test_dir}")
 
 
 if __name__ == "__main__":
