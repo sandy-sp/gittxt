@@ -165,18 +165,6 @@ def display_filter_form(repo_info: dict):
     return filters
 
 
-def display_download_button(filters):
-    # Add a download button for Config Scan Filters outside the form
-    st.subheader("Config Scan Filters")
-    st.download_button(
-        label="Download Config Scan Filters",
-        data=str(filters),  # Convert filters to a string or JSON for download
-        file_name="config_scan_filters.json",
-        mime="application/json",
-        key="download_config_filters"
-    )
-
-
 def display_outputs(outputs: dict):
     st.subheader("Download Outputs")
     for fmt, path in outputs.items():
