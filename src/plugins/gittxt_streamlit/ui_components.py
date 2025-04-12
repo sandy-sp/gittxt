@@ -138,6 +138,10 @@ def display_filter_form(repo_info: dict):
             selected_formats.append(fmt)
     filters["output_formats"] = selected_formats
 
+    # Add Lite Mode and ZIP Bundle under Output Formats
+    filters["lite_mode"] = st.checkbox("Lite Mode", value=False, key="lite")
+    filters["zip_output"] = st.checkbox("Include ZIP Bundle", value=True, key="zip")
+
     # Tick boxes for Repository Options
     st.subheader("Repository Options")
     filters["include_default_excludes"] = st.checkbox(
@@ -146,8 +150,6 @@ def display_filter_form(repo_info: dict):
     filters["include_gitignore"] = st.checkbox(
         "Include .gitignore Rules", value=True, key="gitignore_rules"
     )
-    filters["lite_mode"] = st.checkbox("Lite Mode", value=False, key="lite")
-    filters["zip_output"] = st.checkbox("Include ZIP Bundle", value=True, key="zip")
 
     # Custom textual extension overrides
     filters["custom_textual"] = display_file_type_selector(repo_info)
