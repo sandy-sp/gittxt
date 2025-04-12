@@ -167,4 +167,4 @@ Thanks for helping improve **Gittxt** for the dev and AI community! ❤️
 
 Next:
 - [Code of Conduct ➡](code-of-conduct.md)
-- [Gittxt Test Suite ➡](test.md)
+- [Gittxt Test Suite ➡](tests.md)
