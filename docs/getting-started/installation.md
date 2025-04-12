@@ -75,6 +75,39 @@ You should see output directories created and summary info printed to your termi
 
 ---
 
+## 🔧 Modular Installation Options (Poetry)
+
+Gittxt is designed to be lightweight. You can install only what you need:
+
+### 🧩 Core CLI Tool Only
+This installs the base `gittxt` CLI without any plugin overhead:
+
+```bash
+poetry install
+```
+
+### 🔌 With Plugins (API & Streamlit)
+If you plan to use the FastAPI backend or Streamlit dashboard:
+
+```bash
+poetry install --with plugins
+```
+
+### 🧪 With Dev Tools (for contributors)
+Install development dependencies (tests, linting, formatting):
+
+```bash
+poetry install --with dev
+```
+
+You can also combine them:
+
+```bash
+poetry install --with plugins,dev
+```
+
+---
+
 ## 💬 Need Help?
 If you face installation issues:
 - Open an issue at [github.com/sandy-sp/gittxt/issues](https://github.com/sandy-sp/gittxt/issues)
