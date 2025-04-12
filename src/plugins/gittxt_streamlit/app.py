@@ -9,9 +9,8 @@ from plugins.gittxt_streamlit.ui_components import (
     display_directory_tree,
     display_filter_form,
     display_outputs,
-    display_hidden_icon_with_tooltip,
-    display_download_button
-)
+    display_hidden_icon_with_tooltip
+)  # Removed display_download_button
 from plugins.gittxt_streamlit.state_manager import init_session_state
 
 st.set_page_config(page_title="Gittxt Streamlit", layout="wide")
@@ -62,8 +61,9 @@ if repo_info:
         filters = display_filter_form(repo_info)
         run_scan = st.form_submit_button("Run Scan")
 
-    if filters:
-        display_download_button(filters)
+    # Removed the call to display_download_button
+    # if filters:
+    #     display_download_button(filters)
 
     if run_scan:
         with st.spinner("Running filtered scan..."):
