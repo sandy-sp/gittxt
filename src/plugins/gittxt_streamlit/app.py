@@ -9,7 +9,8 @@ from plugins.gittxt_streamlit.ui_components import (
     display_directory_tree,
     display_filter_form,
     display_outputs,
-    display_hidden_icon_with_tooltip 
+    display_hidden_icon_with_tooltip,
+    display_download_button
 )
 from plugins.gittxt_streamlit.state_manager import init_session_state
 
@@ -61,7 +62,10 @@ if repo_info:
         filters = display_filter_form(repo_info)
         run_scan = st.form_submit_button("Run Scan")
 
-    if run_scan and filters:
+    if filters:
+        display_download_button(filters)
+
+    if run_scan:
         with st.spinner("Running filtered scan..."):
             output_paths = execute_scan_with_filters(github_url, filters)
             st.session_state["outputs"] = output_paths
