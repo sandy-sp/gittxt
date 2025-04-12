@@ -10,7 +10,7 @@ cli::
 	@echo "🔧 Generating test repo in tests/cli/test_repo..."
 	poetry run pytest cli -v
 	@echo "🗑️ Cleaning up test repo and outputs..."
-	rm -rf cli/cli_test_outputs cli/test_outputs cli/test_outputs_lite cli/test_repo cli/test_zip_output
+	rm -rf cli/cli_test_outputs cli/test_outputs cli/test_outputs_lite cli/test_repo cli/test_zip_output cli/test_repo
 
 # Run API tests
 api::
@@ -24,5 +24,5 @@ api::
 # Clean up generated test outputs
 clean:
 	@echo "🗑️ Cleaning up test repo and outputs..."
-	rm -rf cli/cli_test_outputs cli/test_outputs cli/test_outputs_lite cli/test_repo cli/test_zip_output
+	rm -rf cli/cli_test_outputs cli/test_outputs cli/test_outputs_lite cli/test_repo cli/test_zip_output cli/test_repo
 	rm -rf api/test_repo api/test_repo.zip
