@@ -1,4 +1,6 @@
 import streamlit as st
+import requests
+
 from plugins.gittxt_streamlit.pipeline import (
     load_repository_summary,
     execute_scan_with_filters,
@@ -10,13 +12,28 @@ from plugins.gittxt_streamlit.ui_components import (
     display_filter_form,
     display_outputs,
     display_hidden_icon_with_tooltip
-)  # Removed display_download_button
+)
 from plugins.gittxt_streamlit.state_manager import init_session_state
 
 st.set_page_config(page_title="Gittxt Streamlit", layout="wide")
 init_session_state()
 
 st.title("🧠 Gittxt: GitHub Repo Scanner & Formatter")
+
+
+def validate_github_url(url: str) -> bool:
+    if not url.startswith("https://github.com/"):
+        return False
+    try:
+        parts = url.replace("https://github.com/", "").split("/")
+        if len(parts) < 2:
+            return False
+        api_url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}"
+        response = requests.get(api_url, timeout=5)
+        return response.status_code == 200
+    except Exception:
+        return False
+
 
 # --- Phase 1: GitHub Repo URL Input ---
 with st.form("repo_input_form"):
@@ -27,24 +44,29 @@ with st.form("repo_input_form"):
             "Include Default Excluded Directories", value=True, key="default_excludes_checkbox"
         )
     with col2:
-        display_hidden_icon_with_tooltip()  # Add the hidden icon with tooltip
+        display_hidden_icon_with_tooltip()
     include_gitignore = st.checkbox(
         "Include .gitignore Rules", value=True, key="gitignore_checkbox"
     )
     submitted = st.form_submit_button("Inspect Repository")
 
-if submitted and github_url:
-    with st.spinner("Cloning and analyzing repository..."):
-        repo_info = load_repository_summary(
-            github_url,
-            include_default_excludes=include_default_excludes,
-            include_gitignore=include_gitignore
-        )
-        if repo_info:
-            st.session_state["repo_info"] = repo_info
-            st.success("Repository loaded successfully!")
-        else:
-            st.error("Failed to clone or inspect repository.")
+if submitted:
+    if not github_url:
+        st.warning("\u26a0\ufe0f Please enter a GitHub URL.")
+    elif not validate_github_url(github_url):
+        st.error("\u274c Invalid or inaccessible GitHub repo. Please check the URL.")
+    else:
+        with st.spinner("Cloning and analyzing repository..."):
+            repo_info = load_repository_summary(
+                github_url,
+                include_default_excludes=include_default_excludes,
+                include_gitignore=include_gitignore
+            )
+            if repo_info:
+                st.session_state["repo_info"] = repo_info
+                st.success("\u2705 Repository loaded successfully!")
+            else:
+                st.error("\ud83d\udeab Failed to clone or inspect repository.")
 
 # --- Phase 2: Display Summary & Filters ---
 repo_info = st.session_state.get("repo_info")
@@ -60,10 +82,6 @@ if repo_info:
     with st.form("filters_form"):
         filters = display_filter_form(repo_info)
         run_scan = st.form_submit_button("Run Scan")
-
-    # Removed the call to display_download_button
-    # if filters:
-    #     display_download_button(filters)
 
     if run_scan:
         with st.spinner("Running filtered scan..."):
