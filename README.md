@@ -2,6 +2,7 @@
 
 # 📝 Gittxt: Get text from Git repositories in AI-ready formats
 
+[![Docs](https://img.shields.io/badge/docs-online-blue?logo=mkdocs&labelColor=gray)](https://sandy-sp.github.io/gittxt/)
 [![Python Version](https://img.shields.io/badge/python-≥3.8-blue)](pyproject.toml)
 [![PyPI version](https://badge.fury.io/py/gittxt.svg)](https://pypi.org/project/gittxt/)
 [![Release](https://img.shields.io/github/release/sandy-sp/gittxt.svg)](https://github.com/sandy-sp/gittxt/releases)
