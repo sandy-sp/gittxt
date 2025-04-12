@@ -4,8 +4,8 @@ from pathlib import Path
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
 
-TEST_REPO = Path("tests/test_repo")
-OUTPUT_DIR = Path("tests/test_zip_output")
+TEST_REPO = Path("tests/cli/test_repo")
+OUTPUT_DIR = Path("tests/cli/test_zip_output")
 
 
 @pytest.mark.asyncio
