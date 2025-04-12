@@ -124,7 +124,7 @@ This recreates original file structure in a ZIP from Gittxt `.txt`, `.md`, or `.
 
 ## 📚 Documentation
 
-Docs are now organized in a full [MkDocs site](https://your-docs-site-url.com) with:
+Docs are now organized in a full [Docs site](https://sandy-sp.github.io/gittxt/) with:
 
 - ✅ Getting Started
 - ✅ CLI Reference
@@ -145,7 +145,7 @@ Docs are now organized in a full [MkDocs site](https://your-docs-site-url.com) w
 
 ## 🤝 Contributing
 
-See [Contributing Guide](https://your-docs-site-url.com/development/contributing)
+See [Contributing Guide](https://sandy-sp.github.io/gittxt/development/contributing/)
 
 ```bash
 make lint     # Code style
