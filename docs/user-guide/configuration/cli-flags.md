@@ -12,7 +12,6 @@ Gittxt provides powerful command-line options to control each scan. These flags 
 | `-f`, `--output-format` | Comma-separated formats: `txt`, `json`, `md` |
 | `--zip` | Bundle all outputs into a ZIP archive |
 | `--lite` | Generate minimal outputs (summary + raw content only) |
-| `--log-level` | Log verbosity: `debug`, `info`, `warning`, `error` |
 
 ---
 
@@ -32,16 +31,20 @@ Gittxt provides powerful command-line options to control each scan. These flags 
 | `-x`, `--exclude-dir` | Exclude directory paths (e.g., `node_modules`) |
 | `-i`, `--include-patterns` | Include files matching glob patterns |
 | `-e`, `--exclude-patterns` | Exclude files matching glob patterns |
-| `--sync` | Sync with `.gitignore` exclusions (optional) |
+| `--docs` | Scan only Markdown documentation files (*.md) if no include patterns given |
 | `--size-limit` | Exclude files larger than specified size (in bytes) |
 
 ---
 
-## 🌲 Tree and Summary Control
+## 🧠 Behavior & Summary
 
 | Flag | Description |
 |------|-------------|
-| `--tree-depth` | Limit depth of rendered directory tree |
+| `--branch` | GitHub branch to scan (defaults to `main`) |
+| `--sync` | Use `.gitignore` if present (local only) |
+| `--log-level` | Logging verbosity: `debug`, `info`, `error`, `warning` |
+| `--no-tree` | Omit directory tree section from the output formats |
+| `--tree-depth` | Restrict tree rendering to N levels |
 
 ---
 
