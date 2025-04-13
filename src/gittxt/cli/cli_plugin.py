@@ -25,7 +25,7 @@ def plugin():
 
 @plugin.command("list")
 def list_plugins():
-    console.print("🧩 Available Plugins:\n")
+    console.print("🧙 Available Plugins:\n")
     for name, meta in PLUGIN_LIST.items():
         installed = meta["path"].exists()
         console.print(f"- {name} {'[green](installed)' if installed else '[red](not installed)'}")
@@ -41,6 +41,12 @@ def run_plugin(plugin_name):
     if not plugin["path"].exists():
         console.print(f"[red]❌ Plugin '{plugin_name}' is not installed.[/red]")
         return
+
+    # Check for and install dependencies
+    req_file = plugin["path"] / "requirements.txt"
+    if req_file.exists():
+        console.print(f"[cyan]📦 Installing dependencies for {plugin_name}...[/cyan]")
+        subprocess.run(["pip", "install", "-r", str(req_file)], cwd=plugin["path"])
 
     console.print(f"[cyan]🚀 Launching plugin: {plugin_name}[/cyan]")
     subprocess.run(plugin["run_cmd"].split(), cwd=plugin["path"])
@@ -58,7 +64,6 @@ def install_plugin(plugin_name):
         return
 
     console.print(f"[green]📦 Installing plugin: {plugin_name}[/green]")
-    # Example: just simulate install from internal registry or local template
     template_path = Path(__file__).parent.parent.parent / "plugin_templates" / plugin_name
     if not template_path.exists():
         console.print(f"[red]❌ No local template found for: {plugin_name}[/red]")
