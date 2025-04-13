@@ -73,6 +73,11 @@ async def execute_scan_with_filters(filters: dict) -> dict:
     mode = "lite" if filters.get("lite_mode") else "rich"
     create_zip = filters.get("zip_output", False)
     tree_depth = filters.get("tree_depth")
+    skip_tree = filters.get("no_tree", False)
+
+    include_patterns = filters.get("include_patterns", [])
+    if filters.get("docs_only") and not include_patterns:
+        include_patterns = ["**/*.md"]
 
     builder = OutputBuilder(
         repo_name=repo_name,
@@ -90,6 +95,7 @@ async def execute_scan_with_filters(filters: dict) -> dict:
         repo_path,
         create_zip=create_zip,
         tree_depth=tree_depth,
+        skip_tree=skip_tree,
     )
 
     return {path.suffix.lstrip("."): str(path) for path in output_paths if path and path.exists()}
