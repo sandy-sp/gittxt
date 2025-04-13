@@ -1,5 +1,5 @@
 import streamlit as st
-import requests
+import asyncio
 
 from plugins.gittxt_streamlit.pipeline import (
     load_repository_summary,
@@ -24,15 +24,8 @@ st.title("\U0001f9e0 Gittxt: GitHub Repo Scanner & Formatter")
 def validate_github_url(url: str) -> bool:
     if not url.startswith("https://github.com/"):
         return False
-    try:
-        parts = url.replace("https://github.com/", "").split("/")
-        if len(parts) < 2:
-            return False
-        api_url = f"https://api.github.com/repos/{parts[0]}/{parts[1]}"
-        response = requests.get(api_url, timeout=5)
-        return response.status_code == 200
-    except Exception:
-        return False
+    parts = url.replace("https://github.com/", "").split("/")
+    return len(parts) >= 2
 
 
 # --- Phase 1: GitHub Repo URL Input ---
@@ -54,20 +47,22 @@ if submitted:
     if not github_url:
         st.warning("\u26a0\ufe0f Please enter a GitHub URL.")
     elif not validate_github_url(github_url):
-        st.error("\u274c Invalid or inaccessible GitHub repo. Please check the URL.")
+        st.error("\u274c Invalid or incomplete GitHub repo URL.")
     else:
         with st.spinner("Cloning and analyzing repository..."):
-            repo_info = load_repository_summary(
-                github_url,
-                include_default_excludes=include_default_excludes,
-                include_gitignore=include_gitignore
-            )
-            if repo_info:
+            try:
+                repo_info = asyncio.run(
+                    load_repository_summary(
+                        github_url,
+                        include_default_excludes=include_default_excludes,
+                        include_gitignore=include_gitignore
+                    )
+                )
                 st.session_state["repo_info"] = repo_info
-                st.session_state.pop("outputs", None)  # Clear old outputs if repo reloaded
+                st.session_state.pop("outputs", None)
                 st.success("\u2705 Repository loaded successfully!")
-            else:
-                st.error("\ud83d\udeab Failed to clone or inspect repository.")
+            except Exception as e:
+                st.error(f"\ud83d\udeab Failed to inspect repository: {e}")
 
 # --- Phase 2: Display Summary & Filters ---
 repo_info = st.session_state.get("repo_info")
@@ -86,10 +81,14 @@ if repo_info:
 
     if run_scan:
         with st.spinner("Running filtered scan..."):
-            output_paths = execute_scan_with_filters(github_url, filters)
-            st.session_state["outputs"] = output_paths
-            st.session_state["filters_used"] = filters
-            st.success("Scan complete. You can now download the outputs.")
+            try:
+                cleanup_output_dir()
+                outputs = asyncio.run(execute_scan_with_filters(filters))
+                st.session_state["outputs"] = outputs
+                st.session_state["filters_used"] = filters
+                st.success("\u2705 Scan complete. You can now download the outputs.")
+            except Exception as e:
+                st.error(f"\u274c Scan failed: {e}")
 
 # --- Phase 3: Display and Download Results ---
 if st.session_state.get("outputs"):
