@@ -99,7 +99,7 @@ def execute_scan_with_filters(github_url: str, filters: dict) -> dict:
             tree_depth=filters.get("tree_depth"),
         )
     )
-    return {fmt: str(path) for path in output_paths if path}
+    return {path.suffix.lstrip("."): str(path) for path in output_paths if path}
 
 
 def cleanup_output_dir():
