@@ -12,7 +12,7 @@ gittxt scan [REPO] [OPTIONS]
 
 You can provide:
 - A local path (e.g., `.`)
-- A GitHub URL (e.g., `https://github.com/user/repo`)
+- A GitHub URL (e.g., `https://github.com/sandy-sp/gittxt`)
 
 ---
 
@@ -32,6 +32,8 @@ You can provide:
 | `--branch` | Branch name (GitHub repos only) |
 | `--tree-depth` | Limit directory tree depth |
 | `--log-level` | Logging level: `debug`, `info`, `warning`, `error` |
+| `--docs` | Only scan Markdown docs (e.g. README.md, guides) |
+| `--no-tree` | Exclude directory tree section from all output formats |
 
 ---
 
@@ -44,7 +46,7 @@ gittxt scan https://github.com/sandy-sp/gittxt
 Target a branch or subfolder:
 
 ```bash
-gittxt scan https://github.com/user/repo --branch dev --subdir src
+gittxt scan https://github.com/sandy-sp/gittxt --branch gh-pages --subdir cli-reference
 ```
 
 ---
@@ -67,6 +69,31 @@ gittxt scan . -i "**/*.py" -i "**/*.md"
 
 ---
 
+## 🧪 Scan Command Examples
+
+### Full scan with Markdown and JSON output
+```bash
+gittxt scan https://github.com/sandy-sp/gittxt -f md,json
+```
+
+### Scan only Markdown files
+```bash
+gittxt scan --docs https://github.com/sandy-sp/gittxt
+```
+
+### Skip directory tree
+```bash
+gittxt scan --no-tree https://github.com/sandy-sp/gittxt
+```
+
+### Minimal scan
+```bash
+gittxt scan --lite https://github.com/sandy-sp/gittxt
+```
+
+---
+---
+
 ## ⚠️ Warnings and Tips
 
 - `--branch` is ignored for local paths.
@@ -78,7 +105,7 @@ gittxt scan . -i "**/*.py" -i "**/*.md"
 ## ✅ Sample Command
 
 ```bash
-gittxt scan https://github.com/user/repo \
+gittxt scan https://github.com/sandy-sp/gittxt \
   -f txt,json \
   --zip \
   --lite \
