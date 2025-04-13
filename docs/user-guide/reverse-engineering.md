@@ -62,6 +62,14 @@ project_reconstructed_<timestamp>.zip
 - Only files included in the original scan will be restored
 - Binary/non-textual files are not recoverable from `.txt` or `.md`
 - Edited reports may fail to parse
+- If the report was created with --no-tree, the directory tree will be missing from reconstruction.
+- If --lite was used, asset metadata and detailed formatting may be absent.
+
+You may see CLI warnings like:
+```bash
+⚠️ Note: This report did not include a directory tree. Reconstructed structure may be limited.
+⚠️ Note: No non-textual assets were included in this report.
+```
 
 ---
 
