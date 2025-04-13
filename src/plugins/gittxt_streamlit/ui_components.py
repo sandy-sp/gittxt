@@ -86,24 +86,20 @@ def display_directory_tree(repo_info: dict):
 
 
 def display_file_type_selector(repo_info: dict):
-    with st.expander("⚙️ Advanced Filters: File Types by Subcategory"):
-        st.markdown("This section lets you selectively include extensions for specific content types.")
-        subcat_exts = asyncio.run(_classify_extensions_by_subcategory(repo_info["textual_files"]))
-
-        selected_exts = set()
-        cols = st.columns(2)
-        for idx, (subcat, extensions) in enumerate(sorted(subcat_exts.items())):
-            with cols[idx % 2]:
-                st.markdown(f"**{subcat.upper()}**")
-                chosen = st.multiselect(
-                    f"Include extensions for {subcat}",
-                    options=sorted(extensions),
-                    default=sorted(extensions),
-                    key=f"subcat_{subcat}"
-                )
-                selected_exts.update(chosen)
-
-        return sorted(selected_exts)
+    subcat_exts = asyncio.run(_classify_extensions_by_subcategory(repo_info["textual_files"]))
+    selected_exts = set()
+    cols = st.columns(2)
+    for idx, (subcat, extensions) in enumerate(sorted(subcat_exts.items())):
+        with cols[idx % 2]:
+            st.markdown(f"**{subcat.upper()}**")
+            chosen = st.multiselect(
+                f"Include extensions for {subcat}",
+                options=sorted(extensions),
+                default=sorted(extensions),
+                key=f"subcat_{subcat}"
+            )
+            selected_exts.update(chosen)
+    return sorted(selected_exts)
 
 
 def display_filter_form(repo_info: dict):
@@ -127,24 +123,32 @@ def display_filter_form(repo_info: dict):
     filters["include_default_excludes"] = st.checkbox("Include Default Excluded Directories", value=True, key="default_excludes")
     filters["include_gitignore"] = st.checkbox("Include .gitignore Rules", value=True, key="gitignore_rules")
 
-    filters["custom_textual"] = display_file_type_selector(repo_info)
+    with st.expander("⚙️ Advanced Filters: File Types + Rules"):
+        filters["custom_textual"] = display_file_type_selector(repo_info)
 
-    tree_lines = repo_info.get("tree_summary", "").split("\n")
-    all_dirs = sorted({line.strip("│├└─ ") for line in tree_lines if line.strip() and "." not in line})
-    filters["exclude_dirs"] = st.multiselect("Exclude Directories:", all_dirs, key="exclude_dirs")
-    filters["include_patterns"] = st.text_input("Include Patterns (comma-separated):", key="include_patterns").split(",")
-    filters["exclude_patterns"] = st.text_input("Exclude Patterns (comma-separated):", key="exclude_patterns").split(",")
+        tree_lines = repo_info.get("tree_summary", "").split("\n")
+        all_dirs = sorted({line.strip("│├└─ ") for line in tree_lines if line.strip() and "." not in line})
+        filters["exclude_dirs"] = st.multiselect("Exclude Directories:", all_dirs, key="exclude_dirs")
+        filters["include_patterns"] = st.text_input("Include Patterns (comma-separated):", key="include_patterns").split(",")
+        filters["exclude_patterns"] = st.text_input("Exclude Patterns (comma-separated):", key="exclude_patterns").split(",")
 
     return filters
 
 
 def display_outputs(outputs: dict):
     st.subheader("Download Outputs")
-    cols = st.columns(len(outputs))
-    for idx, (fmt, path) in enumerate(outputs.items()):
-        if Path(path).exists():
-            with open(path, "rb") as f:
-                with cols[idx]:
+    if outputs:
+        st.markdown("""
+        <style>
+        .block-container .element-container .stDownloadButton {
+            display: inline-block;
+            margin-right: 4px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        for fmt, path in outputs.items():
+            if Path(path).exists():
+                with open(path, "rb") as f:
                     st.download_button(
                         label=f"\u2b07\ufe0f {fmt.upper()}",
                         data=f.read(),
