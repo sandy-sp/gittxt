@@ -60,10 +60,11 @@ class MarkdownFormatter:
                     await md.write(f"- **Subdir**: `{self.subdir.strip('/')}`\n")
                 await md.write("\n")
                 # === Directory Tree ===
-                await md.write("## 📂 Directory Tree\n")
-                await md.write("```text\n")
-                await md.write(f"{self.tree_summary}\n")
-                await md.write("```\n\n")
+                if self.tree_summary:
+                    await md.write("## 📁 Directory Tree\n")
+                    await md.write("```text\n")
+                    await md.write(f"{self.tree_summary}\n")
+                    await md.write("```\n\n")
                 # === Textual Files Section ===
                 await md.write("## 📝 Textual Files\n")
                 for file in ordered_files:
@@ -91,10 +92,11 @@ class MarkdownFormatter:
                     )
                 await md.write("- **Format**: `markdown`\n\n")
 
-                await md.write("## 📂 Directory Tree\n")
-                await md.write("```text\n")
-                await md.write(f"{self.tree_summary}\n")
-                await md.write("```\n\n")
+                if self.tree_summary:
+                    await md.write("## 📁 Directory Tree\n")
+                    await md.write("```text\n")
+                    await md.write(f"{self.tree_summary}\n")
+                    await md.write("```\n\n")
 
                 formatted = summary_data.get("formatted", {})
                 await md.write("## 📊 Summary Report\n")
