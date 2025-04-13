@@ -42,11 +42,17 @@ def run_plugin(plugin_name):
         console.print(f"[red]❌ Plugin '{plugin_name}' is not installed.[/red]")
         return
 
-    # Check for and install dependencies
     req_file = plugin["path"] / "requirements.txt"
-    if req_file.exists():
+    marker_file = plugin["path"] / ".installed"
+
+    if req_file.exists() and not marker_file.exists():
         console.print(f"[cyan]📦 Installing dependencies for {plugin_name}...[/cyan]")
-        subprocess.run(["pip", "install", "-r", str(req_file)], cwd=plugin["path"])
+        result = subprocess.run(["pip", "install", "-r", str(req_file)], cwd=plugin["path"])
+        if result.returncode == 0:
+            marker_file.write_text("installed")
+        else:
+            console.print(f"[red]❌ Dependency installation failed for {plugin_name}[/red]")
+            return
 
     console.print(f"[cyan]🚀 Launching plugin: {plugin_name}[/cyan]")
     subprocess.run(plugin["run_cmd"].split(), cwd=plugin["path"])
@@ -86,6 +92,9 @@ def uninstall_plugin(plugin_name):
 
     confirm = click.confirm(f"🗑️ Are you sure you want to delete {plugin_name}?", default=False)
     if confirm:
+        marker_file = plugin["path"] / ".installed"
+        if marker_file.exists():
+            marker_file.unlink()
         shutil.rmtree(plugin["path"])
         console.print(f"[green]✅ Plugin '{plugin_name}' removed.[/green]")
     else:
