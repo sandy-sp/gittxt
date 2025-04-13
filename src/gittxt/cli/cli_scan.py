@@ -58,6 +58,7 @@ console = Console()
     default="warning",
     help="Set log verbosity level.",
 )
+@click.option("--docs", is_flag=True, help="Only scan for documentation files (*.md).")
 def scan(
     repos,
     sync,
@@ -72,6 +73,7 @@ def scan(
     include_patterns,
     exclude_patterns,
     lite,
+    docs,
 ):
     log_level = getattr(logging, log_level.upper(), logging.INFO)
     Logger.setup_logger(force_stdout=True)
@@ -96,6 +98,11 @@ def scan(
     if not requested.issubset(VALID_OUTPUT_FORMATS):
         console.print(f"[red]Invalid format. Allowed: {VALID_OUTPUT_FORMATS}[/red]")
         sys.exit(1)
+
+    # Apply --docs logic if no --include-patterns is passed
+    if docs and not include_patterns:
+        include_patterns = ["**/*.md"]
+        logger.debug("🔍 --docs flag active. Including only .md files.")
 
     mode = "lite" if lite else "rich"
     final_output_dir = (
