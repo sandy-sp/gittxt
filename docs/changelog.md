@@ -6,6 +6,22 @@ We follow [Semantic Versioning](https://semver.org/) — breaking changes increa
 
 ---
 
+## [1.7.6] - 2025-04-13
+
+### ✨ Features
+- Added `--docs` CLI flag to scan only Markdown documentation files (`*.md`) when `--include-patterns` is not specified.
+- Introduced `--no-tree` flag to omit directory tree from all output formats (`.txt`, `.md`, `.json`).
+
+### 🛠 Improvements
+- Reverse engineering now tolerates `.json`, `.md`, and `.txt` reports created with `--lite` or `--no-tree`.
+- CLI warns if tree summary or assets are missing from the report.
+
+### 🧹 Cleanup
+- Isolated plugin dependencies into `requirements.txt` inside each plugin folder (`gittxt-api`, `gittxt-streamlit`).
+- `gittxt plugin run` now installs dependencies before launching plugins.
+- Keeps core CLI tool lightweight and avoids unnecessary installations.
+
+
 ## [1.7.5] - 2025-04-12
 
 ### 📝 Documentation
