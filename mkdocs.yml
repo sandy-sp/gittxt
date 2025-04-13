@@ -29,6 +29,7 @@ theme:
     - content.code.annotate
     - content.code.copy
     - navigation.instant
+  logo: images/logo/gittxt.png
 
 nav:
   - Home: index.md
