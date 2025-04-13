@@ -89,7 +89,7 @@ class OutputBuilder:
             parts = Path(parsed_url.path).parts
             if "tree" in parts:
                 tree_idx = parts.index("tree")
-                subdir_parts = parts[tree_idx + 2 :]  # skip 'tree' and branch
+                subdir_parts = parts[tree_idx + 2 :]
                 if subdir_parts:
                     base_name = f"{base_name}_{'_'.join(subdir_parts)}"
         elif self.repo_url:
@@ -121,10 +121,11 @@ class OutputBuilder:
         repo_path,
         create_zip=False,
         tree_depth=None,
+        skip_tree=False,
     ):
         self.repo_path = Path(repo_path).resolve()
         root_for_tree = self.repo_path / self.subdir if self.subdir else self.repo_path
-        tree_summary = generate_tree(root_for_tree, max_depth=tree_depth)
+        tree_summary = "" if skip_tree else generate_tree(root_for_tree, max_depth=tree_depth)
         summary_data = await generate_summary(textual_files + non_textual_files)
 
         output_files = []
@@ -133,7 +134,7 @@ class OutputBuilder:
         for fmt in self.output_formats:
             FormatterClass = self.FORMATTERS.get(fmt)
             if not FormatterClass:
-                logger.warning(f"⚠️ Unsupported formatter: {fmt}")
+                logger.warning(f"\u26a0\ufe0f Unsupported formatter: {fmt}")
                 continue
 
             formatter = FormatterClass(
@@ -159,10 +160,10 @@ class OutputBuilder:
 
         for result in results:
             if isinstance(result, Exception):
-                logger.error(f"❌ Formatter failed: {result}")
+                logger.error(f"\u274c Formatter failed: {result}")
             elif result:
                 output_files.append(result)
-                logger.info(f"📄 Output generated: {result}")
+                logger.info(f"\ud83d\udcc4 Output generated: {result}")
 
         if create_zip:
             full_output_files = []
@@ -187,7 +188,7 @@ class OutputBuilder:
                     if result:
                         full_output_files.append(result)
                 except Exception as e:
-                    logger.error(f"❌ Formatter {fmt} failed for ZIP bundle: {e}")
+                    logger.error(f"\u274c Formatter {fmt} failed for ZIP bundle: {e}")
 
             zip_formatter = ZipFormatter(
                 repo_name=self._get_dynamic_basename(),
@@ -200,6 +201,6 @@ class OutputBuilder:
             zip_path = await zip_formatter.generate()
             if zip_path:
                 output_files.append(zip_path)
-                logger.info(f"📦 Zipped bundle created: {zip_path}")
+                logger.info(f"\ud83d\udce6 Zipped bundle created: {zip_path}")
 
         return output_files
