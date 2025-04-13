@@ -59,7 +59,11 @@ def reverse_from_report(report_path: str, output_dir: Path = None) -> str:
 
 def parse_json_auto(report_path: str) -> dict:
     with open(report_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError as e:
+            logger.warning(f"⚠️ Failed to parse JSON: {e}")
+            return {}
 
     files = {}
     entries = data.get("files", [])
