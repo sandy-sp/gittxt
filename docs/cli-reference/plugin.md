@@ -5,48 +5,52 @@ The `plugin` command allows you to list, install, run, and uninstall Gittxt exte
 ---
 
 ## ✅ Syntax
+
 ```bash
-gittxt plugin [COMMAND] [PLUGIN_NAME]
+gittxt plugin [subcommand] <plugin_name>
 ```
 
 ---
 
-## 🧩 Subcommands
+## 📋 Subcommands
 
-### `list`
-View available plugins and whether they are installed.
-```bash
-gittxt plugin list
-```
-
----
-
-### `install`
-Install a plugin from local templates.
-```bash
-gittxt plugin install gittxt-api
-```
+| Command             | Description                                      |
+|---------------------|--------------------------------------------------|
+| `list`              | List all available plugins and their install status |
+| `install <plugin>`  | Install a plugin from a local template           |
+| `run <plugin>`      | Launch the plugin (installs dependencies automatically) |
+| `uninstall <plugin>`| Remove the plugin folder                         |
 
 ---
 
-### `uninstall`
-Remove a plugin from your environment.
-```bash
-gittxt plugin uninstall gittxt-api
+## 🧰 Dependency Management
+
+Each plugin manages its own dependencies via a `requirements.txt` file:
+
+```text
+plugins/gittxt-api/requirements.txt
+plugins/gittxt-streamlit/requirements.txt
 ```
 
----
+When you run a plugin using:
 
-### `run`
-Launch a plugin like the API or Streamlit interface.
 ```bash
-gittxt plugin run gittxt-streamlit
+gittxt plugin run gittxt-api
 ```
+
+The tool:
+1. Checks for the plugin folder.
+2. Installs dependencies from `requirements.txt`.
+3. Launches the plugin using the specified run command.
+
+This keeps the core CLI lightweight and free of plugin-specific dependencies like FastAPI or Streamlit.
 
 ---
 
 ## 📁 Plugin Paths
+
 Plugins are located inside the project under:
+
 ```
 plugins/
 ├── gittxt_api/
@@ -58,9 +62,19 @@ Each plugin contains its own app files and configuration.
 ---
 
 ## ⚠️ Notes
-- Plugin templates are expected in `plugin_templates/`
-- CLI warns if a plugin is already installed or missing
-- Installed plugins are sandboxed to the project directory
+
+- CLI warns if a plugin is already installed or missing.
+- Installed plugins are sandboxed to the project directory.
+
+---
+
+## 🧪 Example
+
+```bash
+gittxt plugin list
+gittxt plugin install gittxt-api
+gittxt plugin run gittxt-api
+```
 
 ---
 
