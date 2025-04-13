@@ -18,7 +18,7 @@ from plugins.gittxt_streamlit.state_manager import init_session_state
 st.set_page_config(page_title="Gittxt Streamlit", layout="wide")
 init_session_state()
 
-st.title("🧠 Gittxt: GitHub Repo Scanner & Formatter")
+st.title("\U0001f9e0 Gittxt: GitHub Repo Scanner & Formatter")
 
 
 def validate_github_url(url: str) -> bool:
@@ -64,6 +64,7 @@ if submitted:
             )
             if repo_info:
                 st.session_state["repo_info"] = repo_info
+                st.session_state.pop("outputs", None)  # Clear old outputs if repo reloaded
                 st.success("\u2705 Repository loaded successfully!")
             else:
                 st.error("\ud83d\udeab Failed to clone or inspect repository.")
@@ -78,7 +79,7 @@ if repo_info:
         display_directory_tree(repo_info)
 
     st.markdown("---")
-    st.subheader("🔧 Configure Scan Filters")
+    st.subheader("\U0001f527 Configure Scan Filters")
     with st.form("filters_form"):
         filters = display_filter_form(repo_info)
         run_scan = st.form_submit_button("Run Scan")
@@ -87,6 +88,7 @@ if repo_info:
         with st.spinner("Running filtered scan..."):
             output_paths = execute_scan_with_filters(github_url, filters)
             st.session_state["outputs"] = output_paths
+            st.session_state["filters_used"] = filters
             st.success("Scan complete. You can now download the outputs.")
 
 # --- Phase 3: Display and Download Results ---
