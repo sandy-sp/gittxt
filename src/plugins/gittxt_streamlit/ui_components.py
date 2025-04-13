@@ -96,6 +96,8 @@ def display_filter_form(repo_info: dict):
 
     filters["lite_mode"] = st.checkbox("Lite Mode", value=False, key="lite")
     filters["zip_output"] = st.checkbox("Include ZIP Bundle", value=True, key="zip")
+    filters["docs_only"] = st.checkbox("Only documentation files (.md)", value=False, key="docs")
+    filters["no_tree"] = st.checkbox("Exclude directory tree from output", value=False, key="no_tree")
 
     with st.expander("⚙️ Advanced Filters: File Types + Rules"):
         filters["custom_textual"] = display_file_type_selector(repo_info)
@@ -117,7 +119,7 @@ def display_outputs(outputs: dict):
             if file_path.exists():
                 with open(file_path, "rb") as f:
                     st.download_button(
-                        label=f"\u2b07\ufe0f Download {fmt.upper()}",
+                        label=f"⬇️ Download {fmt.upper()}",
                         data=f.read(),
                         file_name=file_path.name,
                         mime="application/octet-stream",
