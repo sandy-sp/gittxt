@@ -32,7 +32,6 @@ def display_summary(repo_info: dict):
     st.markdown(f"**Total Size**: `{formatted.get('total_size', '-')}`")
     st.markdown(f"**Estimated Tokens**: `{formatted.get('estimated_tokens', '-')}`")
 
-    # Show GitHub metadata if available
     if handler:
         branch = handler.branch or "main"
         url = getattr(handler, "repo_url", None) or "(local)"
@@ -87,23 +86,24 @@ def display_directory_tree(repo_info: dict):
 
 
 def display_file_type_selector(repo_info: dict):
-    st.subheader("File Type Classification by Subcategory")
-    subcat_exts = asyncio.run(_classify_extensions_by_subcategory(repo_info["textual_files"]))
+    with st.expander("⚙️ Advanced Filters: File Types by Subcategory"):
+        st.markdown("This section lets you selectively include extensions for specific content types.")
+        subcat_exts = asyncio.run(_classify_extensions_by_subcategory(repo_info["textual_files"]))
 
-    selected_exts = set()
-    cols = st.columns(2)
-    for idx, (subcat, extensions) in enumerate(sorted(subcat_exts.items())):
-        with cols[idx % 2]:
-            st.markdown(f"**{subcat.upper()}**")
-            chosen = st.multiselect(
-                f"Include extensions for {subcat}",
-                options=sorted(extensions),
-                default=sorted(extensions),
-                key=f"subcat_{subcat}"
-            )
-            selected_exts.update(chosen)
+        selected_exts = set()
+        cols = st.columns(2)
+        for idx, (subcat, extensions) in enumerate(sorted(subcat_exts.items())):
+            with cols[idx % 2]:
+                st.markdown(f"**{subcat.upper()}**")
+                chosen = st.multiselect(
+                    f"Include extensions for {subcat}",
+                    options=sorted(extensions),
+                    default=sorted(extensions),
+                    key=f"subcat_{subcat}"
+                )
+                selected_exts.update(chosen)
 
-    return sorted(selected_exts)
+        return sorted(selected_exts)
 
 
 def display_filter_form(repo_info: dict):
@@ -140,16 +140,18 @@ def display_filter_form(repo_info: dict):
 
 def display_outputs(outputs: dict):
     st.subheader("Download Outputs")
-    for fmt, path in outputs.items():
+    cols = st.columns(len(outputs))
+    for idx, (fmt, path) in enumerate(outputs.items()):
         if Path(path).exists():
             with open(path, "rb") as f:
-                st.download_button(
-                    label=f"\u2b07\ufe0f Download {fmt.upper()} Output",
-                    data=f.read(),
-                    file_name=Path(path).name,
-                    mime="application/octet-stream",
-                    key=f"download_{fmt}"
-                )
+                with cols[idx]:
+                    st.download_button(
+                        label=f"\u2b07\ufe0f {fmt.upper()}",
+                        data=f.read(),
+                        file_name=Path(path).name,
+                        mime="application/octet-stream",
+                        key=f"download_{fmt}"
+                    )
 
 
 def display_hidden_icon_with_tooltip():
