@@ -16,7 +16,7 @@ config = ConfigManager.load_config()
 def reverse_command(report_file, output_dir):
     """
     Reverse engineer a Gittxt report into reconstructed source files.
-    
+
     Takes a Gittxt-generated report (.txt, .md, or .json) and reconstructs
     the original file structure as a ZIP archive.
     """
@@ -30,19 +30,33 @@ def reverse_command(report_file, output_dir):
 
     # Convert output_dir to Path if provided
     output_path = Path(output_dir) if output_dir else None
-    
+
     try:
         with console.status("[cyan]Reconstructing repository from report...[/cyan]"):
             zip_path = reverse_from_report(report_file, output_path)
+
         console.print(f"[bold green]SUCCESS:[/bold green] Reconstructed repository written to: {zip_path}")
+
+        # Optional warning if report might be partial (from --lite or --no-tree)
+        if report_file.endswith(".json"):
+            with open(report_file, "r", encoding="utf-8") as f:
+                import json
+                try:
+                    data = json.load(f)
+                    if "tree_summary" not in data.get("repository", {}):
+                        console.print("[yellow]⚠️ Note: This report did not include a directory tree. Reconstructed structure may be limited.[/yellow]")
+                    if not data.get("assets"):
+                        console.print("[yellow]⚠️ Note: No non-textual assets were included in this report.[/yellow]")
+                except Exception:
+                    pass
+
     except Exception as e:
         console.print(f"[bold red]ERROR:[/bold red] Failed to reverse engineer report: {e}")
         sys.exit(1)
 
-# This allows the command to be run directly
+
 def main():
     reverse_command()
 
 if __name__ == "__main__":
     main()
-
