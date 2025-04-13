@@ -59,6 +59,7 @@ console = Console()
     help="Set log verbosity level.",
 )
 @click.option("--docs", is_flag=True, help="Only scan for documentation files (*.md).")
+@click.option("--no-tree", is_flag=True, help="Exclude directory tree from output.")
 def scan(
     repos,
     sync,
@@ -74,6 +75,7 @@ def scan(
     exclude_patterns,
     lite,
     docs,
+    no_tree,
 ):
     log_level = getattr(logging, log_level.upper(), logging.INFO)
     Logger.setup_logger(force_stdout=True)
@@ -125,6 +127,7 @@ def scan(
             include_patterns,
             exclude_patterns,
             mode,
+            no_tree,
         )
     )
 
@@ -215,6 +218,7 @@ async def _handle_repos(
     include_patterns,
     exclude_patterns,
     mode,
+    skip_tree,
 ):
     for repo_source in repos:
         try:
@@ -231,6 +235,7 @@ async def _handle_repos(
                 include_patterns,
                 exclude_patterns,
                 mode,
+                skip_tree,
             )
         except Exception as e:
             logger.error(f"❌ Failed processing {repo_source}: {e}")
@@ -250,6 +255,7 @@ async def _process_one_repo(
     include_patterns,
     exclude_patterns,
     mode,
+    skip_tree,
 ):
     # Decide local vs. remote
     handler = RepositoryHandler(repo_source, branch=branch)
@@ -311,6 +317,7 @@ async def _process_one_repo(
                 repo_path,
                 create_zip=create_zip,
                 tree_depth=tree_depth,
+                skip_tree=skip_tree,
             )
 
         # Summary
