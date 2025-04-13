@@ -54,8 +54,9 @@ class TextFormatter:
                     await txt_file.write(f"Branch: {self.branch}\n")
                 if self.subdir:
                     await txt_file.write(f"Subdir: {self.subdir.strip('/')}\n")
-                await txt_file.write("\n=== Directory Tree ===\n")
-                await txt_file.write(f"{self.tree_summary}\n\n")
+                if self.tree_summary:
+                    await txt_file.write("=== Directory Tree ===\n")
+                    await txt_file.write(f"{self.tree_summary}\n\n")
                 await txt_file.write("=== Textual Files ===\n")
 
                 for text_file in ordered_files:
@@ -77,8 +78,9 @@ class TextFormatter:
                     await txt_file.write(f"Branch: {self.branch}\n")
                 if self.subdir:
                     await txt_file.write(f"Subdir: {self.subdir.strip('/')}\n")
-                await txt_file.write("\n=== Directory Tree ===\n")
-                await txt_file.write(f"{self.tree_summary}\n\n")
+                if self.tree_summary:
+                    await txt_file.write("=== Directory Tree ===\n")
+                    await txt_file.write(f"{self.tree_summary}\n\n")
 
                 formatted = summary_data.get("formatted", {})
                 await txt_file.write("=== 📊 Summary Report ===\n")
