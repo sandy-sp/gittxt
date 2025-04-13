@@ -64,7 +64,7 @@ class JSONFormatter:
                     "branch": self.branch,
                     "subdir": self.subdir,
                 },
-                "tree_summary": self.tree_summary,
+                **({"tree_summary": self.tree_summary} if self.tree_summary else {}),
                 "files": files,
             }
 
@@ -125,7 +125,7 @@ class JSONFormatter:
                     "url": self.repo_url,
                     "branch": self.branch,
                     "subdir": self.subdir,
-                    "tree_summary": self.tree_summary,
+                    **({"tree_summary": self.tree_summary} if self.tree_summary else {}),
                     "generated_at": datetime.now(timezone.utc).isoformat() + " UTC",
                 },
                 "summary": {
