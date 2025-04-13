@@ -32,6 +32,8 @@ You can scan:
 | `--size-limit` | Skip files larger than N bytes |
 | `--sync` | Sync with `.gitignore` rules |
 | `--log-level` | Logging level: `debug`, `info`, `error`, `warning` |
+| `--docs` | Scan only documentation files (`*.md`) if `--include-patterns` not set |
+| `--no-tree` | Exclude directory tree from output formats |
 
 ---
 
@@ -45,6 +47,16 @@ gittxt scan .
 ### Remote GitHub repo
 ```bash
 gittxt scan https://github.com/user/repo
+```
+
+### Documentation-only scan
+```bash
+gittxt scan --docs https://github.com/user/repo
+```
+
+### Skip directory tree
+```bash
+gittxt scan --no-tree https://github.com/user/repo
 ```
 
 ### Advanced scan
@@ -84,5 +96,4 @@ To see skipped files, run with:
 
 ---
 
-Back: [CLI Overview](index.md) | Next: [Config ➡](config.md)
-
+Back: [CLI Overview](index.md) | Next: [Config ➡️](config.md)
