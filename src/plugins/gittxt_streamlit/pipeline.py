@@ -61,8 +61,6 @@ async def execute_scan_with_filters(filters: dict) -> dict:
     Run a filtered scan using Gittxt core logic and return output paths.
     """
     repo_path = Path(filters.get("repo_path"))
-    textual_files = [Path(p) for p in filters.get("textual_file_paths", [])]
-    non_textual_files = [Path(p) for p in filters.get("non_textual_file_paths", [])]
     repo_name = filters.get("repo_name")
     repo_url = filters.get("repo_url")
     branch = filters.get("branch")
@@ -76,8 +74,25 @@ async def execute_scan_with_filters(filters: dict) -> dict:
     skip_tree = filters.get("no_tree", False)
 
     include_patterns = filters.get("include_patterns", [])
+    exclude_patterns = filters.get("exclude_patterns", [])
     if filters.get("docs_only") and not include_patterns:
         include_patterns = ["**/*.md"]
+
+    exclude_dirs = filters.get("exclude_dirs", [])
+    use_ignore_file = filters.get("include_gitignore", True)
+    dynamic_ignores = load_gittxtignore(repo_path) if use_ignore_file else []
+    merged_excludes = list(set(exclude_dirs) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT))
+
+    scanner = Scanner(
+        root_path=repo_path,
+        exclude_dirs=merged_excludes,
+        size_limit=None,
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
+        progress=False,
+        use_ignore_file=use_ignore_file,
+    )
+    textual_files, non_textual_files = await scanner.scan_directory()
 
     builder = OutputBuilder(
         repo_name=repo_name,
