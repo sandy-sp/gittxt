@@ -1,17 +1,19 @@
 # 🔌 Plugin System Overview
 
-Gittxt supports a modular plugin system that allows you to extend its capabilities with optional tools and user interfaces.
+Gittxt supports optional plugins to extend its functionality beyond the CLI.
 
-This guide introduces the plugin system and how to interact with plugins using the CLI.
+Plugins currently include:
+- 🧠 `gittxt-api`: FastAPI backend for web/app integrations
+- 📊 `gittxt-streamlit`: Streamlit UI for interactive scans and downloads
 
 ---
 
-## 🧩 What Are Plugins?
+## ⚙️ How Plugins Work
 
-Plugins are optional add-ons placed in the `plugins/` directory. They can include:
-- 🧠 API servers (e.g., FastAPI backend)
-- 🌐 Web UIs (e.g., Streamlit app)
-- 🛠 Custom tools for export, post-processing, or automation
+Each plugin:
+- Resides under the `plugins/` directory
+- Is launched using `gittxt plugin run <name>`
+- Can be installed/uninstalled via CLI
 
 ---
 
@@ -30,6 +32,13 @@ gittxt plugin [COMMAND]
 | `uninstall <name>` | Remove a plugin from your system |
 | `run <name>` | Launch a plugin (e.g., API server, Streamlit UI) |
 
+### 🧪 Example Commands
+```bash
+gittxt plugin list
+gittxt plugin install gittxt-api
+gittxt plugin run gittxt-api
+```
+
 ---
 
 ## 🧰 Plugin Directory
@@ -45,9 +54,25 @@ Each plugin is self-contained with its own dependencies and entry points.
 
 ---
 
-## ⚙️ Plugin Requirements
-- Python dependencies are listed in `requirements.txt` or managed via Poetry
-- Plugin `run` commands are defined in `cli_plugin.py`
+## 🧰 Plugin Requirements
+
+Each plugin has its own `requirements.txt`. For example:
+
+```text
+plugins/gittxt-api/requirements.txt
+plugins/gittxt-streamlit/requirements.txt
+```
+
+When you run a plugin via:
+```bash
+gittxt plugin run gittxt-streamlit
+```
+Gittxt will:
+1. Check if the plugin is installed
+2. Automatically install any required dependencies from `requirements.txt`
+3. Launch the plugin in the correct working directory
+
+✅ This keeps the **core CLI lightweight** and avoids bundling unnecessary dependencies.
 
 ---
 
