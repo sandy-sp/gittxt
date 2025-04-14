@@ -7,6 +7,7 @@ import requests
 from scan.pipeline import full_cli_equivalent_scan
 
 CHAT_HISTORY_KEY = "ai_chat_history"
+MAX_TOKENS = 8000
 
 
 def run_ai_summary_ui():
@@ -21,6 +22,17 @@ def run_ai_summary_ui():
         ollama_url = st.text_input("\U0001F310 Ollama Endpoint (http://localhost:11434)")
 
     repo_url = st.text_input("\U0001F4E6 GitHub Repository URL", placeholder="https://github.com/username/repo")
+
+    selected_model = None
+    available_models = []
+
+    if api_key:
+        available_models = get_openai_models(api_key)
+    elif ollama_url:
+        available_models = get_ollama_models(ollama_url)
+
+    if available_models:
+        selected_model = st.selectbox("Select LLM Model", available_models)
 
     if st.button("\U0001F680 Analyze Repository") and repo_url and (api_key or ollama_url):
         with st.status("Running docs-only scan...", expanded=True):
@@ -47,15 +59,33 @@ def run_ai_summary_ui():
 
             st.session_state.repo_docs = result
             md_files = result["output_files"]
-            context = "\n\n".join(Path(f).read_text() for f in md_files if Path(f).suffix == ".md")
+            context_parts = []
+            token_estimate = 0
+            used_files = []
+
+            for f in md_files:
+                if Path(f).suffix == ".md":
+                    text = Path(f).read_text()
+                    tokens = len(text.split())  # crude token est.
+                    if token_estimate + tokens > MAX_TOKENS:
+                        break
+                    context_parts.append(f"\n\n### {Path(f).name}\n\n{text}")
+                    token_estimate += tokens
+                    used_files.append(Path(f).name)
+
+            context = "\n".join(context_parts)
 
             if api_key:
-                summary = generate_summary_with_llm(context, model="gpt-3.5-turbo", api_key=api_key)
+                summary = generate_summary_with_llm(context, model=selected_model or "gpt-3.5-turbo", api_key=api_key)
             elif ollama_url:
-                summary = generate_summary_with_llm(context, model="llama3", ollama_url=ollama_url)
+                summary = generate_summary_with_llm(context, model=selected_model or "llama3", ollama_url=ollama_url)
 
             st.markdown("### \U0001F4DC Repository Summary")
             st.info(summary)
+
+            st.markdown("**Files Used:**")
+            for f in used_files:
+                st.code(f, language="text")
 
             st.session_state[CHAT_HISTORY_KEY] = [{"role": "system", "content": summary}]
 
@@ -75,9 +105,9 @@ def run_ai_summary_ui():
                 st.markdown(user_input)
 
             if api_key:
-                reply = chat_with_llm(st.session_state[CHAT_HISTORY_KEY], api_key=api_key)
+                reply = chat_with_llm(st.session_state[CHAT_HISTORY_KEY], model=selected_model or "gpt-3.5-turbo", api_key=api_key)
             elif ollama_url:
-                reply = chat_with_llm(st.session_state[CHAT_HISTORY_KEY], ollama_url=ollama_url)
+                reply = chat_with_llm(st.session_state[CHAT_HISTORY_KEY], model=selected_model or "llama3", ollama_url=ollama_url)
             else:
                 reply = "❌ No valid LLM backend."
 
@@ -126,3 +156,23 @@ def chat_with_llm(history, model="gpt-3.5-turbo", api_key=None, ollama_url=None)
         return response.json()["message"]["content"].strip()
 
     return "❌ No valid LLM credentials."
+
+
+def get_openai_models(api_key):
+    try:
+        openai.api_key = api_key
+        models = openai.Model.list()
+        return [m.id for m in models.data if m.id.startswith("gpt")]
+    except Exception as e:
+        st.warning(f"OpenAI model listing failed: {e}")
+        return []
+
+
+def get_ollama_models(ollama_url):
+    try:
+        response = requests.get(f"{ollama_url}/api/tags")
+        data = response.json()
+        return [m["name"] for m in data.get("models", [])]
+    except Exception as e:
+        st.warning(f"Ollama model listing failed: {e}")
+        return []
