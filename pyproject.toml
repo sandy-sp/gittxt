@@ -4,8 +4,8 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "gittxt"
-version = "1.7.5"
-description = "Gittxt: Get text from Git repositories in AI-ready formats"
+version = "1.7.7"
+description = "Gittxt: Get Text from Git — Optimized for AI."
 readme = "README.md"
 requires-python = ">=3.9,!=3.9.7"
 keywords = [ "llm-dataset", "text-extraction", "git-repos", "ai-preprocessing", "cli-tool", "nlp", "data-pipeline", "repo-analysis", "source-code", "github-scanner", "ai-ready",]
