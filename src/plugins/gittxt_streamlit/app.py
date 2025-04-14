@@ -1,7 +1,6 @@
-# src/plugins/gittxt_streamlit/app.py
-
 import streamlit as st
 import asyncio
+import humanize
 from pathlib import Path
 from pipeline import full_cli_equivalent_scan
 from ui_components import (
@@ -12,19 +11,19 @@ from ui_components import (
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 st.set_page_config(page_title="Gittxt Streamlit Plugin", layout="wide")
-st.title("🧾 Gittxt: Scan GitHub Repos to Text")
+st.title("Gittxt: Get text from Git repositories in AI-ready formats.")
 
 if "scan_result" not in st.session_state:
     st.session_state.scan_result = None
 
 # --- Main UI Input ---
 st.subheader("📥 Enter GitHub Repository URL")
-repo_url = st.text_input("GitHub URL or Local Path", placeholder="https://github.com/user/repo")
+repo_url = st.text_input("GitHub URL", placeholder="https://github.com/sandy-sp/gittxt", label_visibility="collapsed")
 
 # --- Filter Settings Section with Toggle ---
 col1, col2 = st.columns([0.9, 0.1])
 with col1:
-    st.subheader("🧩 Filter Settings")
+    st.subheader("📑 Filter Settings")
 with col2:
     use_defaults = st.toggle("Use Default Filter Settings", value=True, label_visibility="collapsed")
 
@@ -33,7 +32,7 @@ if use_defaults:
     include_patterns = ""
     exclude_patterns = ""
     exclude_dirs = ",".join(EXCLUDED_DIRS_DEFAULT)
-    size_limit = 1_000_000
+    size_limit = 10_000_000
     tree_depth = 5
 
     with st.expander("🔍 Default Filter Preview", expanded=False):
