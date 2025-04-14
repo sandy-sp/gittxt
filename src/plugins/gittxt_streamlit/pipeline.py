@@ -19,7 +19,7 @@ async def full_cli_equivalent_scan(repo_url: str, filters: dict) -> dict:
     """
     branch = filters.get("branch")
     subdir = filters.get("subdir")
-    include_patterns = filters.get("include_patterns", [])
+    docs_only = filters.get("docs_only", False)
     exclude_patterns = filters.get("exclude_patterns", [])
     exclude_dirs = filters.get("exclude_dirs", [])
     size_limit = filters.get("size_limit")
@@ -30,6 +30,12 @@ async def full_cli_equivalent_scan(repo_url: str, filters: dict) -> dict:
     tree_depth = filters.get("tree_depth")
     skip_tree = filters.get("skip_tree", False)
     sync_ignore = filters.get("sync", False)
+
+    # Set include patterns based on docs_only
+    if docs_only:
+        include_patterns = ["**/*.md"]
+    else:
+        include_patterns = filters.get("include_patterns", [])
 
     handler = RepositoryHandler(repo_url, branch=branch, subdir=subdir)
     await handler.resolve()
@@ -43,7 +49,6 @@ async def full_cli_equivalent_scan(repo_url: str, filters: dict) -> dict:
     dynamic_ignores = load_gittxtignore(scan_root) if sync_ignore else []
     merged_excludes = list(set(exclude_dirs + dynamic_ignores + EXCLUDED_DIRS_DEFAULT))
 
-    # Warn if include_patterns targets non-textual
     for pattern in include_patterns:
         ext = Path(pattern).suffix.lower()
         if ext and not FiletypeConfigManager.is_known_textual_ext(ext):
