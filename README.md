@@ -1,4 +1,18 @@
+> 🚀 **AI-Ready Text Extractor for Git Repos** | CLI tool for dataset prep, summaries, reverse engineering & bundling
+
 # 🚀 Gittxt: Get Text from Git — Optimized for AI
+
+[![Docs](https://img.shields.io/badge/docs-online-blue?logo=mkdocs&labelColor=gray)](https://sandy-sp.github.io/gittxt/)
+[![Python Version](https://img.shields.io/badge/python-≥3.9-blue)](pyproject.toml)
+[![PyPI version](https://badge.fury.io/py/gittxt.svg)](https://pypi.org/project/gittxt/)
+[![Release](https://img.shields.io/github/release/sandy-sp/gittxt.svg)](https://github.com/sandy-sp/gittxt/releases)
+[![Tested with Pytest](https://img.shields.io/badge/tested%20with-pytest-9cf.svg)](https://docs.pytest.org/en/stable/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/gittxt)](https://pypi.org/project/gittxt/)
+![GitHub repo size](https://img.shields.io/github/repo-size/sandy-sp/gittxt)
+![GitHub top language](https://img.shields.io/github/languages/top/sandy-sp/gittxt)
+[![Build Status](https://github.com/sandy-sp/gittxt/actions/workflows/release.yml/badge.svg)](https://github.com/sandy-sp/gittxt/actions)
+[![Made for LLMs](https://img.shields.io/badge/LLM%20ready-Yes-brightgreen)](https://github.com/sandy-sp/gittxt)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Gittxt** is an open-source tool that transforms GitHub repositories into LLM-compatible datasets.
 
