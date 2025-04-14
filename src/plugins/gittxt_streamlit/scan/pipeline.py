@@ -1,5 +1,3 @@
-# src/plugins/gittxt_streamlit/pipeline.py
-
 import asyncio
 from pathlib import Path
 from gittxt.core.repository import RepositoryHandler
