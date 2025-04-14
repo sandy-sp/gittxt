@@ -15,18 +15,24 @@ def section_filters():
 
 
 def section_options():
-    lite_mode = st.checkbox("Lite Mode", value=False)
-    zip_bundle = st.checkbox("Create ZIP Bundle", value=False)
-    skip_tree = st.checkbox("Skip Directory Tree", value=False)
-    sync_ignore = st.checkbox("Use .gittxtignore", value=False)
+    st.subheader("📦 Download Options")
+    col1, col2 = st.columns(2)
 
-    st.markdown("**Output Formats:**")
-    txt = st.checkbox(".txt", value=True)
-    md = st.checkbox(".md", value=True)
-    json = st.checkbox(".json", value=True)
+    with col1:
+        lite_mode = st.checkbox("Lite Mode", value=False)
+        skip_tree = st.checkbox("Skip Directory Tree", value=False)
+        sync_ignore = st.checkbox("Use .gittxtignore", value=False)
+        docs_only = st.checkbox("Docs Only", value=False)
+
+    with col2:
+        txt = st.checkbox(".txt", value=True)
+        md = st.checkbox(".md", value=True)
+        json = st.checkbox(".json", value=True)
+        zip_bundle = st.checkbox("Create ZIP Bundle", value=False)
+
     selected_formats = [fmt for fmt, checked in zip(["txt", "md", "json"], [txt, md, json]) if checked]
 
-    return lite_mode, zip_bundle, skip_tree, sync_ignore, selected_formats
+    return lite_mode, skip_tree, sync_ignore, docs_only, selected_formats, zip_bundle
 
 
 def render_scan_result(result):
