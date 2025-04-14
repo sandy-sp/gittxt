@@ -1,4 +1,3 @@
-# ai/ai_summary.py
 import streamlit as st
 import asyncio
 from pathlib import Path
@@ -33,6 +32,7 @@ def run_ai_summary_ui():
     include_json = st.checkbox("Include .json files", value=False)
     context_mode = st.radio("Select Context Mode", ["Docs Only", "Full Files"])
     full_mode = context_mode == "Full Files"
+    docs_only = context_mode == "Docs Only"
 
     selected_model = None
     available_models = []
@@ -46,6 +46,10 @@ def run_ai_summary_ui():
         selected_model = st.selectbox("Select LLM Model", available_models)
 
     if st.button("\U0001F680 Analyze Repository") and repo_url and (api_key or ollama_url):
+        context = ""
+        used_files = []
+        token_est = 0
+
         with st.status("Running scan...", expanded=True):
             filters = {
                 "branch": None,
@@ -61,7 +65,7 @@ def run_ai_summary_ui():
                 "skip_tree": True,
                 "tree_depth": 5,
                 "sync": False,
-                "docs_only": False,
+                "docs_only": docs_only,
             }
             result = asyncio.run(full_cli_equivalent_scan(repo_url, filters))
             if result.get("error"):
@@ -77,22 +81,25 @@ def run_ai_summary_ui():
                 full_mode=full_mode
             )
 
-            if token_est > 8000:
-                st.warning(f"⚠️ Total estimated tokens: {token_est}. Some models may truncate.")
+        with st.expander("\U0001F50D Context Preview", expanded=False):
+            st.code(context[:1000] or "⚠️ No context extracted", language="markdown")
 
-            if api_key:
-                summary = generate_summary_with_llm(context, model=selected_model or "gpt-3.5-turbo", api_key=api_key)
-            elif ollama_url:
-                summary = generate_summary_with_llm(context, model=selected_model or "llama3", ollama_url=ollama_url)
+        if token_est > 8000:
+            st.warning(f"⚠️ Total estimated tokens: {token_est}. Some models may truncate.")
 
-            st.markdown("### \U0001F4DC Repository Summary")
-            st.info(summary)
+        if api_key:
+            summary = generate_summary_with_llm(context, model=selected_model or "gpt-3.5-turbo", api_key=api_key)
+        elif ollama_url:
+            summary = generate_summary_with_llm(context, model=selected_model or "llama3", ollama_url=ollama_url)
 
-            st.markdown("**Files Used:**")
-            for f in used_files:
-                st.code(f, language="text")
+        st.markdown("### \U0001F4DC Repository Summary")
+        st.info(summary)
 
-            st.session_state[CHAT_HISTORY_KEY] = [{"role": "system", "content": summary}]
+        st.markdown("**Files Used:**")
+        for f in used_files:
+            st.code(f, language="text")
+
+        st.session_state[CHAT_HISTORY_KEY] = [{"role": "system", "content": summary}]
 
     st.markdown("### \U0001F4AC Chat with the Repo")
 
@@ -122,7 +129,7 @@ def run_ai_summary_ui():
                 else:
                     st.warning("❌ No valid LLM backend.")
 
-        with st.expander("💾 Export Chat History"):
+        with st.expander("\U0001F4BE Export Chat History"):
             export_format = st.selectbox("Choose Format", [".json", ".md"])
             if st.button("Export Chat"):
                 history = st.session_state[CHAT_HISTORY_KEY]
