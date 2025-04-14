@@ -2,12 +2,18 @@
 import streamlit as st
 import asyncio
 from pathlib import Path
-import openai
-import requests
 from scan.pipeline import full_cli_equivalent_scan
+from ai.llm_handler import (
+    get_openai_models,
+    get_ollama_models,
+    generate_summary_with_llm,
+    chat_with_llm,
+    stream_chat_response
+)
+from ai.context_builder import build_context
+from ai.chat_exporter import export_chat_as_json, export_chat_as_markdown
 
 CHAT_HISTORY_KEY = "ai_chat_history"
-MAX_TOKENS = 8000
 
 
 def run_ai_summary_ui():
@@ -23,6 +29,11 @@ def run_ai_summary_ui():
 
     repo_url = st.text_input("\U0001F4E6 GitHub Repository URL", placeholder="https://github.com/username/repo")
 
+    include_txt = st.checkbox("Include .txt files", value=False)
+    include_json = st.checkbox("Include .json files", value=False)
+    context_mode = st.radio("Select Context Mode", ["Docs Only", "Full Files"])
+    full_mode = context_mode == "Full Files"
+
     selected_model = None
     available_models = []
 
@@ -35,7 +46,7 @@ def run_ai_summary_ui():
         selected_model = st.selectbox("Select LLM Model", available_models)
 
     if st.button("\U0001F680 Analyze Repository") and repo_url and (api_key or ollama_url):
-        with st.status("Running docs-only scan...", expanded=True):
+        with st.status("Running scan...", expanded=True):
             filters = {
                 "branch": None,
                 "subdir": None,
@@ -43,14 +54,14 @@ def run_ai_summary_ui():
                 "exclude_patterns": [],
                 "exclude_dirs": [],
                 "size_limit": 5_000_000,
-                "output_formats": ["md"],
+                "output_formats": ["md", "txt", "json"],
                 "output_dir": "/tmp/gittxt_ai_summary",
                 "lite": True,
                 "zip": False,
                 "skip_tree": True,
                 "tree_depth": 5,
                 "sync": False,
-                "docs_only": True,
+                "docs_only": False,
             }
             result = asyncio.run(full_cli_equivalent_scan(repo_url, filters))
             if result.get("error"):
@@ -58,22 +69,16 @@ def run_ai_summary_ui():
                 return
 
             st.session_state.repo_docs = result
-            md_files = result["output_files"]
-            context_parts = []
-            token_estimate = 0
-            used_files = []
+            files = result["output_files"]
+            context, used_files, token_est = build_context(
+                files,
+                include_txt=include_txt,
+                include_json=include_json,
+                full_mode=full_mode
+            )
 
-            for f in md_files:
-                if Path(f).suffix == ".md":
-                    text = Path(f).read_text()
-                    tokens = len(text.split())  # crude token est.
-                    if token_estimate + tokens > MAX_TOKENS:
-                        break
-                    context_parts.append(f"\n\n### {Path(f).name}\n\n{text}")
-                    token_estimate += tokens
-                    used_files.append(Path(f).name)
-
-            context = "\n".join(context_parts)
+            if token_est > 8000:
+                st.warning(f"⚠️ Total estimated tokens: {token_est}. Some models may truncate.")
 
             if api_key:
                 summary = generate_summary_with_llm(context, model=selected_model or "gpt-3.5-turbo", api_key=api_key)
@@ -104,75 +109,25 @@ def run_ai_summary_ui():
             with st.chat_message("user"):
                 st.markdown(user_input)
 
-            if api_key:
-                reply = chat_with_llm(st.session_state[CHAT_HISTORY_KEY], model=selected_model or "gpt-3.5-turbo", api_key=api_key)
-            elif ollama_url:
-                reply = chat_with_llm(st.session_state[CHAT_HISTORY_KEY], model=selected_model or "llama3", ollama_url=ollama_url)
-            else:
-                reply = "❌ No valid LLM backend."
-
-            st.session_state[CHAT_HISTORY_KEY].append({"role": "assistant", "content": reply})
-
             with st.chat_message("assistant"):
-                st.markdown(reply)
+                if api_key or ollama_url:
+                    stream = stream_chat_response(
+                        st.session_state[CHAT_HISTORY_KEY],
+                        model=selected_model or "gpt-3.5-turbo",
+                        api_key=api_key,
+                        ollama_url=ollama_url,
+                    )
+                    full_response = st.write_stream(stream)
+                    st.session_state[CHAT_HISTORY_KEY].append({"role": "assistant", "content": full_response})
+                else:
+                    st.warning("❌ No valid LLM backend.")
 
-
-def generate_summary_with_llm(context, model="gpt-3.5-turbo", api_key=None, ollama_url=None):
-    prompt = (
-        "You are an expert at analyzing code repositories. Based on the documentation below, "
-        "generate a clear summary of the project’s purpose, structure, and key components:\n\n"
-        + context
-    )
-
-    if api_key:
-        openai.api_key = api_key
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return response.choices[0].message.content.strip()
-
-    elif ollama_url:
-        response = requests.post(
-            f"{ollama_url}/api/chat",
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}]
-            }
-        )
-        return response.json()["message"]["content"].strip()
-
-    return "❌ No valid LLM credentials provided."
-
-
-def chat_with_llm(history, model="gpt-3.5-turbo", api_key=None, ollama_url=None):
-    if api_key:
-        openai.api_key = api_key
-        response = openai.ChatCompletion.create(model=model, messages=history)
-        return response.choices[0].message.content.strip()
-
-    elif ollama_url:
-        response = requests.post(f"{ollama_url}/api/chat", json={"model": model, "messages": history})
-        return response.json()["message"]["content"].strip()
-
-    return "❌ No valid LLM credentials."
-
-
-def get_openai_models(api_key):
-    try:
-        openai.api_key = api_key
-        models = openai.Model.list()
-        return [m.id for m in models.data if m.id.startswith("gpt")]
-    except Exception as e:
-        st.warning(f"OpenAI model listing failed: {e}")
-        return []
-
-
-def get_ollama_models(ollama_url):
-    try:
-        response = requests.get(f"{ollama_url}/api/tags")
-        data = response.json()
-        return [m["name"] for m in data.get("models", [])]
-    except Exception as e:
-        st.warning(f"Ollama model listing failed: {e}")
-        return []
+        with st.expander("💾 Export Chat History"):
+            export_format = st.selectbox("Choose Format", [".json", ".md"])
+            if st.button("Export Chat"):
+                history = st.session_state[CHAT_HISTORY_KEY]
+                if export_format == ".json":
+                    filepath = export_chat_as_json(history)
+                else:
+                    filepath = export_chat_as_markdown(history)
+                st.success(f"Exported to: {filepath}")
