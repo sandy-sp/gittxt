@@ -1,5 +1,5 @@
 # src/plugins/gittxt_streamlit/ui_components.py
-
+import pandas as pd
 import streamlit as st
 from pathlib import Path
 import humanize
@@ -58,8 +58,12 @@ def render_scan_result(result):
         st.markdown("### 🔍 Tokens by Type")
         token_table = summary.get("tokens_by_type", {})
         if token_table:
-            for k, v in token_table.items():
-                st.markdown(f"- **{k.title()}**: {humanize.intcomma(v)} tokens")
+            df = pd.DataFrame({
+                "Type": list(token_table.keys()),
+                "Tokens": [humanize.intcomma(v) for v in token_table.values()]
+            })
+            st.dataframe(df.style.set_properties(**{'text-align': 'center'}).hide(axis="index"), use_container_width=True)
+
 
     with col2:
         if result.get("skipped"):
