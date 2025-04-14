@@ -38,6 +38,16 @@ if use_defaults:
     exclude_dirs = ",".join(EXCLUDED_DIRS_DEFAULT)
     size_limit = 1_000_000
     tree_depth = 5
+
+    with st.expander("🔍 Default Filter Preview", expanded=False):
+        st.markdown("**Included Extensions:**")
+        st.code(include_patterns, language="text")
+        st.markdown("**Excluded Directories:**")
+        st.code(exclude_dirs, language="text")
+        st.markdown("**Max File Size:**")
+        st.code(f"{size_limit} bytes", language="text")
+        st.markdown("**Tree Depth:**")
+        st.code(str(tree_depth), language="text")
 else:
     include_patterns, exclude_patterns, exclude_dirs, size_limit, tree_depth = section_filters()
 
