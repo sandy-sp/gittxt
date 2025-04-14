@@ -33,9 +33,18 @@ def load_context_chunks(path, max_tokens=2048):
         chunks.append("".join(current))
     return chunks
 
+def get_preferred_format(model_name: str) -> str:
+    if "gpt" in model_name or "llama" in model_name:
+        return "md"
+    elif "mistral" in model_name or "gemma" in model_name:
+        return "txt"
+    elif "phi" in model_name or "code" in model_name:
+        return "json"
+    return "md"
+
 def run_ai_summary_ui():
     st.title("\U0001F9E0 AI Repo Summary & Chat")
-
+    st.subheader("Note: Under Development")
     st.markdown("Input either an **OpenAI API key** or **Ollama endpoint**, and a GitHub repository URL.")
 
     col1, col2 = st.columns(2)
@@ -49,6 +58,8 @@ def run_ai_summary_ui():
     context_mode = st.radio("Select Context Mode", ["Docs Only", "Full Files"])
     full_mode = context_mode == "Full Files"
     docs_only = context_mode == "Docs Only"
+
+    auto_format = st.checkbox("Auto-select best output format for model", value=True)
 
     selected_model = None
     available_models = []
@@ -67,6 +78,7 @@ def run_ai_summary_ui():
         token_est = 0
 
         with st.status("Running scan...", expanded=True):
+            preferred_format = get_preferred_format(selected_model or "") if auto_format else "md"
             filters = {
                 "branch": None,
                 "subdir": None,
@@ -74,7 +86,7 @@ def run_ai_summary_ui():
                 "exclude_patterns": [],
                 "exclude_dirs": [],
                 "size_limit": 5_000_000,
-                "output_formats": ["md"],
+                "output_formats": [preferred_format],
                 "output_dir": "/tmp/gittxt_ai_summary",
                 "lite": True,
                 "zip": False,
