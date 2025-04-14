@@ -1,6 +1,6 @@
 import streamlit as st
 from scan import app as scan_app
-from ai_summary import run_ai_summary_ui
+from ai.ai_summary import run_ai_summary_ui
 
 st.set_page_config(page_title="Gittxt App", layout="wide")
 st.sidebar.title("🔀 Gittxt Navigation")
