@@ -1,6 +1,7 @@
 import openai
 import requests
 import streamlit as st
+import json
 
 
 def get_openai_models(api_key):
@@ -70,11 +71,22 @@ def generate_summary_with_llm(context, model="llama3", api_key=None, ollama_url=
         try:
             response = requests.post(
                 f"{ollama_url}/api/chat",
-                json={"model": model, "messages": [{"role": "user", "content": prompt}]},
-                timeout=60
+                json={"model": model, "messages": [{"role": "user", "content": prompt}], "stream": True},
+                stream=True,
+                timeout=60,
             )
-            json_data = response.json()
-            return json_data.get("message", {}).get("content", "").strip()
+            summary = ""
+            for line in response.iter_lines():
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line.decode("utf-8"))
+                    content = data.get("message", {}).get("content")
+                    if content:
+                        summary += content
+                except Exception as e:
+                    continue
+            return summary.strip()
         except Exception as e:
             return f"❌ Ollama call failed: {str(e)}"
 
