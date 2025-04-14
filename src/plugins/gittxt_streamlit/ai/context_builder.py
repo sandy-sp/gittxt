@@ -34,9 +34,11 @@ def build_context(files, include_txt=False, include_json=False, full_mode=False)
         ext = Path(f).suffix.lower()
         if ext not in allowed_exts:
             continue
+        print(f"Checking file: {f} | ext: {ext}")
         try:
             text = Path(f).read_text(encoding="utf-8")
-        except Exception:
+        except Exception as e:
+            print(f"❌ Failed reading {f}: {e}")
             continue
 
         tokens = len(text.split())
