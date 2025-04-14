@@ -1,4 +1,3 @@
-# src/plugins/gittxt_streamlit/ui_components.py
 import pandas as pd
 import streamlit as st
 from pathlib import Path
