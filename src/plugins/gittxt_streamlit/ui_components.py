@@ -6,9 +6,9 @@ from pathlib import Path
 
 def section_filters():
     with st.expander("⚙️ Advanced Filters"):
-        include_patterns = st.text_input("Include Patterns (comma-separated)")
-        exclude_patterns = st.text_input("Exclude Patterns (comma-separated)")
-        exclude_dirs = st.text_input("Exclude Dirs (comma-separated)")
+        include_patterns = st.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
+        exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
+        exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
         max_file_size = st.slider("Max File Size (bytes)", min_value=0, max_value=5_000_000, step=100_000, value=1_000_000)
         tree_depth = st.slider("Tree Depth", 1, 10, value=5)
     return include_patterns, exclude_patterns, exclude_dirs, max_file_size, tree_depth
@@ -41,25 +41,30 @@ def render_scan_result(result):
         return
 
     st.success(f"✅ Scan complete for {result['repo_name']}")
-    st.subheader("📊 Repository Summary")
-    st.json(result["summary"])
 
-    if result.get("skipped"):
-        with st.expander("⚠️ Skipped Files"):
-            for path, reason in result["skipped"]:
-                st.markdown(f"- `{path}` → *{reason}*")
+    st.subheader("📊 Repository Summary")
+    col1, col2 = st.columns([0.6, 0.4])
+    with col1:
+        st.json(result["summary"])
+    with col2:
+        if result.get("skipped"):
+            with st.expander("⚠️ Skipped Files"):
+                for path, reason in result["skipped"]:
+                    st.markdown(f"- `{path}` → *{reason}*")
 
     st.subheader("📄 Download Outputs")
-    for path in result["output_files"]:
-        p = Path(path)
-        st.download_button(
-            label=f"⬇️ {p.name}",
-            data=p.read_bytes(),
-            file_name=p.name,
-            mime="application/octet-stream",
-        )
-
-    if result.get("non_textual"):
-        with st.expander("🎨 Non-Textual Assets Included"):
-            for a in result["non_textual"]:
-                st.markdown(f"- `{a}`")
+    col1, col2 = st.columns([0.6, 0.4])
+    with col1:
+        for path in result["output_files"]:
+            p = Path(path)
+            st.download_button(
+                label=f"⬇️ {p.name}",
+                data=p.read_bytes(),
+                file_name=p.name,
+                mime="application/octet-stream",
+            )
+    with col2:
+        if result.get("non_textual"):
+            with st.expander("🎨 Non-Textual Assets Included"):
+                for a in result["non_textual"]:
+                    st.markdown(f"- `{a}`")
