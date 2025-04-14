@@ -14,7 +14,7 @@ PLUGIN_LIST = {
     },
     "gittxt-streamlit": {
         "path": PLUGINS_DIR / "gittxt_streamlit",
-        "run_cmd": "streamlit run app.py"
+        "run_cmd": "streamlit run main.py"
     }
     # Add future plugins here
 }
