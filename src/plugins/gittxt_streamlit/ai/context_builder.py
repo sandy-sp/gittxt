@@ -1,8 +1,6 @@
 from pathlib import Path
-import os
 
 MAX_TOKENS = 8000
-SUPPORTED_EXTS = {".md", ".txt", ".json"}
 
 
 def build_context(files, include_txt=False, include_json=False, full_mode=False):
@@ -20,25 +18,29 @@ def build_context(files, include_txt=False, include_json=False, full_mode=False)
         used_files (list): List of filenames included.
         token_estimate (int): Crude token estimate.
     """
-    context_parts = []
-    token_estimate = 0
-    used_files = []
-
     allowed_exts = {".md"}
     if include_txt:
         allowed_exts.add(".txt")
     if include_json:
         allowed_exts.add(".json")
 
+    context_parts = []
+    token_estimate = 0
+    used_files = []
+
     for f in files:
         ext = Path(f).suffix.lower()
         if ext not in allowed_exts:
             continue
-        print(f"Checking file: {f} | ext: {ext}")
+
         try:
             text = Path(f).read_text(encoding="utf-8")
-        except Exception as e:
-            print(f"❌ Failed reading {f}: {e}")
+        except UnicodeDecodeError:
+            try:
+                text = Path(f).read_text(encoding="latin-1")
+            except Exception:
+                continue
+        except Exception:
             continue
 
         tokens = len(text.split())
