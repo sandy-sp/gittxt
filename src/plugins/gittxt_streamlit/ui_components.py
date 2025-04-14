@@ -2,6 +2,7 @@
 
 import streamlit as st
 from pathlib import Path
+import humanize
 
 
 def section_filters():
@@ -43,9 +44,19 @@ def render_scan_result(result):
     st.success(f"✅ Scan complete for {result['repo_name']}")
 
     st.subheader("📊 Repository Summary")
+    summary = result["summary"]
     col1, col2 = st.columns([0.6, 0.4])
+
     with col1:
-        st.json(result["summary"])
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Total Files", summary["total_files"])
+        c2.metric("Total Size", humanize.naturalsize(summary["total_size"]))
+        c3.metric("Estimated Tokens", f"{summary['estimated_tokens']:,}")
+
+        st.markdown("### 🔍 Tokens by Type")
+        token_table = summary.get("tokens_by_type", {})
+        st.table({k: f"{v:,}" for k, v in token_table.items()})
+
     with col2:
         if result.get("skipped"):
             with st.expander("⚠️ Skipped Files"):
