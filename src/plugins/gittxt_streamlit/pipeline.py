@@ -1,123 +1,102 @@
-import shutil
+# src/plugins/gittxt_streamlit/pipeline.py
+
 import asyncio
 from pathlib import Path
 from gittxt.core.repository import RepositoryHandler
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
-from gittxt.utils.tree_utils import generate_tree
+from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.utils.summary_utils import generate_summary
-from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
-from .state_manager import get_output_dir
+from gittxt.utils.file_utils import load_gittxtignore
+from gittxt.utils.filetype_utils import FiletypeConfigManager
+import logging
 
 
-async def load_repository_summary(github_url: str, include_default_excludes: bool, include_gitignore: bool) -> dict:
+async def full_cli_equivalent_scan(repo_url: str, filters: dict) -> dict:
     """
-    Clone and analyze a GitHub repo or local path.
-    Returns repo metadata including dir tree and file summary.
+    Replicates full `gittxt scan` CLI logic in Streamlit context.
     """
-    handler = RepositoryHandler(source=github_url)
+    branch = filters.get("branch")
+    subdir = filters.get("subdir")
+    include_patterns = filters.get("include_patterns", [])
+    exclude_patterns = filters.get("exclude_patterns", [])
+    exclude_dirs = filters.get("exclude_dirs", [])
+    size_limit = filters.get("size_limit")
+    output_formats = filters.get("output_formats", ["txt"])
+    output_dir = Path(filters.get("output_dir", "/tmp/gittxt_streamlit_output"))
+    mode = "lite" if filters.get("lite") else "rich"
+    create_zip = filters.get("zip", False)
+    tree_depth = filters.get("tree_depth")
+    skip_tree = filters.get("skip_tree", False)
+    sync_ignore = filters.get("sync", False)
+
+    handler = RepositoryHandler(repo_url, branch=branch, subdir=subdir)
     await handler.resolve()
     repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
 
     scan_root = Path(repo_path)
     if subdir:
         scan_root = scan_root / subdir
-        if not scan_root.exists():
-            raise FileNotFoundError(f"Subdirectory '{subdir}' does not exist in the repository.")
 
-    dynamic_ignores = load_gittxtignore(scan_root) if include_gitignore else []
-    merged_excludes = list(set(EXCLUDED_DIRS_DEFAULT if include_default_excludes else []) | set(dynamic_ignores))
+    # .gittxtignore support
+    dynamic_ignores = load_gittxtignore(scan_root) if sync_ignore else []
+    merged_excludes = list(set(exclude_dirs + dynamic_ignores + EXCLUDED_DIRS_DEFAULT))
+
+    # Warn if include_patterns targets non-textual
+    for pattern in include_patterns:
+        ext = Path(pattern).suffix.lower()
+        if ext and not FiletypeConfigManager.is_known_textual_ext(ext):
+            logging.warning(f"⚠️ Include pattern {pattern} may target non-textual files.")
 
     scanner = Scanner(
         root_path=scan_root,
         exclude_dirs=merged_excludes,
-        size_limit=None,
-        include_patterns=[],
-        exclude_patterns=[],
-        progress=False,
-        use_ignore_file=include_gitignore,
-    )
-
-    textual_files, non_textual_files = await scanner.scan_directory()
-    tree_summary = generate_tree(scan_root)
-    summary_data = await generate_summary(textual_files + non_textual_files)
-
-    return {
-        "repo_name": repo_name,
-        "repo_path": str(scan_root),
-        "tree_summary": tree_summary,
-        "summary": summary_data,
-        "textual_file_paths": [str(p) for p in textual_files],
-        "non_textual_file_paths": [str(p) for p in non_textual_files],
-        "branch": used_branch,
-        "subdir": subdir,
-        "repo_url": github_url,
-    }
-
-
-async def execute_scan_with_filters(filters: dict) -> dict:
-    """
-    Run a filtered scan using Gittxt core logic and return output paths.
-    """
-    repo_path = Path(filters.get("repo_path"))
-    repo_name = filters.get("repo_name")
-    repo_url = filters.get("repo_url")
-    branch = filters.get("branch")
-    subdir = filters.get("subdir")
-
-    output_formats = filters.get("output_formats", ["txt"])
-    output_dir = get_output_dir()
-    mode = "lite" if filters.get("lite_mode") else "rich"
-    create_zip = filters.get("zip_output", False)
-    tree_depth = filters.get("tree_depth")
-    skip_tree = filters.get("no_tree", False)
-
-    include_patterns = filters.get("include_patterns", [])
-    exclude_patterns = filters.get("exclude_patterns", [])
-    if filters.get("docs_only") and not include_patterns:
-        include_patterns = ["**/*.md"]
-
-    exclude_dirs = filters.get("exclude_dirs", [])
-    use_ignore_file = filters.get("include_gitignore", True)
-    dynamic_ignores = load_gittxtignore(repo_path) if use_ignore_file else []
-    merged_excludes = list(set(exclude_dirs) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT))
-
-    scanner = Scanner(
-        root_path=repo_path,
-        exclude_dirs=merged_excludes,
-        size_limit=None,
+        size_limit=size_limit,
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
-        progress=False,
-        use_ignore_file=use_ignore_file,
+        use_ignore_file=sync_ignore,
+        progress=False
     )
+
     textual_files, non_textual_files = await scanner.scan_directory()
+    skipped = scanner.skipped_files
+
+    if not textual_files:
+        return {"error": "No valid textual files found.", "skipped": skipped}
 
     builder = OutputBuilder(
         repo_name=repo_name,
         output_dir=output_dir,
         output_format=output_formats,
-        repo_url=repo_url,
-        branch=branch,
+        repo_url=repo_url if is_remote else None,
+        branch=used_branch,
         subdir=subdir,
         mode=mode,
     )
 
-    output_paths = await builder.generate_output(
+    output_files = await builder.generate_output(
         textual_files,
         non_textual_files,
-        repo_path,
+        Path(repo_path),
         create_zip=create_zip,
         tree_depth=tree_depth,
         skip_tree=skip_tree,
     )
 
-    return {path.suffix.lstrip("."): str(path) for path in output_paths if path and path.exists()}
+    summary = await generate_summary(textual_files + non_textual_files)
+    result = {
+        "repo_name": repo_name,
+        "branch": used_branch,
+        "subdir": subdir,
+        "output_dir": str(output_dir),
+        "output_files": output_files,
+        "summary": summary,
+        "skipped": skipped,
+        "non_textual": non_textual_files,
+    }
 
+    if is_remote:
+        cleanup_temp_folder(Path(repo_path))
 
-def cleanup_output_dir():
-    output_dir = get_output_dir()
-    if output_dir.exists():
-        shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    return result
