@@ -1,6 +1,7 @@
 # src/plugins/gittxt_streamlit/ui_components.py
 
 import streamlit as st
+import pandas as pd
 from pathlib import Path
 import humanize
 
@@ -10,8 +11,9 @@ def section_filters():
         include_patterns = st.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
         exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
         exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
-        max_file_size = st.slider("Max File Size (bytes)", min_value=0, max_value=5_000_000, step=100_000, value=1_000_000)
-        st.caption(f"Max file size: {humanize.naturalsize(max_file_size)}")
+        max_file_size_mb = st.slider("Max File Size (MB)", min_value=0, max_value=5, step=1, value=1)
+        max_file_size = max_file_size_mb * 1_000_000
+        st.caption(f"Max file size: {max_file_size_mb} MB")
         tree_depth = st.slider("Tree Depth", 1, 10, value=5)
     return include_patterns, exclude_patterns, exclude_dirs, max_file_size, tree_depth
 
@@ -57,8 +59,11 @@ def render_scan_result(result):
         st.markdown("### 🔍 Tokens by Type")
         token_table = summary.get("tokens_by_type", {})
         if token_table:
-            formatted = {"Type": list(token_table.keys()), "Tokens": [humanize.intcomma(v) for v in token_table.values()]}
-            st.table(formatted)
+            df = pd.DataFrame({
+                "Type": list(token_table.keys()),
+                "Tokens": [humanize.intcomma(v) for v in token_table.values()]
+            })
+            st.dataframe(df.style.set_properties(**{'text-align': 'center'}).hide(axis="index"), use_container_width=True)
 
     with col2:
         if result.get("skipped"):
