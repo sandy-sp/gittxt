@@ -4,31 +4,21 @@ import streamlit as st
 from pathlib import Path
 
 
-def section_repo_input():
-    st.sidebar.header("📥 Repository Input")
-    repo_url = st.sidebar.text_input("GitHub URL or Local Path", placeholder="https://github.com/user/repo")
-    branch = st.sidebar.text_input("Branch (optional)", placeholder="main")
-    subdir = st.sidebar.text_input("Subdirectory (optional)", placeholder="src/")
-    return repo_url, branch, subdir
-
-
 def section_filters():
-    st.sidebar.header("🧩 File Filters")
-    include_patterns = st.sidebar.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
-    exclude_patterns = st.sidebar.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
-    exclude_dirs = st.sidebar.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
+    include_patterns = st.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
+    exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
+    exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
     return include_patterns, exclude_patterns, exclude_dirs
 
 
 def section_options():
-    st.sidebar.header("⚙️ Options")
-    size_limit = st.sidebar.number_input("Max File Size (bytes)", value=1_000_000, step=1_000)
-    lite_mode = st.sidebar.checkbox("Lite Mode", value=False)
-    zip_bundle = st.sidebar.checkbox("Create ZIP Bundle", value=False)
-    skip_tree = st.sidebar.checkbox("Skip Directory Tree", value=False)
-    sync_ignore = st.sidebar.checkbox("Use .gittxtignore", value=False)
-    tree_depth = st.sidebar.slider("Tree Depth", 1, 10, value=5)
-    output_formats = st.sidebar.multiselect("Output Formats", ["txt", "md", "json"], default=["txt"])
+    size_limit = st.number_input("Max File Size (bytes)", value=1_000_000, step=1_000)
+    lite_mode = st.checkbox("Lite Mode", value=False)
+    zip_bundle = st.checkbox("Create ZIP Bundle", value=False)
+    skip_tree = st.checkbox("Skip Directory Tree", value=False)
+    sync_ignore = st.checkbox("Use .gittxtignore", value=False)
+    tree_depth = st.slider("Tree Depth", 1, 10, value=5)
+    output_formats = st.multiselect("Output Formats", ["txt", "md", "json"], default=["txt"])
     return size_limit, lite_mode, zip_bundle, skip_tree, sync_ignore, tree_depth, output_formats
 
 
