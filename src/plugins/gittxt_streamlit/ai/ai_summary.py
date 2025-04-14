@@ -1,13 +1,13 @@
 import streamlit as st
 import asyncio
 import nest_asyncio
+import os
 from pathlib import Path
 from scan.pipeline import full_cli_equivalent_scan
 from ai.llm_handler import (
     get_openai_models,
     get_ollama_models,
     generate_summary_with_llm,
-    chat_with_llm,
     stream_chat_response
 )
 from ai.context_builder import build_context
@@ -16,6 +16,22 @@ from ai.chat_exporter import export_chat_as_json, export_chat_as_markdown
 nest_asyncio.apply()
 
 CHAT_HISTORY_KEY = "ai_chat_history"
+CONTEXT_PATH = "/tmp/gittxt_chat_context.md"
+
+def load_context_chunks(path, max_tokens=2048):
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    chunks, current, token_est = [], [], 0
+    for line in lines:
+        token_est += len(line.split())
+        current.append(line)
+        if token_est > max_tokens:
+            chunks.append("".join(current))
+            current, token_est = [], 0
+    if current:
+        chunks.append("".join(current))
+    return chunks
 
 def run_ai_summary_ui():
     st.title("\U0001F9E0 AI Repo Summary & Chat")
@@ -81,11 +97,9 @@ def run_ai_summary_ui():
                 include_json=False,
                 full_mode=full_mode
             )
-            st.markdown("### Debug: Files from Scan")
-            st.write(files)
-            st.markdown("### Debug: Context String")
-            st.code(context or "❌ Empty Context", language="markdown")
 
+            with open(CONTEXT_PATH, "w", encoding="utf-8") as f:
+                f.write(context)
 
         with st.expander("\U0001F50D Context Preview", expanded=False):
             st.code(context[:1000] or "⚠️ No context extracted", language="markdown")
@@ -109,7 +123,7 @@ def run_ai_summary_ui():
 
     st.markdown("### \U0001F4AC Chat with the Repo")
 
-    if CHAT_HISTORY_KEY in st.session_state:
+    if CHAT_HISTORY_KEY in st.session_state and os.path.exists(CONTEXT_PATH):
         user_input = st.chat_input("Ask about the repo...")
 
         for msg in st.session_state[CHAT_HISTORY_KEY]:
@@ -124,14 +138,19 @@ def run_ai_summary_ui():
 
             with st.chat_message("assistant"):
                 if api_key or ollama_url:
-                    stream = stream_chat_response(
-                        st.session_state[CHAT_HISTORY_KEY],
-                        model=selected_model or "gpt-3.5-turbo",
-                        api_key=api_key,
-                        ollama_url=ollama_url,
-                    )
-                    full_response = st.write_stream(stream)
-                    st.session_state[CHAT_HISTORY_KEY].append({"role": "assistant", "content": full_response})
+                    chunks = load_context_chunks(CONTEXT_PATH)
+                    for i, chunk in enumerate(chunks):
+                        st.info(f"Processing chunk {i+1}/{len(chunks)}...")
+                        msg = {"role": "user", "content": chunk + "\n" + user_input}
+                        history = st.session_state[CHAT_HISTORY_KEY] + [msg]
+                        stream = stream_chat_response(
+                            history,
+                            model=selected_model or "gpt-3.5-turbo",
+                            api_key=api_key,
+                            ollama_url=ollama_url,
+                        )
+                        full_response = st.write_stream(stream)
+                        st.session_state[CHAT_HISTORY_KEY].append({"role": "assistant", "content": full_response})
                 else:
                     st.warning("❌ No valid LLM backend.")
 
@@ -144,3 +163,8 @@ def run_ai_summary_ui():
                 else:
                     filepath = export_chat_as_markdown(history)
                 st.success(f"Exported to: {filepath}")
+
+        if st.button("🧹 End Chat & Clean Up"):
+            os.remove(CONTEXT_PATH)
+            del st.session_state[CHAT_HISTORY_KEY]
+            st.success("Context file deleted. Chat session ended.")
