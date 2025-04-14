@@ -1,163 +1,122 @@
-🚀 **AI-Ready Text Extractor for Git Repos** | CLI tool for dataset prep, summaries, reverse engineering & bundling
+# 🚀 Gittxt: Get Text from Git — Optimized for AI
 
-# 📝 Gittxt: Get text from Git repositories in AI-ready formats
+**Gittxt** is an open-source tool that transforms GitHub repositories into LLM-compatible datasets.
 
-[![Docs](https://img.shields.io/badge/docs-online-blue?logo=mkdocs&labelColor=gray)](https://sandy-sp.github.io/gittxt/)
-[![Python Version](https://img.shields.io/badge/python-≥3.9-blue)](pyproject.toml)
-[![PyPI version](https://badge.fury.io/py/gittxt.svg)](https://pypi.org/project/gittxt/)
-[![Release](https://img.shields.io/github/release/sandy-sp/gittxt.svg)](https://github.com/sandy-sp/gittxt/releases)
-[![Tested with Pytest](https://img.shields.io/badge/tested%20with-pytest-9cf.svg)](https://docs.pytest.org/en/stable/)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/gittxt)](https://pypi.org/project/gittxt/)
-![GitHub repo size](https://img.shields.io/github/repo-size/sandy-sp/gittxt)
-![GitHub top language](https://img.shields.io/github/languages/top/sandy-sp/gittxt)
-[![Build Status](https://github.com/sandy-sp/gittxt/actions/workflows/release.yml/badge.svg)](https://github.com/sandy-sp/gittxt/actions)
-[![Made for LLMs](https://img.shields.io/badge/LLM%20ready-Yes-brightgreen)](https://github.com/sandy-sp/gittxt)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Perfect for developers, data scientists, and AI engineers, Gittxt helps you extract and structure `.txt`, `.json`, `.md` content into clean, analyzable formats for use in:
+- Prompt engineering
+- Fine-tuning & retrieval
+- Codebase summarization
+- Open-source LLM workflows
 
 ---
 
-## ✨ What is Gittxt? 
-![](./docs/getting-started/assets/gittxt-demo.gif)
+## 💡 Why Gittxt?
+Large Language Models often expect input in very specific formats. Many tools (e.g., ChatGPT, Gemini, Ollama) struggle with arbitrary GitHub URLs, complex folders, or non-text assets.
 
-**Gittxt** is a powerful CLI and plugin framework that extracts structured text and metadata from Git repositories. It’s designed to help you build AI-ready datasets, analyze large codebases, and even reverse engineer report outputs.
-
-Use it for:
-- 🔍 Curating datasets from code and documentation
-- 🗃️ Generating `.txt`, `.json`, `.md`, and `.zip` bundles
-- 📑 Extracting and classifying technical files by sub-type
-- 🧠 Analyzing size, token count, and file types
-- 🔄 Reconstructing full project trees from summary reports
+Gittxt bridges this gap by:
+- Extracting **all usable text** from a repo
+- Organizing it for **easy ingestion by LLMs**
+- Offering **structured `.txt`, `.json`, `.md`, `.zip` outputs**
+- Giving you full control with filtering, formatting, and plugin support
 
 ---
 
-## 🚀 Features
-
-- ✅ **File-Type Detection** (extension, MIME, content heuristic)
-- ✅ **.gittxtignore Support** (with `--sync`)
-- ✅ **Subcategory Classification** (docs, config, code, etc.)
-- ✅ **Async File I/O** for scalable performance
-- ✅ **Lite Mode** for minimal outputs (`--lite`)
-- ✅ **Bundled ZIPs** (`--zip`) with manifest, summary, README
-- ✅ **Reverse Engineering** from `.txt`, `.md`, `.json` reports
-- ✅ **Plugin System**: `gittxt-api`, `gittxt-streamlit`, etc.
+## ✨ Features at a Glance
+- ✅ Text extractor for code, docs, config files
+- ✅ Output: `.txt`, `.json`, `.md`, `.zip`
+- ✅ CLI and plugin system (FastAPI, Streamlit)
+- ✅ AI-ready summaries (OpenAI / Ollama)
+- ✅ Reverse engineer `.txt`/`.json` reports back into repo structure
+- ✅ `.gittxtignore` support
+- ✅ Async scanning for large projects
+- ✅ Works offline and in constrained compute environments
 
 ---
 
-## 🏗️ Installation
+## 📁 Output Types
+```text
+outputs/
+├── txt/         # Plain text report
+├── json/        # Structured metadata
+├── md/          # Markdown-formatted summary
+└── zip/         # Bundled results + manifest
+```
 
+---
+
+## 🚀 Quickstart
+
+### Install
 ```bash
 pip install gittxt
 ```
 
-Or for development:
-
+### Run your first scan
 ```bash
-git clone https://github.com/sandy-sp/gittxt.git
-cd gittxt
-poetry install
-poetry run gittxt config install  # Optional installer
+gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json --lite --zip
 ```
 
----
-
-## ⚙️ Quickstart
-
+### Reverse engineer a summary
 ```bash
-gittxt scan https://github.com/sandy-sp/gittxt --output-format txt,json --zip --lite
-gittxt re outputs/gittxt_summary.json
+gittxt re outputs/project.md -o ./restored
 ```
 
 ---
 
-## 🖥️ CLI Commands
+## 🌐 Explore the Visual Web App
+Try the hosted version (no install required!)
 
+👉 [Launch Streamlit App](https://gittxt.streamlit.app/)
+
+---
+
+## 📈 Gittxt for AI Workflows
+- Use it to build structured input for LLMs
+- Ideal for **prompt chaining**, **document agents**, **code summarization**
+- Helps transform messy repos into single-file, AI-consumable reports
+
+---
+
+## 📖 Full Documentation
+All CLI flags, plugins, formats, and filters are documented here:
+
+📚 [Explore Gittxt Docs](https://sandy-sp.github.io/gittxt/)
+
+---
+
+## 🔧 Plugin Support
+Gittxt supports modular plugins:
+
+- `gittxt-api`: Run via FastAPI backend
+- `gittxt-streamlit`: Interactive dashboard
+
+Install & run with:
 ```bash
-gittxt scan [OPTIONS] [REPOS]...
-gittxt config [SUBCOMMANDS]
-gittxt clean [--output-dir]
-gittxt re REPORT_FILE [--output-dir]
-gittxt plugin [list|install|run|uninstall]
+gittxt plugin install gittxt-streamlit
+gittxt plugin run gittxt-streamlit
 ```
 
 ---
 
-## 🔌 Plugin System
-
-```bash
-gittxt plugin list
-gittxt plugin install gittxt-api
-gittxt plugin run gittxt-api
-```
-
-Plugins include:
-
-- 🧪 `gittxt-api`: FastAPI backend for scanning and summaries
-- 🖥️ `gittxt-streamlit`: Interactive visual dashboard
+## 🧠 Built for Developers & AI Engineers
+Created by [Sandeep Paidipati](https://www.linkedin.com/in/sandeep-paidipati), Gittxt was born out of a need to:
+- Quickly preview and summarize GitHub repos with LLMs
+- Avoid manual copying, filtering, and converting files
+- Create AI-ready datasets for learning and experimentation
 
 ---
 
-## 📦 Output Formats
-
-```
-<output_dir>/
-├── txt/
-├── json/
-├── md/
-├── zip/
-│   ├── summary.json
-│   ├── manifest.json
-│   ├── outputs/
-│   └── assets/
-```
+## 🙏 Support the Project
+- ⭐️ Star [this repo](https://github.com/sandy-sp/gittxt) if it helped you
+- 🧵 Share it with your dev/AI community
+- 🤝 Contact me for collaboration or sponsorship
 
 ---
 
-## 🔄 Reverse Engineer
-
-```bash
-gittxt re report.txt -o ./restored
-```
-
-This recreates original file structure in a ZIP from Gittxt `.txt`, `.md`, or `.json` reports.
-
----
-
-## 📚 Documentation
-
-Docs are now organized in a full [Docs site](https://sandy-sp.github.io/gittxt/) with:
-
-- ✅ Getting Started
-- ✅ CLI Reference
-- ✅ API Endpoints
-- ✅ Reverse Engineering
-- ✅ Developer & Contributor Guide
-
----
-
-## 🛣️ Roadmap
-
-- ✅ Plugin framework with API/Streamlit
-- ✅ Reverse from Gittxt reports
-- ⏳ AI-powered summaries
-- ⏳ Live web UI
-
----
-
-## 🤝 Contributing
-
-See [Contributing Guide](https://sandy-sp.github.io/gittxt/development/contributing/)
-
-```bash
-make lint     # Code style
-make test     # Run CLI + API tests
-```
-
----
-
-## 🛡️ License
-
+## 🔒 License
 MIT License © [Sandeep Paidipati](https://github.com/sandy-sp)
 
 ---
 
-Gittxt — **Get text from Git repositories in AI-ready formats.**
+**Gittxt** — **Get Text from Git — Optimized for AI**
+
