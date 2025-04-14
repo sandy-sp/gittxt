@@ -6,9 +6,9 @@ from pathlib import Path
 
 def section_filters():
     with st.expander("⚙️ Advanced Filters"):
-        include_patterns = st.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
-        exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
-        exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
+        include_patterns = st.text_input("Include Patterns (comma-separated)")
+        exclude_patterns = st.text_input("Exclude Patterns (comma-separated)")
+        exclude_dirs = st.text_input("Exclude Dirs (comma-separated)")
         max_file_size = st.slider("Max File Size (bytes)", min_value=0, max_value=5_000_000, step=100_000, value=1_000_000)
         tree_depth = st.slider("Tree Depth", 1, 10, value=5)
     return include_patterns, exclude_patterns, exclude_dirs, max_file_size, tree_depth
