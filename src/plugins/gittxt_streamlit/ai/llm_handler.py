@@ -51,7 +51,7 @@ def stream_chat_response(history, model, api_key=None, ollama_url=None):
                     continue
 
 
-def generate_summary_with_llm(context, model="gpt-3.5-turbo", api_key=None, ollama_url=None):
+def generate_summary_with_llm(context, model="llama3", api_key=None, ollama_url=None):
     prompt = (
         "You are an expert at analyzing code repositories. Based on the documentation below, "
         "generate a clear summary of the project’s purpose, structure, and key components:\n\n"
@@ -67,11 +67,16 @@ def generate_summary_with_llm(context, model="gpt-3.5-turbo", api_key=None, olla
         return response.choices[0].message.content.strip()
 
     elif ollama_url:
-        response = requests.post(
-            f"{ollama_url}/api/chat",
-            json={"model": model, "messages": [{"role": "user", "content": prompt}]},
-        )
-        return response.json()["message"]["content"].strip()
+        try:
+            response = requests.post(
+                f"{ollama_url}/api/chat",
+                json={"model": model, "messages": [{"role": "user", "content": prompt}]},
+                timeout=60
+            )
+            json_data = response.json()
+            return json_data.get("message", {}).get("content", "").strip()
+        except Exception as e:
+            return f"❌ Ollama call failed: {str(e)}"
 
     return "❌ No valid LLM credentials provided."
 
