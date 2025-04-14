@@ -6,6 +6,34 @@ We follow [Semantic Versioning](https://semver.org/) — breaking changes increa
 
 ---
 
+## [1.7.7] – 2025-04-14
+
+### 🚀 Streamlit App Now Fully Functional
+
+- The **Gittxt Streamlit plugin** is now **production-ready**, matching the full capabilities of the `gittxt` CLI tool.
+- ✅ Seamless support for `--docs`, `--lite`, `--zip`, `--tree-depth`, `.gittxtignore`, and advanced filters.
+- 📥 Outputs include `.txt`, `.md`, `.json`, and optional ZIP bundles — downloadable directly via the UI.
+- 📊 Interactive summary panels show token estimates, file types, and skipped files.
+- 📦 Results are parsed from CLI-generated JSON output to ensure parity and future-proofing.
+
+### 🎛️ UI Enhancements
+
+- All scan filters now centralized in a clean, two-column layout.
+- Humanized file size slider (MB) replaces byte input for better UX.
+- Sidebar branding finalized with dark theme and Gittxt logo.
+- Navigation between “Scan Repository” and “AI Summary” now persistent via `st.session_state`.
+
+### 🛠️ Refactor & Cleanup
+
+- Internals modularized into `scan/` and `ai/` subfolders.
+- Removed direct internal imports — now powered via CLI execution for robustness.
+- Session-aware cleanup ensures temporary outputs and chat state are deleted between runs.
+
+### 🧠 AI Summary (Early Access)
+
+- The AI-based repo summarizer and chat remain in **beta**.
+- Token-aware chunking and basic error handling added, but some LLM bugs persist.
+
 ## [1.7.6] - 2025-04-13
 
 ### ✨ Features
