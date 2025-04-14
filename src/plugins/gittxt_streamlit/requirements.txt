@@ -3,3 +3,4 @@ humanize
 aiofiles
 openai
 requests
+nest_asyncio
