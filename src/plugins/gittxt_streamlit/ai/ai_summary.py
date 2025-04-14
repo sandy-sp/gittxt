@@ -1,5 +1,6 @@
 import streamlit as st
 import asyncio
+import nest_asyncio
 from pathlib import Path
 from scan.pipeline import full_cli_equivalent_scan
 from ai.llm_handler import (
@@ -12,8 +13,9 @@ from ai.llm_handler import (
 from ai.context_builder import build_context
 from ai.chat_exporter import export_chat_as_json, export_chat_as_markdown
 
-CHAT_HISTORY_KEY = "ai_chat_history"
+nest_asyncio.apply()
 
+CHAT_HISTORY_KEY = "ai_chat_history"
 
 def run_ai_summary_ui():
     st.title("\U0001F9E0 AI Repo Summary & Chat")
@@ -28,8 +30,6 @@ def run_ai_summary_ui():
 
     repo_url = st.text_input("\U0001F4E6 GitHub Repository URL", placeholder="https://github.com/username/repo")
 
-    include_txt = st.checkbox("Include .txt files", value=False)
-    include_json = st.checkbox("Include .json files", value=False)
     context_mode = st.radio("Select Context Mode", ["Docs Only", "Full Files"])
     full_mode = context_mode == "Full Files"
     docs_only = context_mode == "Docs Only"
@@ -58,7 +58,7 @@ def run_ai_summary_ui():
                 "exclude_patterns": [],
                 "exclude_dirs": [],
                 "size_limit": 5_000_000,
-                "output_formats": ["md", "txt", "json"],
+                "output_formats": ["md"],
                 "output_dir": "/tmp/gittxt_ai_summary",
                 "lite": True,
                 "zip": False,
@@ -68,6 +68,7 @@ def run_ai_summary_ui():
                 "docs_only": docs_only,
             }
             result = asyncio.run(full_cli_equivalent_scan(repo_url, filters))
+
             if result.get("error"):
                 st.error(result["error"])
                 return
@@ -76,10 +77,15 @@ def run_ai_summary_ui():
             files = result["output_files"]
             context, used_files, token_est = build_context(
                 files,
-                include_txt=include_txt,
-                include_json=include_json,
+                include_txt=False,
+                include_json=False,
                 full_mode=full_mode
             )
+            st.markdown("### Debug: Files from Scan")
+            st.write(files)
+            st.markdown("### Debug: Context String")
+            st.code(context or "❌ Empty Context", language="markdown")
+
 
         with st.expander("\U0001F50D Context Preview", expanded=False):
             st.code(context[:1000] or "⚠️ No context extracted", language="markdown")
