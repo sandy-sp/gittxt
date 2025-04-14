@@ -11,6 +11,7 @@ def section_filters():
         exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
         exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
         max_file_size = st.slider("Max File Size (bytes)", min_value=0, max_value=5_000_000, step=100_000, value=1_000_000)
+        st.caption(f"Max file size: {humanize.naturalsize(max_file_size)}")
         tree_depth = st.slider("Tree Depth", 1, 10, value=5)
     return include_patterns, exclude_patterns, exclude_dirs, max_file_size, tree_depth
 
@@ -51,11 +52,13 @@ def render_scan_result(result):
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Files", summary["total_files"])
         c2.metric("Total Size", humanize.naturalsize(summary["total_size"]))
-        c3.metric("Estimated Tokens", f"{summary['estimated_tokens']:,}")
+        c3.metric("Estimated Tokens", humanize.intcomma(summary['estimated_tokens']))
 
         st.markdown("### 🔍 Tokens by Type")
         token_table = summary.get("tokens_by_type", {})
-        st.table({k: f"{v:,}" for k, v in token_table.items()})
+        if token_table:
+            formatted = {"Type": list(token_table.keys()), "Tokens": [humanize.intcomma(v) for v in token_table.values()]}
+            st.table(formatted)
 
     with col2:
         if result.get("skipped"):
