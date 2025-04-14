@@ -11,7 +11,7 @@ from .ui_components import (
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 def run_scan_ui():
-    st.title("Gittxt: Get text from Git repositories in AI-ready formats.")
+    st.title("Gittxt: Get Text from Git — Optimized for AI")
 
     if "scan_result" not in st.session_state:
         st.session_state.scan_result = None
