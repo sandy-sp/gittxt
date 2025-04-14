@@ -10,6 +10,15 @@ Whether you're analyzing open source code, building training corpora, or archivi
 
 ---
 
+## 🎨 Try the Visual Web App
+
+Want to understand how Gittxt works without installing anything?
+Check out the hosted Streamlit app: 
+
+➡️ [Try Gittxt on Streamlit Cloud](https://gittxt.streamlit.app/)
+
+---
+
 ## 🚀 Quick Navigation
 
 | Section | Description |
@@ -26,10 +35,12 @@ Whether you're analyzing open source code, building training corpora, or archivi
 
 ## 💡 Key Features
 - Modular CLI: `scan`, `config`, `plugin`, `re`, `clean`
-- `.gittxtignore` support
+- `.gittxtignore` support for gitignore-style filtering
 - Lite vs Rich modes
 - ZIP bundling and manifest/summary outputs
-- Plugin system: API + Streamlit
+- Plugin system: FastAPI + Streamlit
+- Hosted Streamlit app with full `gittxt scan` parity
+- AI-Powered Summary & Chat (OpenAI / Ollama support)
 - Fast, async scanning of large codebases
 
 ---
@@ -43,3 +54,7 @@ Whether you're analyzing open source code, building training corpora, or archivi
 
 Let’s get started → [Installation Guide](getting-started/installation.md)
 
+---
+
+Want to know how Gittxt was born and why it exists?  
+📖 [Read the full story → About Gittxt](about.md)
