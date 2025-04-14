@@ -11,7 +11,7 @@ class CustomGroup(click.Group):
     def __init__(self, *args, **kwargs):
         kwargs["invoke_without_command"] = False
         kwargs["help"] = (
-            "[📝] Gittxt CLI - Get text from Git repositories in AI-ready formats."
+            "[📝] Gittxt CLI - Get Text from Git — Optimized for AI."
         )
         super().__init__(*args, **kwargs)
 
