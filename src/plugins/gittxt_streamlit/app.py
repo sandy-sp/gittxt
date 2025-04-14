@@ -9,6 +9,10 @@ from ui_components import (
     section_options,
     render_scan_result,
 )
+from gittxt.core.constants import (
+    DEFAULT_FILETYPE_CONFIG,
+    EXCLUDED_DIRS_DEFAULT,
+)
 
 st.set_page_config(page_title="Gittxt Streamlit Plugin", layout="wide")
 st.title("🧾 Gittxt: Scan GitHub Repos to Text")
@@ -20,9 +24,24 @@ if "scan_result" not in st.session_state:
 st.subheader("📥 Enter GitHub Repository URL")
 repo_url = st.text_input("GitHub URL or Local Path", placeholder="https://github.com/user/repo")
 
-st.subheader("🧩 Filter Settings")
-include_patterns, exclude_patterns, exclude_dirs, size_limit, tree_depth = section_filters()
+# --- Filter Settings Section with Toggle ---
+col1, col2 = st.columns([0.9, 0.1])
+with col1:
+    st.subheader("🧩 Filter Settings")
+with col2:
+    use_defaults = st.toggle("Use Default Filter Settings", value=True, label_visibility="collapsed")
 
+# --- Determine filter values ---
+if use_defaults:
+    include_patterns = ",".join(f"**/*{ext}" for ext in DEFAULT_FILETYPE_CONFIG["textual_exts"])
+    exclude_patterns = ""
+    exclude_dirs = ",".join(EXCLUDED_DIRS_DEFAULT)
+    size_limit = 1_000_000
+    tree_depth = 5
+else:
+    include_patterns, exclude_patterns, exclude_dirs, size_limit, tree_depth = section_filters()
+
+# --- Options Section ---
 st.subheader("⚙️ Scan Options")
 lite_mode, zip_bundle, skip_tree, sync_ignore, output_formats = section_options()
 
