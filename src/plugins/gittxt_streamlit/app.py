@@ -9,10 +9,7 @@ from ui_components import (
     section_options,
     render_scan_result,
 )
-from gittxt.core.constants import (
-    DEFAULT_FILETYPE_CONFIG,
-    EXCLUDED_DIRS_DEFAULT,
-)
+from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 
 st.set_page_config(page_title="Gittxt Streamlit Plugin", layout="wide")
 st.title("🧾 Gittxt: Scan GitHub Repos to Text")
@@ -33,7 +30,7 @@ with col2:
 
 # --- Determine filter values ---
 if use_defaults:
-    include_patterns = ",".join(f"**/*{ext}" for ext in DEFAULT_FILETYPE_CONFIG["textual_exts"])
+    include_patterns = ""
     exclude_patterns = ""
     exclude_dirs = ",".join(EXCLUDED_DIRS_DEFAULT)
     size_limit = 1_000_000
@@ -51,12 +48,11 @@ if use_defaults:
 else:
     include_patterns, exclude_patterns, exclude_dirs, size_limit, tree_depth = section_filters()
 
-# --- Options Section ---
-st.subheader("⚙️ Scan Options")
-lite_mode, zip_bundle, skip_tree, sync_ignore, output_formats = section_options()
+# --- Download Options Section ---
+lite_mode, skip_tree, sync_ignore, docs_only, output_formats, zip_bundle = section_options()
 
-# --- Run Scan Button ---
-if st.button("🚀 Run Scan", type="primary") and repo_url:
+# --- Get Text Button ---
+if st.button("📄 Get Text", type="primary") and repo_url:
     with st.status("Running scan...", expanded=True):
         filters = {
             "branch": None,
@@ -72,6 +68,7 @@ if st.button("🚀 Run Scan", type="primary") and repo_url:
             "skip_tree": skip_tree,
             "tree_depth": tree_depth,
             "sync": sync_ignore,
+            "docs_only": docs_only,
         }
         result = asyncio.run(full_cli_equivalent_scan(repo_url, filters))
         st.session_state.scan_result = result
