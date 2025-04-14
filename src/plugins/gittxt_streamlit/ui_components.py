@@ -5,21 +5,28 @@ from pathlib import Path
 
 
 def section_filters():
-    include_patterns = st.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
-    exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
-    exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
-    return include_patterns, exclude_patterns, exclude_dirs
+    with st.expander("⚙️ Advanced Filters"):
+        include_patterns = st.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
+        exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
+        exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
+        max_file_size = st.slider("Max File Size (bytes)", min_value=0, max_value=5_000_000, step=100_000, value=1_000_000)
+        tree_depth = st.slider("Tree Depth", 1, 10, value=5)
+    return include_patterns, exclude_patterns, exclude_dirs, max_file_size, tree_depth
 
 
 def section_options():
-    size_limit = st.number_input("Max File Size (bytes)", value=1_000_000, step=1_000)
     lite_mode = st.checkbox("Lite Mode", value=False)
     zip_bundle = st.checkbox("Create ZIP Bundle", value=False)
     skip_tree = st.checkbox("Skip Directory Tree", value=False)
     sync_ignore = st.checkbox("Use .gittxtignore", value=False)
-    tree_depth = st.slider("Tree Depth", 1, 10, value=5)
-    output_formats = st.multiselect("Output Formats", ["txt", "md", "json"], default=["txt"])
-    return size_limit, lite_mode, zip_bundle, skip_tree, sync_ignore, tree_depth, output_formats
+
+    st.markdown("**Output Formats:**")
+    txt = st.checkbox(".txt", value=True)
+    md = st.checkbox(".md", value=True)
+    json = st.checkbox(".json", value=True)
+    selected_formats = [fmt for fmt, checked in zip(["txt", "md", "json"], [txt, md, json]) if checked]
+
+    return lite_mode, zip_bundle, skip_tree, sync_ignore, selected_formats
 
 
 def render_scan_result(result):
