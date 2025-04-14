@@ -5,7 +5,6 @@ import asyncio
 from pathlib import Path
 from pipeline import full_cli_equivalent_scan
 from ui_components import (
-    section_repo_input,
     section_filters,
     section_options,
     render_scan_result,
@@ -17,9 +16,14 @@ st.title("🧾 Gittxt: Scan GitHub Repos to Text")
 if "scan_result" not in st.session_state:
     st.session_state.scan_result = None
 
-# --- Sidebar UI ---
-repo_url, branch, subdir = section_repo_input()
+# --- Main UI Input ---
+st.subheader("📥 Enter GitHub Repository URL")
+repo_url = st.text_input("GitHub URL or Local Path", placeholder="https://github.com/user/repo")
+
+st.subheader("🧩 Filter Settings")
 include_patterns, exclude_patterns, exclude_dirs = section_filters()
+
+st.subheader("⚙️ Scan Options")
 (
     size_limit,
     lite_mode,
@@ -30,15 +34,12 @@ include_patterns, exclude_patterns, exclude_dirs = section_filters()
     output_formats,
 ) = section_options()
 
-st.sidebar.markdown("---")
-st.sidebar.caption("Built with ❤️ using Gittxt")
-
-# --- Scan Trigger ---
+# --- Run Scan Button ---
 if st.button("🚀 Run Scan", type="primary") and repo_url:
     with st.status("Running scan...", expanded=True):
         filters = {
-            "branch": branch or None,
-            "subdir": subdir or None,
+            "branch": None,
+            "subdir": None,
             "include_patterns": [p.strip() for p in include_patterns.split(",") if p.strip()],
             "exclude_patterns": [p.strip() for p in exclude_patterns.split(",") if p.strip()],
             "exclude_dirs": [d.strip() for d in exclude_dirs.split(",") if d.strip()],
