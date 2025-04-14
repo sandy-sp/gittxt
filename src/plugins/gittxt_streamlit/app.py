@@ -21,18 +21,10 @@ st.subheader("📥 Enter GitHub Repository URL")
 repo_url = st.text_input("GitHub URL or Local Path", placeholder="https://github.com/user/repo")
 
 st.subheader("🧩 Filter Settings")
-include_patterns, exclude_patterns, exclude_dirs = section_filters()
+include_patterns, exclude_patterns, exclude_dirs, size_limit, tree_depth = section_filters()
 
 st.subheader("⚙️ Scan Options")
-(
-    size_limit,
-    lite_mode,
-    zip_bundle,
-    skip_tree,
-    sync_ignore,
-    tree_depth,
-    output_formats,
-) = section_options()
+lite_mode, zip_bundle, skip_tree, sync_ignore, output_formats = section_options()
 
 # --- Run Scan Button ---
 if st.button("🚀 Run Scan", type="primary") and repo_url:
