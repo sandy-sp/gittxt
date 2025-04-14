@@ -4,7 +4,7 @@ Gittxt supports optional plugins to extend its functionality beyond the CLI.
 
 Plugins currently include:
 - 🧠 `gittxt-api`: FastAPI backend for web/app integrations
-- 📊 `gittxt-streamlit`: Streamlit UI for interactive scans and downloads
+- 📊 `gittxt-streamlit`: Streamlit UI for interactive scans and downloads, now with full CLI parity and AI Summary support
 
 ---
 
@@ -14,6 +14,7 @@ Each plugin:
 - Resides under the `plugins/` directory
 - Is launched using `gittxt plugin run <name>`
 - Can be installed/uninstalled via CLI
+- Manages its own dependencies via `requirements.txt`
 
 ---
 
@@ -36,12 +37,12 @@ gittxt plugin [COMMAND]
 ```bash
 gittxt plugin list
 gittxt plugin install gittxt-api
-gittxt plugin run gittxt-api
+gittxt plugin run gittxt-streamlit
 ```
 
 ---
 
-## 🧰 Plugin Directory
+## 🛠 Plugin Directory Structure
 
 All plugins live under:
 ```
@@ -50,49 +51,38 @@ plugins/
 ├── gittxt_streamlit/
 └── ...
 ```
-Each plugin is self-contained with its own dependencies and entry points.
+Each plugin is self-contained with:
+- `requirements.txt`
+- Entrypoint script(s)
+- Localized dependencies
 
 ---
 
-## 🧰 Plugin Requirements
+## 🔧 How Dependency Installation Works
 
-Each plugin has its own `requirements.txt`. For example:
-
+Each plugin has its own `requirements.txt`, such as:
 ```text
 plugins/gittxt-api/requirements.txt
 plugins/gittxt-streamlit/requirements.txt
 ```
 
-When you run a plugin via:
+When you run a plugin like:
 ```bash
 gittxt plugin run gittxt-streamlit
 ```
 Gittxt will:
-1. Check if the plugin is installed
-2. Automatically install any required dependencies from `requirements.txt`
-3. Launch the plugin in the correct working directory
+1. Verify that the plugin is installed
+2. Install missing dependencies automatically
+3. Launch the plugin from the appropriate working directory
 
-✅ This keeps the **core CLI lightweight** and avoids bundling unnecessary dependencies.
-
----
-
-## 🔗 Examples
-
-### Launch Streamlit App
-```bash
-gittxt plugin run gittxt-streamlit
-```
-
-### Launch FastAPI Server
-```bash
-gittxt plugin run gittxt-api
-```
+✅ This design keeps the **core CLI lightweight** and avoids unnecessary dependencies.
 
 ---
 
 ## 🔒 Safe Defaults
 - All plugin paths are sandboxed inside the project repo
-- No plugins are fetched from external sources unless added manually
+- No external fetching is done unless plugins are manually added
+- Dependency installation is local to the plugin scope
 
 ---
 
