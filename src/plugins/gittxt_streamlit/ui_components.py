@@ -7,12 +7,11 @@ import humanize
 
 def section_filters():
     with st.expander("⚙️ Advanced Filters"):
-        include_patterns = st.text_input("Include Patterns (comma-separated)", "**/*.py,**/*.md")
-        exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", "tests/*,.vscode/*")
-        exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", "__pycache__,.git,node_modules")
-        max_file_size_mb = st.slider("Max File Size (MB)", min_value=0, max_value=5, step=1, value=1)
+        include_patterns = st.text_input("Include Patterns (comma-separated)", placeholder= "**/*.py,**/*.md")
+        exclude_patterns = st.text_input("Exclude Patterns (comma-separated)", placeholder= "tests/*,.vscode/*")
+        exclude_dirs = st.text_input("Exclude Dirs (comma-separated)", placeholder= "__pycache__,.git,node_modules")
+        max_file_size_mb = st.slider("Max File Size (MB)", min_value=0, max_value=73, step=1, value=1)
         max_file_size = max_file_size_mb * 1_000_000
-        st.caption(f"Max file size: {max_file_size_mb} MB")
         tree_depth = st.slider("Tree Depth", 1, 10, value=5)
     return include_patterns, exclude_patterns, exclude_dirs, max_file_size, tree_depth
 
