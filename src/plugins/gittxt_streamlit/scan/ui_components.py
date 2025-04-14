@@ -36,6 +36,15 @@ def section_options():
     return lite_mode, skip_tree, sync_ignore, docs_only, selected_formats, zip_bundle
 
 
+def format_number_k(num):
+    """Format a number with 'K' for thousands, 'M' for millions, etc."""
+    if num >= 1_000_000:
+        return f"{num / 1_000_000:.1f}M"
+    elif num >= 1_000:
+        return f"{num / 1_000:.1f}K"
+    return str(num)
+
+
 def render_scan_result(result):
     if result.get("error"):
         st.error(result["error"])
@@ -51,17 +60,16 @@ def render_scan_result(result):
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Files", summary["total_files"])
         c2.metric("Total Size", humanize.naturalsize(summary["total_size"]))
-        c3.metric("Estimated Tokens", humanize.intcomma(summary['estimated_tokens']))
+        c3.metric("Estimated Tokens", format_number_k(summary['estimated_tokens']))
 
         st.markdown("### 🔍 Tokens by Type")
         token_table = summary.get("tokens_by_type", {})
         if token_table:
             df = pd.DataFrame({
                 "Type": list(token_table.keys()),
-                "Tokens": [humanize.intcomma(v) for v in token_table.values()]
+                "Tokens": [format_number_k(v) for v in token_table.values()]
             })
             st.dataframe(df.style.set_properties(**{'text-align': 'center'}).hide(axis="index"), use_container_width=True)
-
 
     with col2:
         if result.get("skipped"):
