@@ -9,6 +9,13 @@ class ScanRequest(BaseModel):
     exclude_patterns: Optional[List[str]] = []
     lite: bool = False
     create_zip: bool = False
+    # New fields to match cli_scan.py
+    docs_only: bool = False         # Equivalent to --docs
+    sync_ignore: bool = False       # Equivalent to --sync
+    size_limit: Optional[int] = None  # Equivalent to --size-limit
+    tree_depth: Optional[int] = None  # Equivalent to --tree-depth
+    skip_tree: bool = False         # Equivalent to --no-tree
+
 
 class ScanResponse(BaseModel):
     scan_id: str
