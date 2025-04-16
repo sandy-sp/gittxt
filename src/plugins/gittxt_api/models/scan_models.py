@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 class ScanRequest(BaseModel):
     repo_path: str
@@ -24,3 +24,5 @@ class ScanResponse(BaseModel):
     num_non_textual_files: int
     artifact_dir: str
     message: str
+    # Optionally store a summary dict from generate_summary
+    summary: Dict[str, Any] = {}
