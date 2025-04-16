@@ -86,5 +86,6 @@ async def perform_scan(request: ScanRequest) -> ScanResponse:
         num_textual_files=len(textual_files),
         num_non_textual_files=len(non_textual_files),
         artifact_dir=str(scan_output_dir),
-        message="Scan completed"
+        message="Scan completed",
+        summary=summary_data
     )
