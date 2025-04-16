@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Path
 from fastapi.responses import FileResponse
-from fastapi import Path
 from plugins.gittxt_api.dependencies import OUTPUT_DIR
 
 router = APIRouter(tags=["Download"])
