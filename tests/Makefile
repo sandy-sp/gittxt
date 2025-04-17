@@ -19,7 +19,7 @@ api::
 	@echo "🔧 Generating test repo in tests/api/test_repo..."
 	poetry run pytest api -v
 	@echo "🗑️ Cleaning up test repo and outputs..."
-	rm -rf api/test_repo api/test_repo.zip
+	rm -rf api/test_repo.zip
 
 # Clean up generated test outputs
 clean:
