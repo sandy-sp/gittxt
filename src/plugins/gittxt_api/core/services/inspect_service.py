@@ -9,8 +9,8 @@ from gittxt.utils.file_utils import load_gittxtignore
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from gittxt.utils.tree_utils import generate_tree
 
-from gittxt_api.api.v1.models.inspect_models import InspectRequest, InspectResponse, FileInfo
-from gittxt_api.api.v1.deps import get_output_dir
+from plugins.gittxt_api.api.v1.models.inspect_models import InspectRequest, InspectResponse, FileInfo
+from plugins.gittxt_api.api.v1.deps import get_output_dir
 
 async def perform_inspect(request: InspectRequest) -> InspectResponse:
     scan_id = str(uuid4())
