@@ -1,10 +1,8 @@
-version: '3.9'
-
 services:
   gittxt-api:
     build:
       context: .
-      dockerfile: plugins/gittxt_api/Dockerfile
+      dockerfile: src/plugins/gittxt_api/Dockerfile
     ports:
       - "8000:8000"
     volumes:
