@@ -22,3 +22,13 @@ async def _get_scan_id():
         })
         assert response.status_code == 201
         return response.json()["data"]["scan_id"]
+
+@pytest.fixture(scope="session", autouse=True)
+def auto_cleanup(scan_id):
+    yield
+    import httpx
+    import asyncio
+    async def _cleanup():
+        async with httpx.AsyncClient() as client:
+            await client.delete(f"http://127.0.0.1:8000/v1/cleanup/{scan_id}")
+    asyncio.get_event_loop().run_until_complete(_cleanup())
