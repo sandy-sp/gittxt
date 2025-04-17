@@ -5,7 +5,6 @@ from gittxt import __version__
 # Import all routers
 from plugins.gittxt_api.api.v1.endpoints import (
     scan,
-    inspect,
     upload,
     summary,
     download,
@@ -41,7 +40,6 @@ def health_check():
 # Register all v1 routes
 v1_prefix = "/v1"
 app.include_router(scan.router, prefix=f"{v1_prefix}/scan")
-app.include_router(inspect.router, prefix=f"{v1_prefix}/inspect")
 app.include_router(upload.router, prefix=f"{v1_prefix}/upload")
 app.include_router(summary.router, prefix=f"{v1_prefix}/summary")
 app.include_router(download.router, prefix=f"{v1_prefix}/download")
