@@ -9,8 +9,8 @@ async def test_inspect_minimal():
     }
     async with httpx.AsyncClient() as client:
         r = await client.post("http://127.0.0.1:8000/v1/inspect/", json=payload)
+        print("INSPECT ERROR:", r.status_code, r.text)  # <--- Add this
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "success"
         assert "repo_tree" in data["data"]
-    print("Inspect Response:", r.status_code, r.text)
