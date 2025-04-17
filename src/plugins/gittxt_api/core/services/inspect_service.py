@@ -25,7 +25,10 @@ async def perform_inspect(request: InspectRequest) -> InspectResponse:
     root_path = Path(local_path) / subdir if subdir else Path(local_path)
 
     merged_excludes = set(EXCLUDED_DIRS_DEFAULT) | set(request.exclude_dirs)
-    merged_excludes |= set(safe_read_gitignore(root_path)) 
+    try:
+        merged_excludes |= set(safe_read_gitignore(root_path))
+    except FileNotFoundError:
+        pass
 
     tree_str = generate_tree(root_path, max_depth=request.max_depth)
 
