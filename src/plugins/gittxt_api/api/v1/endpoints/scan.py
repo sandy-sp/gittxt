@@ -5,7 +5,7 @@ from plugins.gittxt_api.api.v1.models.response_models import ApiResponse
 
 router = APIRouter(tags=["Scan"])
 
-@router.post("/", response_model=ScanResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
 async def scan_repo(request: ScanRequest):
     """
     Scan a GitHub/local repository and generate outputs (text, markdown, json, zip).
