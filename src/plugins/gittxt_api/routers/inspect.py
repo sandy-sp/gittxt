@@ -6,6 +6,13 @@ router = APIRouter(tags=["Inspect"])
 
 @router.post("/")
 async def inspect_repo(request: InspectRequest):
+    """
+    Quick pre-scan endpoint:
+    - Clones/resolves the repo
+    - Builds directory tree
+    - Classifies textual/non-textual files
+    - No Gittxt outputs generated
+    """
     try:
         result = await perform_inspect(request)
         return result
