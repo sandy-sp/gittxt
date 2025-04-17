@@ -30,12 +30,12 @@ def load_gittxtignore(repo_path: Path) -> list:
             logger.warning(f"⚠️ Failed to load .gittxtignore: {e}")
     return []
 
-def safe_read_gitignore(repo_path: Path) -> list:
+
+def safe_read_gitignore(root_path: Path) -> list:
+    gitignore = root_path / ".gitignore"
+    if not gitignore.exists():
+        return []
     try:
-        ignore_file = repo_path / ".gitignore"
-        if ignore_file.exists():
-            lines = ignore_file.read_text(encoding="utf-8").splitlines()
-            return [p.strip() for p in lines if p.strip() and not p.startswith("#")]
-    except Exception as e:
-        logger.warning(f"⚠️ Failed to read .gitignore: {e}")
-    return []
+        return [line.strip() for line in gitignore.read_text(encoding="utf-8").splitlines() if line.strip()]
+    except Exception:
+        return []
