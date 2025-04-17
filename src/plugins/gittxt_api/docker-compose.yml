@@ -2,9 +2,11 @@ services:
   gittxt-api:
     build:
       context: .
-      dockerfile: src/plugins/gittxt_api/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
-    restart: unless-stopped
+      - ./src/plugins/gittxt_api:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
