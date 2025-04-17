@@ -13,3 +13,4 @@ async def test_inspect_minimal():
         data = r.json()
         assert data["status"] == "success"
         assert "repo_tree" in data["data"]
+    print("Inspect Response:", r.status_code, r.text)
