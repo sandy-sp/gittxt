@@ -5,13 +5,13 @@ from pathlib import Path
 from gittxt.core.repository import RepositoryHandler
 from gittxt.core.scanner import Scanner
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
-from gittxt.utils.file_utils import load_gittxtignore
+from gittxt.utils.file_utils import safe_read_gitignore 
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from gittxt.utils.tree_utils import generate_tree
 
 from plugins.gittxt_api.api.v1.models.inspect_models import InspectRequest, InspectResponse, FileInfo
 from plugins.gittxt_api.api.v1.deps import get_output_dir
-from gittxt.utils.file_utils import safe_read_gitignore
+
 
 async def perform_inspect(request: InspectRequest) -> InspectResponse:
     scan_id = str(uuid4())
@@ -25,7 +25,7 @@ async def perform_inspect(request: InspectRequest) -> InspectResponse:
     root_path = Path(local_path) / subdir if subdir else Path(local_path)
 
     merged_excludes = set(EXCLUDED_DIRS_DEFAULT) | set(request.exclude_dirs)
-    merged_excludes |= set(safe_read_gitignore(root_path))
+    merged_excludes |= set(safe_read_gitignore(root_path)) 
 
     tree_str = generate_tree(root_path, max_depth=request.max_depth)
 
