@@ -5,7 +5,7 @@ import subprocess
 
 @pytest.mark.asyncio
 async def test_upload_zip():
-    zip_path = Path("tests/api/test_repo.zip")
+    zip_path = Path("api/test_repo.zip")
     if not zip_path.exists():
         subprocess.run(["python", "api/generate_test_repo.py"], check=True)
 
