@@ -10,7 +10,10 @@ def event_loop():
     loop.close()
 
 @pytest.fixture(scope="session")
-async def scan_id():
+def scan_id(event_loop):
+    return event_loop.run_until_complete(_get_scan_id())
+
+async def _get_scan_id():
     async with httpx.AsyncClient() as client:
         response = await client.post("http://127.0.0.1:8000/v1/scan/", json={
             "repo_path": "https://github.com/sandy-sp/gittxt",
