@@ -65,7 +65,7 @@ def generate_test_zip():
     test_dir = Path("tests/api/test_repo")
     generate_test_repo(test_dir)
 
-    zip_path = Path("tests/api/test_repo.zip")
+    zip_path = Path("api/test_repo.zip")
 
     # Clean up existing zip file
     if zip_path.exists():
