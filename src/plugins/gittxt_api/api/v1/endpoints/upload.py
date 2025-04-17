@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
-from gittxt_api.api.v1.models.upload_models import UploadResponse
-from gittxt_api.core.services.upload_service import handle_uploaded_zip
-from gittxt_api.api.v1.models.response_models import ApiResponse
+from plugins.gittxt_api.api.v1.models.upload_models import UploadResponse
+from plugins.gittxt_api.core.services.upload_service import handle_uploaded_zip
+from plugins.gittxt_api.api.v1.models.response_models import ApiResponse
 
 router = APIRouter(tags=["Upload"])
 
