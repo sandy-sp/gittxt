@@ -1,7 +1,7 @@
 .PHONY: all clean cli api
 
 # Run all tests
-all: cli-tests api-tests
+all: cli api
 
 # Run CLI tests
 cli::
