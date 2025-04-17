@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from gittxt import __version__
 
 # Import all routers
-from gittxt_api.api.v1.endpoints import (
+from plugins.gittxt_api.api.v1.endpoints import (
     scan,
     inspect,
     upload,
@@ -11,7 +11,7 @@ from gittxt_api.api.v1.endpoints import (
     download,
     cleanup,
 )
-from gittxt_api.api.v1.models.response_models import ErrorResponse
+from plugins.gittxt_api.api.v1.models.response_models import ErrorResponse
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
