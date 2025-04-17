@@ -15,7 +15,7 @@ cli::
 # Run API tests
 api::
 	@echo "🔧 Generating test repository for API tests..."
-	python cli/generate_test_repo.py
+	python api/generate_test_repo.py
 	@echo "🔧 Generating test repo in tests/api/test_repo..."
 	poetry run pytest api -v
 	@echo "🗑️ Cleaning up test repo and outputs..."
