@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, status
-from gittxt_api.core.utils.json_utils import load_json_summary
-from gittxt_api.api.v1.deps import get_output_dir
-from gittxt_api.api.v1.models.response_models import ApiResponse
+from plugins.gittxt_api.core.utils.json_utils import load_json_summary
+from plugins.gittxt_api.api.v1.deps import get_output_dir
+from plugins.gittxt_api.api.v1.models.response_models import ApiResponse
 
 router = APIRouter(tags=["Summary"])
 
