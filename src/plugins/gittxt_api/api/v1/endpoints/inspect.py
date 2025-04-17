@@ -5,7 +5,7 @@ from plugins.gittxt_api.api.v1.models.response_models import ApiResponse
 
 router = APIRouter(tags=["Inspect"])
 
-@router.post("/", response_model=InspectResponse, status_code=status.HTTP_200_OK)
+@router.post("/", response_model=ApiResponse, status_code=status.HTTP_200_OK)
 async def inspect_repo(request: InspectRequest):
     """
     Pre-scan endpoint to classify files and return directory tree (no output generated).
