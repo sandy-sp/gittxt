@@ -7,7 +7,7 @@ import subprocess
 async def test_upload_zip():
     zip_path = Path("tests/api/test_repo.zip")
     if not zip_path.exists():
-        subprocess.run(["python", "tests/api/generate_test_repo.py"], check=True)
+        subprocess.run(["python", "api/generate_test_repo.py"], check=True)
 
     with zip_path.open("rb") as f:
         files = {"file": ("repo.zip", f, "application/zip")}
