@@ -35,7 +35,7 @@ app.add_middleware(
 # Health check
 @app.get("/health", tags=["Meta"])
 def health_check():
-    return {"status": "ok", "version": __version__, "message": "API is up"}
+    return {"status": "ok", "version": __version__, "message": "Gittxt API is up"}
 
 # Register all v1 routes
 v1_prefix = "/v1"
