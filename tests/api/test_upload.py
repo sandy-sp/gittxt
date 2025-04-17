@@ -1,11 +1,13 @@
 import pytest
 import httpx
 from pathlib import Path
+import subprocess
 
 @pytest.mark.asyncio
 async def test_upload_zip():
     zip_path = Path("tests/api/test_repo.zip")
-    assert zip_path.exists()
+    if not zip_path.exists():
+        subprocess.run(["python", "tests/api/generate_test_repo.py"], check=True)
 
     with zip_path.open("rb") as f:
         files = {"file": ("repo.zip", f, "application/zip")}
