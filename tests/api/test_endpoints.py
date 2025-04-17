@@ -5,6 +5,9 @@ import time
 import os
 import signal
 from pathlib import Path
+import pytest
+from httpx import AsyncClient
+from plugins.gittxt_api.main import app
 
 API_URL = "http://127.0.0.1:8000"
 
@@ -30,15 +33,18 @@ async def test_health_check():
 
 @pytest.mark.asyncio
 async def test_inspect_repo():
-    async with httpx.AsyncClient() as client:
-        payload = {
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.post("/inspect", json={
             "repo_path": "https://github.com/sandy-sp/gittxt",
-        }
-        r = await client.post(f"{API_URL}/inspect/", json=payload)
-        assert r.status_code == 200
-        assert "repository" in r.json()
-        global test_summary  # Store for downstream scan
-        test_summary = r.json()
+            "max_depth": 2
+        })
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "repo_tree" in data
+        assert "textual_files" in data
+        assert "non_textual_files" in data
+        assert len(data["textual_files"]) > 0
 
 @pytest.mark.asyncio
 async def test_scan_repo():
