@@ -5,7 +5,7 @@ from plugins.gittxt_api.api.v1.models.response_models import ApiResponse
 
 router = APIRouter(tags=["Upload"])
 
-@router.post("/", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
 async def upload_zip(file: UploadFile = File(...), lite: bool = False):
     """
     Accepts a zipped repository, scans and processes files.
