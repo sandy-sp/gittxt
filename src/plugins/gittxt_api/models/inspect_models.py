@@ -7,3 +7,4 @@ class InspectRequest(BaseModel):
     exclude_dirs: Optional[List[str]] = []
     include_patterns: Optional[List[str]] = []
     exclude_patterns: Optional[List[str]] = []
+    max_depth: Optional[int] = 3
