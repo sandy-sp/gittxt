@@ -3,6 +3,7 @@ from rich.console import Console
 from pathlib import Path
 import subprocess
 import shutil
+import os  # Add this import
 
 console = Console()
 
@@ -10,7 +11,7 @@ PLUGINS_DIR = Path(__file__).resolve().parent.parent.parent / "plugins"
 PLUGIN_LIST = {
     "gittxt-api": {
         "path": PLUGINS_DIR / "gittxt_api",
-        "run_cmd": "uvicorn gittxt_api.main:app --reload"
+        "run_cmd": "uvicorn plugins.gittxt_api.main:app --reload"
     },
     "gittxt-streamlit": {
         "path": PLUGINS_DIR / "gittxt_streamlit",
@@ -55,7 +56,9 @@ def run_plugin(plugin_name):
             return
 
     console.print(f"[cyan]🚀 Launching plugin: {plugin_name}[/cyan]")
-    subprocess.run(plugin["run_cmd"].split(), cwd=plugin["path"])
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent.parent)  # Add src to PYTHONPATH
+    subprocess.run(plugin["run_cmd"].split(), cwd=str(plugin["path"]), env=env)
 
 @plugin.command("install")
 @click.argument("plugin_name")
