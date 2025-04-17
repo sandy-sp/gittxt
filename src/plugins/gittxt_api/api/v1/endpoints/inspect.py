@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
-from gittxt_api.api.v1.models.inspect_models import InspectRequest, InspectResponse
-from gittxt_api.core.services.inspect_service import perform_inspect
-from gittxt_api.api.v1.models.response_models import ApiResponse
+from plugins.gittxt_api.api.v1.models.inspect_models import InspectRequest, InspectResponse
+from plugins.gittxt_api.core.services.inspect_service import perform_inspect
+from plugins.gittxt_api.api.v1.models.response_models import ApiResponse
 
 router = APIRouter(tags=["Inspect"])
 
