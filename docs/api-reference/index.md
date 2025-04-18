@@ -1,6 +1,6 @@
 # 📡 API Reference Overview
 
-The Gittxt API Plugin provides a RESTful interface for scanning GitHub repositories, uploading ZIP archives, and retrieving results programmatically.
+The Gittxt API Plugin provides a versioned RESTful interface for scanning GitHub repositories, uploading ZIP archives, and retrieving results programmatically. All routes are prefixed under `/v1`.
 
 This section documents the available endpoints, input models, and expected responses.
 
@@ -13,11 +13,11 @@ Launch the API server:
 gittxt plugin run gittxt-api
 ```
 
-Navigate to:
-```text
+Then open:
+```
 http://localhost:8000/docs
 ```
-To access the Swagger UI.
+This provides Swagger UI for all endpoints.
 
 ---
 
@@ -25,29 +25,59 @@ To access the Swagger UI.
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/health` | Check API status |
-| `POST` | `/inspect` | Preview a repo without saving outputs |
-| `POST` | `/scan` | Run full scan and save results |
-| `POST` | `/upload` | Upload a ZIP and extract summaries |
-| `GET` | `/download/{scan_id}` | Download results in `.txt`, `.json`, `.md`, or `.zip` |
-| `GET` | `/summary/{scan_id}` | Fetch structured summary report |
-| `DELETE` | `/cleanup/{scan_id}` | Remove scan outputs from disk |
+| `GET` | `/v1/health` | Check API status |
+| `POST` | `/v1/inspect` | Preview a repo (no outputs saved) |
+| `POST` | `/v1/scan` | Full repo scan with output generation |
+| `POST` | `/v1/upload` | Upload ZIP archive to scan |
+| `GET` | `/v1/download/{scan_id}?format=txt|json|md|zip` | Download artifact |
+| `GET` | `/v1/summary/{scan_id}` | View scan summary (JSON) |
+| `DELETE` | `/v1/cleanup/{scan_id}` | Delete output artifacts by scan ID |
 
 ---
 
 ## 🔑 Scan ID
-Each scan creates a unique `scan_id` used to retrieve, download, or delete results.
+Every successful scan or upload returns a `scan_id`, which you can use to:
+- Download results in various formats
+- View summary data
+- Cleanup temporary or saved files
 
 ---
 
 ## 📦 Output Format
-Results are stored in the configured `OUTPUT_DIR` and returned via API responses or file downloads.
+Scan results are saved to a unique directory inside your configured `OUTPUT_DIR` and returned in:
+- `.txt`, `.json`, `.md`
+- `.zip` bundles (if `create_zip=true`)
 
 ---
 
-## 🔐 CORS & Security
-- CORS is enabled for all origins by default.
-- Add API key support in production environments.
+## 🔐 CORS & Security Notes
+- CORS is **enabled for all origins** (suitable for local or frontend integration)
+- Consider implementing **API key authentication** in production
+- All endpoints return structured `ApiResponse` objects with timestamp
+
+---
+
+## 📊 Response Schema Highlights
+
+### `ApiResponse`
+```json
+{
+  "status": "success",
+  "message": "Scan completed successfully",
+  "data": { ... },
+  "timestamp": "2025-04-17T18:00:00Z"
+}
+```
+
+### `ErrorResponse`
+```json
+{
+  "status": "error",
+  "error": "Validation Error",
+  "detail": "...",
+  "timestamp": "2025-04-17T18:00:00Z"
+}
+```
 
 ---
 
