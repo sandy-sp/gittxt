@@ -1,14 +1,14 @@
 # 🔍 Inspect Endpoint
 
-The `/inspect` endpoint provides a lightweight way to preview the contents of a GitHub repository without writing any output files to disk.
+The `/v1/inspect` endpoint provides a lightweight preview of any GitHub or local repo.
 
-This is ideal for quick exploration and previews in frontend apps or dashboards.
+Unlike `/scan`, this **does not write outputs to disk** or return ZIP bundles — it is intended for real-time frontend previews or quick backend checks.
 
 ---
 
 ## ✅ Endpoint
 ```http
-POST /inspect
+POST /v1/inspect
 ```
 
 ---
@@ -19,47 +19,60 @@ POST /inspect
   "repo_path": "https://github.com/user/repo",
   "branch": "main",
   "exclude_dirs": ["tests", "node_modules"],
-  "include_patterns": ["**/*.py", "**/*.md"],
+  "include_patterns": ["**/*.py"],
   "exclude_patterns": ["*.log"]
 }
 ```
 
-### Fields:
-- `repo_path` (required): Local path or GitHub URL
+### Fields
+- `repo_path` (**required**): Local path or GitHub URL
 - `branch` (optional): Defaults to `main`
-- `exclude_dirs` (optional): Folder names to ignore
-- `include_patterns` / `exclude_patterns`: Glob filters
+- `exclude_dirs` (optional): Folders to skip
+- `include_patterns` / `exclude_patterns`: Glob filters to include/exclude
 
 ---
 
 ## 📦 Response Example
-Returns the same structure as a JSON scan output, but **without saving files**:
+Returns a summary and file listing without writing anything to disk:
 
 ```json
 {
-  "repository": {
-    "name": "repo",
-    "branch": "main",
-    "tree_summary": "..."
+  "status": "success",
+  "message": "Preview completed",
+  "data": {
+    "repository": {
+      "name": "repo",
+      "branch": "main",
+      "tree_summary": "..."
+    },
+    "summary": {
+      "total_files": 8,
+      "estimated_tokens": 3000,
+      "formatted": {
+        "total_size": "28.1 kB",
+        "estimated_tokens": "3k"
+      }
+    },
+    "files": [
+      {
+        "path": "src/main.py",
+        "subcategory": "code",
+        "tokens_estimate": 1100,
+        "url": "https://github.com/user/repo/blob/main/src/main.py"
+      },
+      ...
+    ]
   },
-  "summary": {
-    "total_files": 10,
-    "estimated_tokens": 5000,
-    "formatted": {
-      "total_size": "42.3 kB",
-      "estimated_tokens": "5k"
-    }
-  },
-  "files": [ ... ]
+  "timestamp": "2025-04-17T19:00:00Z"
 }
 ```
 
 ---
 
-## 🧠 Use Case
-- Instant preview in UIs before full scan
-- Run summaries with `lite` mode logic (no ZIP, no disk writes)
-- Low-resource/ephemeral environments
+## 🧠 Use Cases
+- Live UI previews (before committing to a scan)
+- Filter previews: let users choose patterns/directories dynamically
+- Zero-write environments (e.g. sandboxed or ephemeral containers)
 
 ---
 
