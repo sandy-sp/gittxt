@@ -1,78 +1,128 @@
 # 🔌 Gittxt API Plugin
 
-The **Gittxt API Plugin** enables a FastAPI-powered REST interface for scanning repositories, uploading ZIP files, and accessing scan summaries programmatically.
+The Gittxt API Plugin exposes a RESTful interface for programmatic scanning and artifact retrieval. It's ideal for integrating Gittxt functionality into frontend dashboards, automation workflows, or other dev tools.
 
 ---
 
-## 🚀 Launch the API
+## 🚀 Quick Start
 
-Start the server using the plugin CLI:
+Run the API server:
 ```bash
 gittxt plugin run gittxt-api
 ```
 
-Or directly via Uvicorn:
-```bash
-uvicorn plugins.gittxt_api.main:app --reload
+Once running, visit Swagger UI:
+```
+http://localhost:8000/docs
 ```
 
-Default URL: [http://localhost:8000](http://localhost:8000)
+---
+
+## 📌 Route Prefix
+All endpoints are available under:
+```
+/v1/
+```
+Example:
+```http
+POST /v1/scan
+```
 
 ---
 
-## 🛠 Features
-- `/inspect`: Lightweight repo inspection (returns summary, no disk writes)
-- `/scan`: Full scan and artifact generation (txt, json, md, zip)
-- `/upload`: Accept ZIP uploads and return structured output
-- `/download/{scan_id}`: Download any generated artifact
-- `/summary/{scan_id}`: Return parsed scan summary
-- `/cleanup/{scan_id}`: Remove scan artifacts from disk
-- `/health`: Check API status
+## 🔧 Key Features
+- Versioned REST API (`/v1/...`)
+- Full scan options:
+  - `docs_only`, `lite`, `create_zip`, `tree_depth`, `skip_tree`
+  - Glob-based `include_patterns`, `exclude_patterns`, `exclude_dirs`
+- Support for scanning uploaded ZIP files
+- Summary JSON, downloadable artifacts, structured cleanup
+- Built-in CORS support (for frontend integration)
 
 ---
 
-## 🔄 Input Model Example
+## 📥 Upload & Scan
+Use the `/v1/upload` endpoint to scan compressed `.zip` archives:
 
+**Request**
+```http
+POST /v1/upload?lite=true
+Content-Type: multipart/form-data
+```
+Payload: a `.zip` file with your repo.
+
+**Response**
 ```json
 {
-  "repo_path": "https://github.com/user/repo",
-  "branch": "main",
-  "include_patterns": ["**/*.py"],
-  "exclude_dirs": ["tests"]
+  "status": "success",
+  "message": "Upload & scan completed",
+  "data": {
+    "scan_id": "...",
+    "repo_name": "...",
+    "num_textual_files": 14,
+    "num_non_textual_files": 3
+  }
 }
 ```
 
 ---
 
-## 📦 Docker Support
+## 📡 Full Scan Example
 
-To run in a containerized environment:
-```bash
-docker-compose -f plugins/gittxt_api/docker-compose.yml up
+```http
+POST /v1/scan
+Content-Type: application/json
 ```
 
-Or manually:
-```bash
-docker build -t gittxt-api -f plugins/gittxt_api/Dockerfile .
-docker run -p 8000:8000 gittxt-api
+**Payload:**
+```json
+{
+  "repo_path": "https://github.com/user/repo",
+  "branch": "main",
+  "exclude_dirs": ["tests"],
+  "include_patterns": ["**/*.py"],
+  "exclude_patterns": ["*.log"],
+  "lite": false,
+  "create_zip": true,
+  "tree_depth": 3,
+  "docs_only": false,
+  "sync_ignore": true,
+  "skip_tree": false
+}
 ```
+
+**Response:**
+Returns scan ID, summary, artifact paths, and file counts.
 
 ---
 
-## 🧪 Test the API
+## 📦 Artifacts & Downloads
+Use `/v1/download/{scan_id}?format=txt|json|md|zip` to fetch outputs.
 
-Use Swagger UI:
-```text
-http://localhost:8000/docs
-```
+Use `/v1/summary/{scan_id}` to get structured report metadata.
 
-Or send requests using Postman, Curl, or your preferred client.
+Use `/v1/cleanup/{scan_id}` to delete the generated folder and all artifacts.
 
 ---
 
-## 🔐 Notes
-- Each scan is assigned a unique `scan_id`
-- Output is stored in the `OUTPUT_DIR`, configurable via environment
+## 🔐 Security Notes
+- CORS is enabled for all domains by default.
+- No authentication is applied — lock down via reverse proxy or key-based auth in production.
+
+---
+
+## 🛠 Developer Notes
+This plugin is built with **FastAPI**, structured as:
+```
+src/plugins/gittxt_api/
+├── api/v1/endpoints/...
+├── core/services/...
+├── cli_api.py
+└── main.py
+```
+
+Dependencies are declared in `requirements.txt`. Running `gittxt plugin run gittxt-api` will install them automatically.
+
 
 ---
 
