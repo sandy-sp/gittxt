@@ -3,21 +3,26 @@ from rich.console import Console
 from pathlib import Path
 import subprocess
 import shutil
-import os  # Add this import
+import os
+import tempfile
+import git
 
 console = Console()
 
 PLUGINS_DIR = Path(__file__).resolve().parent.parent.parent / "plugins"
 PLUGIN_LIST = {
     "gittxt-api": {
+        "repo": "https://github.com/sandy-sp/gittxt.git",
+        "subdir": "src/plugins/gittxt_api",
         "path": PLUGINS_DIR / "gittxt_api",
         "run_cmd": "uvicorn plugins.gittxt_api.main:app --reload"
     },
     "gittxt-streamlit": {
+        "repo": "https://github.com/sandy-sp/gittxt.git",
+        "subdir": "src/plugins/gittxt_streamlit",
         "path": PLUGINS_DIR / "gittxt_streamlit",
         "run_cmd": "streamlit run main.py"
     }
-    # Add future plugins here
 }
 
 @click.group(help="🔌 Manage optional Gittxt plugins.")
@@ -26,7 +31,7 @@ def plugin():
 
 @plugin.command("list")
 def list_plugins():
-    console.print("🧙 Available Plugins:\n")
+    console.print("\U0001f9d9 Available Plugins:\n")
     for name, meta in PLUGIN_LIST.items():
         installed = meta["path"].exists()
         console.print(f"- {name} {'[green](installed)' if installed else '[red](not installed)'}")
@@ -57,7 +62,7 @@ def run_plugin(plugin_name):
 
     console.print(f"[cyan]🚀 Launching plugin: {plugin_name}[/cyan]")
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent.parent)  # Add src to PYTHONPATH
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent.parent)
     subprocess.run(plugin["run_cmd"].split(), cwd=str(plugin["path"]), env=env)
 
 @plugin.command("install")
@@ -69,17 +74,23 @@ def install_plugin(plugin_name):
         return
 
     if plugin["path"].exists():
-        console.print(f"[yellow]⚠️ Plugin '{plugin_name}' is already installed.[/yellow]")
-        return
+        console.print(f"[yellow]⚠️ Plugin '{plugin_name}' already exists. Removing old version...[/yellow]")
+        shutil.rmtree(plugin["path"])
 
     console.print(f"[green]📦 Installing plugin: {plugin_name}[/green]")
-    template_path = Path(__file__).parent.parent.parent / "plugin_templates" / plugin_name
-    if not template_path.exists():
-        console.print(f"[red]❌ No local template found for: {plugin_name}[/red]")
-        return
 
-    shutil.copytree(template_path, plugin["path"])
-    console.print(f"[green]✅ Plugin '{plugin_name}' installed at {plugin['path']}[/green]")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        try:
+            git.Repo.clone_from(plugin["repo"], temp_path)
+            src_path = temp_path / plugin["subdir"]
+            if not src_path.exists():
+                console.print(f"[red]❌ Plugin subdirectory not found: {plugin['subdir']}[/red]")
+                return
+            shutil.copytree(src_path, plugin["path"])
+            console.print(f"[green]✅ Plugin '{plugin_name}' installed at {plugin['path']}[/green]")
+        except Exception as e:
+            console.print(f"[red]❌ Failed to install plugin: {e}[/red]")
 
 @plugin.command("uninstall")
 @click.argument("plugin_name")
