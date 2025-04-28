@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, status
 import shutil
-from plugins.gittxt_web.api.v1.deps import get_output_dir
-from plugins.gittxt_web.api.v1.models.response_models import ApiResponse
+from gittxt_web.api.v1.deps import get_output_dir
+from gittxt_web.api.v1.models.response_models import ApiResponse
 
 router = APIRouter(tags=["Cleanup"])
 
