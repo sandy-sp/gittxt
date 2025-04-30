@@ -6,8 +6,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       # 👇 point SAM at the plugin root
-      CodeUri: ../../.. 
-      Handler: plugins.gittxt_api.lambda.lambda_handler.handler
+      CodeUri: ..
+      Handler: gittxt_web.lambda.lambda_handler.handler
       Runtime: python3.12
       MemorySize: 512
       Timeout: 60
