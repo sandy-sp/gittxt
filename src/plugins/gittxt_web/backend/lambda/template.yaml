@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  GittxtWeb:
+    Type: AWS::Serverless::Function
+    Properties:
+      # 👇 point SAM at the plugin root
+      CodeUri: ..
+      Handler: gittxt_web.lambda.lambda_handler.handler
+      Runtime: python3.12
+      MemorySize: 512
+      Timeout: 60
+      Layers: []          # (optional) add a Lambda layer later for ‘gittxt’
+      Environment:
+        Variables:
+          GITTXT_OUTPUT_DIR: /tmp/gittxt-output
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /v1/{proxy+}
+            Method: ANY
