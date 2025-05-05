@@ -3,7 +3,7 @@ import zipfile
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
@@ -11,6 +11,18 @@ from gittxt_web.api.v1.models.upload_models import UploadResponse
 from gittxt_web.api.v1.deps import get_output_dir
 
 async def handle_uploaded_zip(file: UploadFile, lite: bool = False) -> UploadResponse:
+    # Validate file type
+    if not file.filename.endswith(".zip"):
+        raise HTTPException(status_code=400, detail="Only ZIP files are allowed.")
+
+    # Validate file size (e.g., max 10 MB)
+    file_size = await file.read()
+    if len(file_size) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 10 MB limit.")
+
+    # Reset file pointer after reading
+    await file.seek(0)
+
     scan_id = str(uuid4())
     output_dir = get_output_dir()
     upload_temp = output_dir / "uploads" / scan_id
@@ -21,13 +33,13 @@ async def handle_uploaded_zip(file: UploadFile, lite: bool = False) -> UploadRes
 
     # Save uploaded zip
     zip_path = upload_temp / file.filename
-    with zip_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    with open(zip_path, "wb") as f:
+        f.write(file_size)
 
     # Extract repo
     extract_dir = upload_temp / "repo"
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zf.extractall(extract_dir)
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(extract_dir)
 
     # Scan and classify
     repo_name = extract_dir.name
