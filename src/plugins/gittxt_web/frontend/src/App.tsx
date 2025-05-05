@@ -5,13 +5,16 @@ import {
   Route,
   NavLink,
   useNavigate,
+  Outlet,
+  Link,
+  useLocation,
 } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, Github } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * Centralised API helper that automatically prepends the base URL.
@@ -177,16 +180,47 @@ function SummaryPage() {
 
 /* ───────────────────────────── App Router ───────────────────────────── */
 export default function App() {
+  const loc = useLocation();
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/scan" element={<ScanPage />} />
-          <Route path="/upload" element={<UploadPage />} />
-          <Route path="/summary/:id" element={<SummaryPage />} />
-        </Routes>
-      </Layout>
+      <div className="min-h-screen flex flex-col bg-background text-foreground">
+        <header className="border-b p-4 flex justify-between items-center">
+          <Link to="/" className="font-bold text-lg">
+            gittxt{" "}
+            <span className="text-primary" style={{ fontWeight: "inherit" }}>
+              web
+            </span>
+          </Link>
+          <Button asChild variant="outline">
+            <a href="https://github.com/your-org/gittxt">GitHub</a>
+          </Button>
+        </header>
+
+        <main className="flex-1 container mx-auto p-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={loc.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/scan" element={<ScanPage />} />
+                  <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/summary/:id" element={<SummaryPage />} />
+                </Routes>
+              </Layout>
+            </motion.div>
+          </AnimatePresence>
+        </main>
+
+        <footer className="border-t p-4 text-xs text-muted-foreground text-center">
+          © {new Date().getFullYear()} gittxt
+        </footer>
+      </div>
     </Router>
   );
 }
