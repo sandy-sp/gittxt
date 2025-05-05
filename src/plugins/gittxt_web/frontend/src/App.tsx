@@ -15,15 +15,25 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, Github } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import api from "@/api";
 
 /**
  * Centralised API helper that automatically prepends the base URL.
  */
-const api = async (path: string, init?: RequestInit) => {
-  const base = import.meta.env.VITE_API_URL ?? "";
-  const res = await fetch(`${base}${path}`, init);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+const apiHelper = async (path: string, init?: RequestInit) => {
+  try {
+    const response = await api.request({
+      url: path,
+      method: init?.method || "GET",
+      headers: init?.headers,
+      data: init?.body ? JSON.parse(init.body as string) : undefined,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "An unexpected error occurred."
+    );
+  }
 };
 
 /* ───────────────────────────── Layout ───────────────────────────── */
@@ -84,7 +94,7 @@ function ScanPage() {
     setMessage("Scanning… this may take a bit ⌛");
     try {
       const payload = { repo_path: repo, branch: branch || undefined };
-      const data = await api("/v1/scan", {
+      const data = await apiHelper("/v1/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -136,7 +146,7 @@ function UploadPage() {
     const form = new FormData();
     form.append("file", file);
     try {
-      const data = await api("/v1/upload", {
+      const data = await apiHelper("/v1/upload", {
         method: "POST",
         body: form,
       });
