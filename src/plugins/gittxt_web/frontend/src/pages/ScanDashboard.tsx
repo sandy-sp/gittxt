@@ -21,6 +21,9 @@ export default function ScanDashboard() {
 
   if (!data) return <Skeleton className="w-full h-32" />;
 
+  const progressValue = data.files.length > 0 ? Math.min(data.files.length * 5, 90) : 0;
+  const progressLabel = progressValue === 90 ? "Almost done" : `${progressValue}% completed`;
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">
@@ -29,7 +32,12 @@ export default function ScanDashboard() {
 
       {data.done
         ? <ResultsTable files={data.files} scanId={id!} />
-        : <ProgressBar value={Math.min(data.files.length * 5, 90)} /> /* naïve progress heuristic */
+        : (
+          <div>
+            <ProgressBar value={progressValue} aria-label={progressLabel} />
+            <p className="text-sm text-gray-600 mt-2">{progressLabel}</p>
+          </div>
+        )
       }
     </div>
   );
