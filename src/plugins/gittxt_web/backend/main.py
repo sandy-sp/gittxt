@@ -1,51 +1,54 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, RequestValidationError, HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Pathimport RequestValidationError, HTTPException as StarletteHTTPException
+from pathlib import Path
 import tomllib  # py3.11+, else import tomli as tomllib
+from fastapi.responses import JSONResponse
 from gittxt_web.api.v1 import api_router
 from gittxt_web.settings import settings  # pydantic-based config
-from gittxt import __version__api_router
+from gittxt import __version__
 from gittxt_web.api.v1.endpoints import scan, upload, summary, download, cleanup, inspect
-# Load project metadata from pyproject.toml pydantic-based config
-meta = tomllib.loads((Path(__file__).resolve().parents[2] / "pyproject.toml").read_text())["project"]
+from gittxt_web.api.v1.models.error_models import ErrorResponse
 
-# Long-form description (Markdown)ject.toml
-overview_md = (Path(__file__).parent / "docs" / "overview.md").read_text(encoding="utf-8")["project"]
+# Load project metadata from pyproject.toml
+meta = tomllib.loads((Path(__file__).resolve().parents[2] / "pyproject.toml").read_text())
 
-app = FastAPI(scription (Markdown)
-    title=meta["name"].replace("_", " ").title(),overview.md").read_text(encoding="utf-8")
-    version=meta["version"],
+# Long-form description (Markdown)
+overview_md = (Path(__file__).resolve().parents[2] / "docs" / "about.md").read_text(encoding="utf-8")
+
+app = FastAPI(
+    title=meta["project"]["name"].replace("_", " ").title(),
+    version=meta["project"]["version"],
     description=overview_md,
-    contact=meta.get("authors", [{}])[0],title(),
-    license_info=meta.get("license", {}),
+    contact=meta["project"].get("authors", [{}])[0],
+    license_info=meta["project"].get("license", {}),
     openapi_url="/openapi.json",
-    docs_url="/docs","authors", [{}])[0],
-    redoc_url="/redoc",et("license", {}),
-)   openapi_url="/openapi.json",
     docs_url="/docs",
+    redoc_url="/redoc",
+)
+
 # CORS allow-list (env: FRONTEND_ORIGINS=...)
 origins = [o.strip() for o in settings.FRONTEND_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
-    CORSMiddleware,env: FRONTEND_ORIGINS=...)
-    allow_origins=origins or ["http://localhost:5173"],.split(",") if o.strip()]
+    CORSMiddleware,
+    allow_origins=origins or ["http://localhost:5173"],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
-    max_age=3600,=origins or ["http://localhost:5173"],
-)   allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["*"],
-# Health check00,
-@app.get("/health", tags=["Meta"])  # Add tags for Swagger
+    max_age=3600,
+)
+
+# Health check
+@app.get("/health", tags=["Meta"])
 def health_check():
     return {"status": "ok", "version": __version__, "message": "Gittxt API is up"}
-@app.get("/health", tags=["Meta"])
+
 # Register all v1 routes
-v1_prefix = "/v1"us": "ok", "version": __version__, "message": "Gittxt API is up"}
+v1_prefix = "/v1"
 app.include_router(scan.router, prefix=f"{v1_prefix}/scan")
 app.include_router(upload.router, prefix=f"{v1_prefix}/upload")
 app.include_router(summary.router, prefix=f"{v1_prefix}/summary")
 app.include_router(download.router, prefix=f"{v1_prefix}/download")
 app.include_router(cleanup.router, prefix=f"{v1_prefix}/cleanup")
-app.include_router(inspect.router, prefix=f"{v1_prefix}/inspect")  # Register the router
+app.include_router(inspect.router, prefix=f"{v1_prefix}/inspect")
 
 # Exception: HTTP
 @app.exception_handler(StarletteHTTPException)
@@ -68,4 +71,3 @@ async def validation_exception_handler(request, exc: RequestValidationError):
             detail=str(exc.errors()),
         ).dict()
     )
-# Include API routerapp.include_router(api_router)
