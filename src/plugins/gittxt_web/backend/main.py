@@ -8,6 +8,8 @@ from gittxt_web.settings import settings  # pydantic-based config
 from gittxt import __version__
 from gittxt_web.api.v1.endpoints import scan, upload, summary, download, cleanup, inspect
 from gittxt_web.api.v1.models.error_models import ErrorResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 # Load project metadata from pyproject.toml
 meta = tomllib.loads((Path(__file__).resolve().parents[2] / "pyproject.toml").read_text())
@@ -36,8 +38,18 @@ app.add_middleware(
     max_age=3600,
 )
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    response = await limiter(request, call_next)
+    return response
+
 # Health check
 @app.get("/health", tags=["Meta"])
+@limiter.limit("5/minute")
 def health_check():
     return {"status": "ok", "version": __version__, "message": "Gittxt API is up"}
 
