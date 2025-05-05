@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from gittxt.core.repository import RepositoryHandler
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
-from gittxt.utils.file_utils import load_gittxtignore
+from gittxt.utils.file_utils import load_gittxtignore, sanitize_path
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from gittxt.utils.summary_utils import generate_summary
@@ -14,12 +14,17 @@ from plugins.gittxt_api.api.v1.deps import get_output_dir
 
 async def perform_scan(request: ScanRequest) -> ScanResponse:
     try:
+        # Sanitize repository path
+        sanitized_repo_path = sanitize_path(request.repo_path)
+        if not sanitized_repo_path:
+            raise HTTPException(status_code=400, detail="Invalid repository path.")
+
         scan_id = str(uuid4())
         output_dir = get_output_dir()
         scan_output_dir = output_dir / scan_id
         scan_output_dir.mkdir(parents=True, exist_ok=True)
 
-        handler = RepositoryHandler(source=request.repo_path, branch=request.branch)
+        handler = RepositoryHandler(source=sanitized_repo_path, branch=request.branch)
         await handler.resolve()
         local_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
         scan_root = Path(local_path) / subdir if subdir else Path(local_path)
