@@ -1,0 +1,69 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import api, { ScanSummaryResp } from "@/api";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import ProgressBar from "@/components/ProgressBar";
+import { Table, TableHead, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
+
+export default function ScanDashboard() {
+  const { id } = useParams();
+  const [data, setData] = useState<ScanSummaryResp | null>(null);
+
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      const { data } = await api.get<ScanSummaryResp>(`/v1/summary/${id}`);
+      setData(data);
+      if (data.done) clearInterval(poll);
+    }, 4000);
+    return () => clearInterval(poll);
+  }, [id]);
+
+  if (!data) return <Skeleton className="w-full h-32" />;
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">
+        {data.repository?.name ?? id}
+      </h2>
+
+      {data.done
+        ? <ResultsTable files={data.files} scanId={id!} />
+        : <ProgressBar value={Math.min(data.files.length * 5, 90)} /> /* naïve progress heuristic */
+      }
+    </div>
+  );
+}
+
+function ResultsTable({ files, scanId }: { files: ScanSummaryResp["files"]; scanId: string }) {
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>File</TableHead>
+            <TableHead className="text-right">Tokens</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {files.map(f => (
+            <TableRow key={f.path}>
+              <TableCell className="truncate max-w-[240px]">{f.path}</TableCell>
+              <TableCell className="text-right">{f.tokens}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <div className="flex gap-2">
+        {["txt", "json", "md", "zip"].map(fmt => (
+          <Button key={fmt} asChild size="sm">
+            <a href={`${import.meta.env.VITE_API_URL}/v1/download/${scanId}?format=${fmt}`} target="_blank">
+              {fmt.toUpperCase()}
+            </a>
+          </Button>
+        ))}
+      </div>
+    </>
+  );
+}
