@@ -9,17 +9,24 @@ import { Table, TableHead, TableHeader, TableBody, TableRow, TableCell } from "@
 export default function ScanDashboard() {
   const { id } = useParams();
   const [data, setData] = useState<ScanSummaryResp | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const poll = setInterval(async () => {
-      const { data } = await api.get<ScanSummaryResp>(`/v1/summary/${id}`);
-      setData(data);
-      if (data.done) clearInterval(poll);
+      try {
+        const { data } = await api.get<ScanSummaryResp>(`/v1/summary/${id}`);
+        setData(data);
+        if (data.done) clearInterval(poll);
+      } finally {
+        setLoading(false);
+      }
     }, 4000);
     return () => clearInterval(poll);
   }, [id]);
 
-  if (!data) return <Skeleton className="w-full h-32" />;
+  if (loading) return <Skeleton className="w-full h-32" />;
+
+  if (!data) return <p>No data available.</p>;
 
   const progressValue = data.files.length > 0 ? Math.min(data.files.length * 5, 90) : 0;
   const progressLabel = progressValue === 90 ? "Almost done" : `${progressValue}% completed`;
