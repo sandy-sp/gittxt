@@ -82,7 +82,7 @@ class Logger:
                 Logger.LOG_FILE, maxBytes=5_000_000, backupCount=2, encoding="utf-8"
             )
             rotating_file_handler.setLevel(log_level)
-            rotating_file_handler.setFormatter(Logger._get_formatter(mode="plain"))
+            rotating_file_handler.setFormatter(Logger._get_formatter(mode="json"))
             root_logger.addHandler(rotating_file_handler)
         except Exception as e:
             print(f"⚠️ Failed to create file logger: {e}")
@@ -90,18 +90,17 @@ class Logger:
     @staticmethod
     def _get_formatter(mode="plain"):
         if mode == "json":
-
-            class JSONFormatter(logging.Formatter):
-                def format(self, record):
-                    log_record = {
-                        "level": record.levelname,
-                        "message": record.getMessage(),
-                        "time": self.formatTime(record, self.datefmt),
-                        "logger": record.name,
+            return logging.Formatter(
+                fmt=json.dumps(
+                    {
+                        "time": "%(asctime)s",
+                        "level": "%(levelname)s",
+                        "message": "%(message)s",
+                        "logger": "%(name)s",
                     }
-                    return json.dumps(log_record)
-
-            return JSONFormatter("%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+                ),
+                datefmt="%Y-%m-%dT%H:%M:%S",
+            )
         else:
 
             class ColoredFormatter(logging.Formatter):
