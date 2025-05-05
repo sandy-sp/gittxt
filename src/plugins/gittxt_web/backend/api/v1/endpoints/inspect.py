@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, HttpUrl, Field
 from gittxt_web.core.services.scan_service import perform_scan
+from gittxt_web.core.models.scan_models import ScanRequest  # Ensure this is imported
 
 router = APIRouter(tags=["Inspect"])
 
@@ -25,10 +26,8 @@ async def inspect_repo(req: InspectRequest):
     Perform a stateless scan and return a summary without persisting artifacts.
     """
     try:
-        result = await perform_scan(
-            repo_path=req.repo_url,
-            persist=False  # Ensure no artifacts are saved
-        )
+        req_model = ScanRequest(repo_url=req.repo_url)  # Create ScanRequest
+        result = await perform_scan(req_model, persist=False)  # Pass ScanRequest
         return {"summary": result.summary}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
