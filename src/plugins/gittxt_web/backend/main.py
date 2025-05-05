@@ -10,6 +10,7 @@ from gittxt_web.api.v1.endpoints import scan, upload, summary, download, cleanup
 from gittxt_web.api.v1.models.error_models import ErrorResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 # Load project metadata from pyproject.toml
 meta = tomllib.loads((Path(__file__).resolve().parents[2] / "pyproject.toml").read_text())
@@ -46,6 +47,9 @@ app.state.limiter = limiter
 async def rate_limit_middleware(request: Request, call_next):
     response = await limiter(request, call_next)
     return response
+
+# Add HTTPS redirect middleware
+app.add_middleware(HTTPSRedirectMiddleware)
 
 # Health check
 @app.get("/health", tags=["Meta"])
