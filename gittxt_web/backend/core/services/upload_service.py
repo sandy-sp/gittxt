@@ -7,8 +7,8 @@ from fastapi import UploadFile, HTTPException
 
 from gittxt.core.scanner import Scanner
 from gittxt.core.output_builder import OutputBuilder
-from gittxt_web.api.v1.models.upload_models import UploadResponse
-from gittxt_web.api.v1.deps import get_output_dir
+from gittxt_web.backend.api.v1.models.upload_models import UploadResponse
+from gittxt_web.backend.api.v1.deps import get_output_dir
 
 async def handle_uploaded_zip(file: UploadFile, lite: bool = False) -> UploadResponse:
     # Validate file type
