@@ -6,8 +6,8 @@ router = APIRouter(tags=["Download"])
 
 @router.get("/{scan_id}", status_code=status.HTTP_200_OK)
 async def download_artifact(
-    scan_id: str = Path(..., description="Scan ID"),
-    format: str = Query(..., pattern="^(txt|json|md|zip)$", description="Download format")
+    scan_id: str = Path(Ellipsis, description="Scan ID"),
+    format: str = Query(Ellipsis, pattern="^(txt|json|md|zip)$", description="Download format")
 ):
     """
     Download a scan artifact in the desired format.
