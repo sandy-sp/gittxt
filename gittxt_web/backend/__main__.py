@@ -3,7 +3,7 @@ import click
 from gittxt_web.backend.main import app
 
 @click.group()
-def cli(): ...
+def cli(): Ellipsis
 
 @cli.command("run")
 @click.option("--host", default="0.0.0.0")
