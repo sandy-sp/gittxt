@@ -7,7 +7,7 @@ router = APIRouter(tags=["Inspect"])
 
 class InspectRequest(BaseModel):
     repo_url: HttpUrl = Field(
-        ..., description="HTTPS URL of a public GitHub repository",
+        Ellipsis, description="HTTPS URL of a public GitHub repository",
         example="https://github.com/openai/tiktoken"
     )
 
