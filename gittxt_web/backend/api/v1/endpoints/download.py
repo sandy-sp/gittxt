@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Path, status
 from fastapi.responses import FileResponse
-from gittxt_web.api.v1.deps import get_output_dir
+from gittxt_web.backend.api.v1.deps import get_output_dir
 
 router = APIRouter(tags=["Download"])
 
