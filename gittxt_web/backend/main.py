@@ -3,11 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import tomllib  # py3.11+, else import tomli as tomllib
 from fastapi.responses import JSONResponse
-from gittxt_web.api.v1 import api_router
-from gittxt_web.settings import settings  # pydantic-based config
+from gittxt_web.backend.api.v1 import api_router
+from gittxt_web.backend.settings import settings  # pydantic-based config
 from gittxt import __version__
-from gittxt_web.api.v1.endpoints import scan, upload, summary, download, cleanup, inspect
-from gittxt_web.api.v1.models.error_models import ErrorResponse
+from gittxt_web.backend.api.v1.endpoints import scan, upload, summary, download, cleanup, inspect
+from gittxt_web.backend.api.v1.models.error_models import ErrorResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
