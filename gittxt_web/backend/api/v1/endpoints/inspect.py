@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, HttpUrl, Field, ValidationError
-from gittxt_web.core.services.scan_service import perform_scan
-from gittxt_web.api.v1.models.scan_models import ScanRequest
+from gittxt_web.backend.core.services.scan_service import perform_scan
+from gittxt_web.backend.api.v1.models.scan_models import ScanRequest
 
 router = APIRouter(tags=["Inspect"])
 
