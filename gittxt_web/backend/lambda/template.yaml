@@ -13,7 +13,7 @@ Resources:
     Properties:
       Handler: lambda_handler.handler
       Runtime: python3.12
-      CodeUri: ../                # point at backend root
+      CodeUri: ..
       Layers:
         - !Ref GittxtLayer
       Environment:
