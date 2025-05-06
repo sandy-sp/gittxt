@@ -57,14 +57,8 @@ app.add_middleware(HTTPSRedirectMiddleware)
 def health_check():
     return {"status": "ok", "version": __version__, "message": "Gittxt API is up"}
 
-# Register all v1 routes
-v1_prefix = "/v1"
-app.include_router(scan.router, prefix=f"{v1_prefix}/scan")
-app.include_router(upload.router, prefix=f"{v1_prefix}/upload")
-app.include_router(summary.router, prefix=f"{v1_prefix}/summary")
-app.include_router(download.router, prefix=f"{v1_prefix}/download")
-app.include_router(cleanup.router, prefix=f"{v1_prefix}/cleanup")
-app.include_router(inspect.router, prefix=f"{v1_prefix}/inspect")
+# Mount all v1 endpoints under /v1
+app.include_router(api_router, prefix="/v1")
 
 # Exception: HTTP
 @app.exception_handler(StarletteHTTPException)
