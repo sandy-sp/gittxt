@@ -8,8 +8,8 @@ from gittxt.utils.file_utils import load_gittxtignore, sanitize_path
 from gittxt.utils.cleanup_utils import cleanup_temp_folder
 from gittxt.core.constants import EXCLUDED_DIRS_DEFAULT
 from gittxt.utils.summary_utils import generate_summary
-from plugins.gittxt_api.api.v1.models.scan_models import ScanRequest, ScanResponse
-from plugins.gittxt_api.api.v1.deps import get_output_dir
+from gittxt_web.backend.api.v1.models.scan_models import ScanRequest, ScanResponse
+from gittxt_web.backend.api.v1.deps import get_output_dir
 
 
 async def perform_scan(request: ScanRequest) -> ScanResponse:
