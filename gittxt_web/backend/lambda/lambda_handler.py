@@ -1,3 +1,3 @@
 from mangum import Mangum
-from gittxt_web.main import app     # nothing under  “plugins” any more
+from gittxt_web.backend.main import app   
 handler = Mangum(app)
