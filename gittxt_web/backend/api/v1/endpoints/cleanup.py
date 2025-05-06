@@ -6,7 +6,7 @@ from gittxt_web.backend.api.v1.models.response_models import ApiResponse
 router = APIRouter(tags=["Cleanup"])
 
 @router.delete("/{scan_id}", response_model=ApiResponse, status_code=status.HTTP_200_OK)
-async def cleanup_scan(scan_id: str = Path(..., description="Scan ID to delete")):
+async def cleanup_scan(scan_id: str = Path(Ellipsis, description="Scan ID to delete")):
     """
     Permanently delete all output artifacts for a given scan ID.
     """
