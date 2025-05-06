@@ -1,6 +1,6 @@
 import uvicorn
 import click
-from gittxt_web.main import app
+from gittxt_web.backend.main import app
 
 @click.group()
 def cli(): ...
