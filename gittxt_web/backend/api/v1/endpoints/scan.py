@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from gittxt_web.api.v1.models.scan_models import ScanRequest, ScanStartResp
-from gittxt_web.core.services.scan_service import perform_scan
+from gittxt_web.backend.api.v1.models.scan_models import ScanRequest, ScanStartResp
+from gittxt_web.backend.core.services.scan_service import perform_scan
 
 router = APIRouter(tags=["Scan"])
 
