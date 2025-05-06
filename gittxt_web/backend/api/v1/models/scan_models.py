@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 
 class ScanRequest(BaseModel):
     repo_url: HttpUrl = Field(
-        ...,
+        Ellipsis,
         description="HTTPS URL of a public Git repo",
         example="https://github.com/openai/tiktoken",
     )
