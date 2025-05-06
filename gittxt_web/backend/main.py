@@ -29,7 +29,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS allow-list (env: FRONTEND_ORIGINS=...)
+# CORS allow-list (env: FRONTEND_ORIGINS=Ellipsis)
 origins = [o.strip() for o in settings.FRONTEND_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
