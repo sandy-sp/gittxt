@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>gittxt Web</title>
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js for reactivity -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="p-6" x-data="gittxtApp()">
+  <h1 class="text-2xl font-bold mb-4">gittxt Web UI</h1>
+
+  <div class="mb-4">
+    <input x-model="repo" placeholder="Repo path or URL"
+           class="border px-3 py-2 w-2/3" />
+    <button @click="scan()"
+            class="bg-blue-600 text-white px-4 py-2 ml-2">Scan</button>
+  </div>
+
+  <div x-show="loading" class="mb-4">Loading…</div>
+
+  <template x-if="result">
+    <pre class="bg-gray-100 p-4 rounded">
+      <code x-text="JSON.stringify(result, null, 2)"></code>
+    </pre>
+  </template>
+
+  <script>
+    function gittxtApp() {
+      return {
+        repo: "",
+        loading: false,
+        result: null,
+        async scan() {
+          this.loading = true;
+          this.result = null;
+          try {
+            let res = await fetch("/api/scan", {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({path:this.repo})
+            });
+            this.result = await res.json();
+          } catch (e) {
+            this.result = {error: e.toString()};
+          } finally {
+            this.loading = false;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
