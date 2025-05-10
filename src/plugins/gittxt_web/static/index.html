@@ -2,51 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>gittxt Web</title>
-  <!-- Tailwind via CDN -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gittxt Web UI</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Alpine.js for reactivity -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="p-6" x-data="gittxtApp()">
-  <h1 class="text-2xl font-bold mb-4">gittxt Web UI</h1>
+<body class="bg-gray-50 min-h-screen flex flex-col" x-data="gittxtApp()" x-init="loadConfig()">
+  <!-- Header -->
+  <header class="bg-white shadow p-4">
+    <h1 class="text-xl font-semibold text-gray-800">gittxt Web Interface</h1>
+  </header>
 
-  <div class="mb-4">
-    <input x-model="repo" placeholder="Repo path or URL"
-           class="border px-3 py-2 w-2/3" />
-    <button @click="scan()"
-            class="bg-blue-600 text-white px-4 py-2 ml-2">Scan</button>
+  <!-- Main Content -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Sidebar Tabs -->
+    <nav class="w-48 bg-white border-r overflow-y-auto">
+      <template x-for="tab in tabs" :key="tab">
+        <button
+          class="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-200"
+          :class="{'bg-gray-100 font-medium': selectedTab===tab}"
+          @click="selectedTab = tab; clearResult()"
+        >
+          <span x-text="tab"></span>
+        </button>
+      </template>
+    </nav>
+
+    <!-- Panel -->
+    <main class="flex-1 p-6 overflow-y-auto">
+      <!-- Loading Indicator -->
+      <div x-show="loading" class="text-blue-600 mb-4">Loading…</div>
+      
+      <!-- Scan Tab -->
+      <div x-show="selectedTab==='Scan'">
+        <div class="flex mb-4">
+          <input x-model="repo" type="text" placeholder="Repo path or URL"
+                 class="flex-1 border rounded-l px-3 py-2 focus:outline-none focus:ring" />
+          <button @click="scan()"
+                  class="bg-blue-600 text-white px-4 rounded-r hover:bg-blue-700">Scan</button>
+        </div>
+      </div>
+
+      <!-- Summary Tab -->
+      <div x-show="selectedTab==='Summary'">
+        <div class="flex mb-4">
+          <input x-model="itemId" type="text" placeholder="Result ID"
+                 class="flex-1 border rounded-l px-3 py-2 focus:outline-none focus:ring" />
+          <button @click="getSummary()"
+                  class="bg-green-600 text-white px-4 rounded-r hover:bg-green-700">Fetch</button>
+        </div>
+      </div>
+
+      <!-- Reverse Tab -->
+      <div x-show="selectedTab==='Reverse'">
+        <div class="flex mb-4">
+          <input x-model="repo" type="text" placeholder="Repo path or URL"
+                 class="flex-1 border rounded-l px-3 py-2 focus:outline-none focus:ring" />
+          <button @click="reverse()"
+                  class="bg-yellow-600 text-white px-4 rounded-r hover:bg-yellow-700">Reverse</button>
+        </div>
+      </div>
+
+      <!-- Clean Tab -->
+      <div x-show="selectedTab==='Clean'">
+        <div class="flex mb-4">
+          <input x-model="repo" type="text" placeholder="Repo path or URL"
+                 class="flex-1 border rounded-l px-3 py-2 focus:outline-none focus:ring" />
+          <button @click="clean()"
+                  class="bg-red-600 text-white px-4 rounded-r hover:bg-red-700">Clean</button>
+        </div>
+      </div>
+
+      <!-- Config Tab -->
+      <div x-show="selectedTab==='Config'">
+        <div class="mb-4">
+          <h2 class="font-medium mb-2">Current Settings</h2>
+          <pre class="bg-gray-100 p-3 rounded h-40 overflow-y-auto"><code x-text="JSON.stringify(config, null, 2)"></code></pre>
+        </div>
+        <div class="flex items-center">
+          <input x-model="configKey" type="text" placeholder="Key"
+                 class="border rounded-l px-3 py-2 focus:outline-none focus:ring" />
+          <input x-model="configValue" type="text" placeholder="Value"
+                 class="border-t border-b border-r px-3 py-2 focus:outline-none focus:ring" />
+          <button @click="updateConfig()"
+                  class="bg-purple-600 text-white px-4 rounded-r hover:bg-purple-700">Update</button>
+        </div>
+      </div>
+
+      <!-- Result Display -->
+      <template x-if="result">
+        <div class="mt-6">
+          <h2 class="text-lg font-semibold mb-2">Result</h2>
+          <pre class="bg-gray-100 p-4 rounded max-h-96 overflow-y-auto"><code x-text="JSON.stringify(result, null, 2)"></code></pre>
+        </div>
+      </template>
+
+    </main>
   </div>
 
-  <div x-show="loading" class="mb-4">Loading…</div>
-
-  <template x-if="result">
-    <pre class="bg-gray-100 p-4 rounded">
-      <code x-text="JSON.stringify(result, null, 2)"></code>
-    </pre>
-  </template>
-
+  <!-- Alpine.js App State -->
   <script>
     function gittxtApp() {
       return {
-        repo: "",
+        tabs: ['Scan','Summary','Reverse','Clean','Config'],
+        selectedTab: 'Scan',
+        repo: '',
+        itemId: '',
         loading: false,
         result: null,
+        config: {},
+        configKey: '',
+        configValue: '',
+
+        clearResult() {
+          this.result = null;
+        },
+
         async scan() {
           this.loading = true;
-          this.result = null;
+          this.clearResult();
           try {
-            let res = await fetch("/api/scan", {
-              method: "POST",
-              headers: {"Content-Type":"application/json"},
+            let res = await fetch('/api/scan', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
               body: JSON.stringify({path:this.repo})
             });
             this.result = await res.json();
-          } catch (e) {
+          } catch(e) {
             this.result = {error: e.toString()};
-          } finally {
-            this.loading = false;
-          }
+          } finally { this.loading = false; }
+        },
+
+        async getSummary() {
+          this.loading = true;
+          this.clearResult();
+          try {
+            let res = await fetch(`/api/summary/${this.itemId}`);
+            this.result = await res.json();
+          } catch(e) {
+            this.result = {error: e.toString()};
+          } finally { this.loading = false; }
+        },
+
+        async reverse() {
+          this.loading = true;
+          this.clearResult();
+          try {
+            let res = await fetch('/api/reverse', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({path:this.repo})
+            });
+            this.result = await res.json();
+          } catch(e) {
+            this.result = {error: e.toString()};
+          } finally { this.loading = false; }
+        },
+
+        async clean() {
+          this.loading = true;
+          this.clearResult();
+          try {
+            let res = await fetch('/api/clean', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({path:this.repo})
+            });
+            this.result = await res.json();
+          } catch(e) {
+            this.result = {error: e.toString()};
+          } finally { this.loading = false; }
+        },
+
+        async loadConfig() {
+          try {
+            let res = await fetch('/api/config');
+            this.config = await res.json();
+          } catch(_) { this.config = {} }
+        },
+
+        async updateConfig() {
+          this.loading = true;
+          try {
+            let res = await fetch('/api/config', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({key:this.configKey, value:this.configValue})
+            });
+            this.result = await res.json();
+            await this.loadConfig();
+          } catch(e) {
+            this.result = {error: e.toString()};
+          } finally { this.loading = false; }
         }
       }
     }
