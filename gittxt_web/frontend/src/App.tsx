@@ -16,6 +16,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, Github } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/api";
+import { Outlet } from 'react-router-dom';
+import './App.css';
+
+function App() {
+  return (
+    <>
+      <header className="app-header">
+        <nav>
+          <a href="/">Home</a>
+          <a href="/about">About</a> {/* You can add more links here */}
+        </nav>
+      </header>
+      <main className="app-content">
+        <Outlet />
+      </main>
+    </>
+  );
+}
+
+export default App;
 
 /**
  * Centralised API helper that automatically prepends the base URL.

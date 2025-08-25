@@ -1,84 +1,117 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import api, { ScanSummaryResp } from "@/api";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import ProgressBar from "@/components/ProgressBar";
-import { Table, TableHead, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { getScanSummary, downloadArtifact, ScanResponse, SummaryData } from '../api';
+import './ScanDashboard.css';
+import InspectDialog from '../components/InspectDialog';
 
-export default function ScanDashboard() {
-  const { id } = useParams();
-  const [data, setData] = useState<ScanSummaryResp | null>(null);
-  const [loading, setLoading] = useState(true);
+const ScanDashboard: React.FC = () => {
+    const { scanId } = useParams<{ scanId: string }>();
+    const [scanData, setScanData] = useState<ScanResponse | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [showInspect, setShowInspect] = useState<boolean>(false);
+    const [selectedFile, setSelectedFile] = useState<string | null>(null);
 
-  useEffect(() => {
-    const poll = setInterval(async () => {
-      try {
-        const { data } = await api.get<ScanSummaryResp>(`/v1/summary/${id}`);
-        setData(data);
-        if (data.done) clearInterval(poll);
-      } finally {
-        setLoading(false);
-      }
-    }, 4000);
-    return () => clearInterval(poll);
-  }, [id]);
+    useEffect(() => {
+        const fetchSummary = async () => {
+            if (!scanId) {
+                setError("No scan ID provided.");
+                setLoading(false);
+                return;
+            }
 
-  if (loading) return <Skeleton className="w-full h-32" />;
+            try {
+                setLoading(true);
+                const data = await getScanSummary(scanId);
+                setScanData(data);
+                setError(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch scan summary.');
+                console.error('Failed to fetch scan summary:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSummary();
+    }, [scanId]);
 
-  if (!data) return <p>No data available.</p>;
+    const handleDownload = async () => {
+        if (!scanId) {
+            setError("No scan ID to download.");
+            return;
+        }
+        try {
+            await downloadArtifact(scanId);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to download artifact.');
+            console.error('Failed to download artifact:', err);
+        }
+    };
+    
+    const handleInspectClick = (filePath: string) => {
+        setSelectedFile(filePath);
+        setShowInspect(true);
+    };
 
-  const progressValue = data.files.length > 0 ? Math.min(data.files.length * 5, 90) : 0;
-  const progressLabel = progressValue === 90 ? "Almost done" : `${progressValue}% completed`;
+    if (loading) {
+        return <div className="loading-container">Loading scan summary...</div>;
+    }
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">
-        {data.repository?.name ?? id}
-      </h2>
+    if (error) {
+        return <div className="error-container">Error: {error}</div>;
+    }
 
-      {data.done
-        ? <ResultsTable files={data.files} scanId={id!} />
-        : (
-          <div>
-            <ProgressBar value={progressValue} aria-label={progressLabel} />
-            <p className="text-sm text-gray-600 mt-2">{progressLabel}</p>
-          </div>
-        )
-      }
-    </div>
-  );
-}
+    if (!scanData) {
+        return <div className="info-container">No scan data found for this ID.</div>;
+    }
 
-function ResultsTable({ files, scanId }: { files: ScanSummaryResp["files"]; scanId: string }) {
-  return (
-    <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>File</TableHead>
-            <TableHead className="text-right">Tokens</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {files.map(f => (
-            <TableRow key={f.path}>
-              <TableCell className="truncate max-w-[240px]">{f.path}</TableCell>
-              <TableCell className="text-right">{f.tokens}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    const { repo_name, num_textual_files, summary } = scanData;
+    const formattedSummary: SummaryData = summary;
+    
+    return (
+        <div className="dashboard-container">
+            <h1 className="dashboard-title">Scan Results for {repo_name}</h1>
+            <p className="scan-message">{scanData.message}</p>
+            
+            <div className="summary-cards">
+                <div className="card">
+                    <h3>Total Files</h3>
+                    <p>{num_textual_files}</p>
+                </div>
+                <div className="card">
+                    <h3>Total Size</h3>
+                    <p>{formattedSummary?.formatted.total_size}</p>
+                </div>
+                <div className="card">
+                    <h3>Estimated Tokens</h3>
+                    <p>{formattedSummary?.formatted.estimated_tokens}</p>
+                </div>
+            </div>
 
-      <div className="flex gap-2">
-        {["txt", "json", "md", "zip"].map(fmt => (
-          <Button key={fmt} asChild size="sm">
-            <a href={`${import.meta.env.VITE_API_URL}/v1/download/${scanId}?format=${fmt}`} target="_blank">
-              {fmt.toUpperCase()}
-            </a>
-          </Button>
-        ))}
-      </div>
-    </>
-  );
-}
+            <div className="summary-section">
+                <h2>File Type Breakdown</h2>
+                <ul className="breakdown-list">
+                    {Object.entries(formattedSummary?.file_type_breakdown || {}).map(([type, count]) => (
+                        <li key={type}>
+                            <strong>{type}:</strong> {count} files
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            <button onClick={handleDownload} className="download-button">
+                Download All Outputs (ZIP)
+            </button>
+            
+            {showInspect && selectedFile && (
+                <InspectDialog
+                    filePath={selectedFile}
+                    scanId={scanId}
+                    onClose={() => setShowInspect(false)}
+                />
+            )}
+        </div>
+    );
+};
+
+export default ScanDashboard;

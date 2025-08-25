@@ -1,15 +1,28 @@
-import { createBrowserRouter } from "react-router-dom";
-import App from "./App";
-import Home from "./pages/Home";
-import Upload from "./pages/Upload";
-import ScanDashboard from "./pages/ScanDashboard";
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import App from './App.tsx';
+import HomePage from './pages/Home.tsx';
+import ScanDashboard from './pages/ScanDashboard.tsx';
+import './index.css';
 
 const router = createBrowserRouter([
-  { element: <App />, children: [
-      { path: "/", element: <Home /> },
-      { path: "/upload", element: <Upload /> },
-      { path: "/scan/:id", element: <ScanDashboard /> },
-    ]},
+    {
+        path: '/',
+        element: <App />,
+        children: [
+            {
+                index: true,
+                element: <HomePage />,
+            },
+            {
+                path: 'scan/:scanId',
+                element: <ScanDashboard />,
+            },
+        ],
+    },
 ]);
 
-export default router;
+const Router: React.FC = () => {
+    return <RouterProvider router={router} />;
+};
+
+export default Router;
