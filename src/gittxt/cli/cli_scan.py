@@ -342,3 +342,118 @@ async def _process_one_repo(
     finally:
         if is_remote:
             cleanup_temp_folder(Path(repo_path))
+
+async def perform_scan_from_api(
+    repos: list[str],
+    exclude_dirs: list[str] = None,
+    output_dir: str = None,
+    output_format: str = "json",
+    include_patterns: list[str] = None,
+    exclude_patterns: list[str] = None,
+    create_zip: bool = False,
+    lite: bool = False,
+    sync: bool = False,
+    size_limit: int = None,
+    branch: str = None,
+    tree_depth: int = None,
+    docs: bool = False,
+    no_tree: bool = False,
+):
+    """
+    Perform a scan and return the results as a dictionary.
+
+    This function contains the core logic for scanning a repository, but is
+    designed to be called programmatically by an API endpoint rather than a CLI.
+    """
+    if not repos:
+        raise ValueError("No repositories specified.")
+
+    # Only process the first repository for the API endpoint for simplicity
+    repo_source = repos[0]
+
+    # Handle docs flag
+    if docs and not include_patterns:
+        include_patterns = ["**/*.md"]
+
+    mode = "lite" if lite else "rich"
+    output_formats = {fmt.strip() for fmt in output_format.split(",")}
+    final_output_dir = Path(output_dir).resolve() if output_dir else Path("./output").resolve()
+    final_output_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        handler = RepositoryHandler(repo_source, branch=branch)
+        await handler.resolve()
+        repo_path, subdir, is_remote, repo_name, used_branch = handler.get_local_path()
+        scan_root = Path(repo_path)
+        if subdir:
+            scan_root = scan_root / subdir
+
+        dynamic_ignores = load_gittxtignore(scan_root) if sync else []
+        merged_exclude_dirs = list(
+            set(exclude_dirs or []) | set(dynamic_ignores) | set(EXCLUDED_DIRS_DEFAULT)
+        )
+
+        scanner = Scanner(
+            root_path=scan_root,
+            exclude_dirs=merged_exclude_dirs,
+            size_limit=size_limit,
+            include_patterns=list(include_patterns) if include_patterns else [],
+            exclude_patterns=list(exclude_patterns) if exclude_patterns else [],
+            progress=False,  # Disable progress for API
+            use_ignore_file=sync,
+        )
+
+        textual_files, non_textual_files = await scanner.scan_directory()
+        skipped_files = scanner.skipped_files
+
+        if not textual_files:
+            return {
+                "repo_name": repo_name,
+                "status": "warning",
+                "message": "No valid textual files found.",
+                "total_files": 0,
+                "summary_data": {},
+            }
+
+        builder = OutputBuilder(
+            repo_name=repo_name,
+            output_dir=final_output_dir,
+            output_format=",".join(output_formats),
+            repo_url=repo_source if is_remote else None,
+            branch=used_branch,
+            subdir=subdir,
+            mode=mode,
+        )
+
+        # Generate output files and get file paths
+        output_data = await builder.generate_output(
+            textual_files,
+            non_textual_files,
+            repo_path,
+            create_zip=create_zip,
+            tree_depth=tree_depth,
+            skip_tree=no_tree,
+        )
+
+        summary_data = await generate_summary(textual_files + non_textual_files)
+
+        output_filepath = str(output_data['file_path']) if 'file_path' in output_data else ""
+
+        return {
+            "repo_name": repo_name,
+            "status": "success",
+            "message": f"Scan complete. {len(textual_files)} files processed.",
+            "total_files": len(textual_files),
+            "summary_data": summary_data,
+            "output_filepath": output_filepath,
+            "skipped_files_count": len(skipped_files),
+            "skipped_files_reasons": [{"path": str(p), "reason": r} for p, r in skipped_files],
+            "is_remote": is_remote
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Failed processing {repo_source}: {e}")
+        raise e
+    finally:
+        if is_remote:
+            cleanup_temp_folder(Path(repo_path))
