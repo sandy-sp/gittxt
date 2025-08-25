@@ -1,8 +1,0 @@
-#!/home/sp/.cache/pypoetry/virtualenvs/gittxt-hL8WfqMF-py3.12/bin/python
-# -*- coding: utf-8 -*-
-import re
-import sys
-from gittxt.cli import cli
-if __name__ == '__main__':
-    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
-    sys.exit(cli())
